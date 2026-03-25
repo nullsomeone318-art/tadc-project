@@ -3,47 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC Digital Portal</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
+    <title>TADC - System Caine'a</title>
     <style>
-        body { background: #000; color: #ff0044; font-family: sans-serif; text-align: center; padding-top: 50px; }
-        .box { border: 2px solid #f9e11e; padding: 20px; display: inline-block; background: #111; }
-        input { padding: 10px; margin: 10px; border: 1px solid #f9e11e; background: #000; color: #fff; }
-        button { padding: 10px 20px; background: #ff0044; color: #fff; border: none; cursor: pointer; font-weight: bold; }
+        /* GŁÓWNY WYGLĄD */
+        body { background: #050505; color: #fff; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; transition: 0.5s; }
+        .hidden { display: none !important; }
+        
+        /* EKRAN LOGOWANIA */
+        #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        .login-box { border: 4px double #ff0044; background: #111; padding: 40px; text-align: center; box-shadow: 0 0 20px #ff0044; }
+        input { padding: 10px; margin: 10px; background: #000; border: 1px solid #00f2ff; color: #00f2ff; font-size: 18px; text-align: center; outline: none;}
+        button { padding: 10px 20px; background: #ff0044; color: #fff; border: none; font-size: 18px; cursor: pointer; text-transform: uppercase; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #00f2ff; color: #000; }
+
+        /* EKRAN CZATU */
+        #chat-screen { display: flex; flex-direction: column; height: 100vh; padding: 10px; box-sizing: border-box; }
+        
+        /* PANEL ADMINA */
+        #admin-panel { background: #ff0044; padding: 10px; border: 2px solid #fff; display: flex; justify-content: space-around; margin-bottom: 10px; font-weight: bold; }
+        .admin-btn { background: #000; color: #f9e11e; border: 1px solid #f9e11e; padding: 5px 10px; font-size: 12px; }
+        
+        /* GŁÓWNA STREFA CZATU */
+        .chat-area { display: flex; flex: 1; gap: 10px; overflow: hidden; }
+        #messages { flex: 3; background: #111; border: 2px solid #00f2ff; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        #online-users { flex: 1; background: #1a1a2e; border: 2px solid #4d3185; padding: 10px; color: #a18ce5; }
+        
+        /* WIADOMOŚCI */
+        .msg { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 5px;}
+        .avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; background: #4d3185; }
+        .time { font-size: 10px; color: #888; }
+        .system-msg { color: #ff0044; text-align: center; font-size: 20px; text-transform: uppercase; font-weight: bold; border: 2px dashed #f9e11e; padding: 10px; }
+
+        /* WPROWADZANIE TEKSTU */
+        .input-area { display: flex; gap: 10px; padding-top: 10px; }
+        #userMsg { flex: 1; }
+        .char-count { font-size: 12px; color: #888; text-align: right; }
+
+        /* EFEKTY */
+        .shake { animation: shake 0.5s infinite; }
+        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 50% { transform: translate(-1px, -2px) rotate(-1deg); } 100% { transform: translate(1px, -1px) rotate(1deg); } }
+        .glitch-mode { filter: invert(1) hue-rotate(90deg) contrast(2); }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h1>TADC INSTALLER</h1>
-        <p>Podaj imię postaci:</p>
-        <input type="text" id="charName" placeholder="Twoje imię...">
-        <br>
-        <button onclick="checkSystem()">DALEJ</button>
-        <p id="msg"></p>
+
+    <div id="login-screen">
+        <div class="login-box" id="loginBox">
+            <h1 style="color: #f9e11e;">KTO WCHODZI?</h1>
+            <input type="text" id="nickInput" placeholder="Twoje imię..." oninput="checkIfCaine()">
+            <br>
+            <button id="loginBtn" onclick="login()">WEJDŹ DO CYRKU</button>
+
+            <div id="admin-login" class="hidden" style="margin-top: 20px; border-top: 1px solid #ff0044; padding-top: 10px;">
+                <p style="color: #ff0044; font-weight: bold;">[ WYKRYTO KONTO ADMINISTRATORA ]</p>
+                <input type="password" id="pinInput" placeholder="KOD DOSTĘPU" maxlength="4">
+                <br>
+                <button onclick="loginAdmin()">AUTORYZUJ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="chat-screen" class="hidden">
+        
+        <div id="admin-panel" class="hidden">
+            <span>⚙️ PANEL CAINE'A</span>
+            <button class="admin-btn" onclick="adminClear()">Wyczyść Czat</button>
+            <button class="admin-btn" onclick="adminAnnounce()">Ogłoszenie</button>
+            <button class="admin-btn" onclick="adminGlitch()">Abstrakcja</button>
+            <button class="admin-btn" onclick="adminTheme()">Zmień Motyw</button>
+        </div>
+
+        <div class="chat-area">
+            <div id="messages"></div>
+            
+            <div id="online-users">
+                <h3 style="color: #fff; margin-top:0;">🌐 ONLINE</h3>
+                <ul style="list-style: none; padding: 0; line-height: 1.8;" id="user-list">
+                    <li>🟢 Jax</li>
+                    <li>🟢 Ragatha</li>
+                    <li>🟢 Kinger</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="char-count" id="charCount">0/100</div>
+        <div class="input-area">
+            <input type="text" id="userMsg" placeholder="Napisz coś..." maxlength="100" onkeypress="handleEnter(event)">
+            <button onclick="sendMessage()">WYŚLIJ</button>
+        </div>
     </div>
 
     <script>
-        function checkSystem() {
-            const name = document.getElementById('charName').value;
-            if(!name) { alert("Wpisz imię!"); return; }
-            
-            const isAndroid = /Android/i.test(navigator.userAgent);
-            const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const msg = document.getElementById('msg');
+        let currentUser = "";
+        let isAdmin = false;
 
-            if (isAndroid) {
-                msg.innerHTML = "WYKRYTO ANDROID.<br>Kliknij 'Zainstaluj' w menu przeglądarki.";
-            } else if (isiOS) {
-                msg.innerHTML = "WYKRYTO iOS.<br>Kliknij 'Udostępnij' i 'Do ekranu początkowego'.";
+        // --- 1. LOGIKA LOGOWANIA ---
+        function checkIfCaine() {
+            const nick = document.getElementById('nickInput').value.toLowerCase();
+            const loginBtn = document.getElementById('loginBtn');
+            const adminLogin = document.getElementById('admin-login');
+            const loginBox = document.getElementById('loginBox');
+
+            // Funkcja 5: Easter Egg Pomni
+            if (nick === 'pomni') { loginBox.classList.add('shake'); } 
+            else { loginBox.classList.remove('shake'); }
+
+            // Funkcja 1: Wykrycie Caine'a
+            if (nick === 'caine') {
+                loginBtn.classList.add('hidden');
+                adminLogin.classList.remove('hidden');
             } else {
-                msg.innerHTML = "WITAJ " + name + " (PC)!";
+                loginBtn.classList.remove('hidden');
+                adminLogin.classList.add('hidden');
             }
         }
 
-        // Rejestracja Service Workera dla PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+        // Wejście zwykłego gracza
+        function login() {
+            const nick = document.getElementById('nickInput').value.trim();
+            if (!nick) { alert("Musisz podać imię!"); return; }
+            currentUser = nick;
+            isAdmin = false;
+            startChat();
+        }
+
+        // Funkcja 3: Wejście Admina
+        function loginAdmin() {
+            const pin = document.getElementById('pinInput').value;
+            if (pin === "2222") {
+                currentUser = "CAINE";
+                isAdmin = true;
+                startChat();
+            } else {
+                alert("BŁĘDNY KOD! DOSTĘP ODMOWIONY.");
+            }
+        }
+
+        // --- 2. LOGIKA CZATU ---
+        function startChat() {
+            // Funkcja 6: Płynne przejście
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('chat-screen').classList.remove('hidden');
+            
+            // Funkcja 11: Dodanie nas do listy online
+            let list = document.getElementById('user-list');
+            list.innerHTML += `<li style="color: ${isAdmin ? '#ff0044' : '#00f2ff'}">🟢 ${currentUser} (Ty)</li>`;
+
+            // Funkcja 16: Pokazanie panelu admina
+            if (isAdmin) {
+                document.getElementById('admin-panel').classList.remove('hidden');
+                systemMessage("CAINE ZALOGOWANY. SYSTEM GOTOWY DO ZARZĄDZANIA.");
+            } else {
+                systemMessage("Witaj w systemie, " + currentUser + "!");
+            }
+        }
+
+        // --- 3. WYSYŁANIE WIADOMOŚCI ---
+        function sendMessage() {
+            const input = document.getElementById('userMsg');
+            let text = input.value.trim();
+            if (!text) return; // Ochrona przed pustą wiadomością
+
+            // Komendy systemowe
+            if (text === "/pomoc") {
+                systemMessage("Dostępne komendy: /pomoc");
+                input.value = ""; return;
+            }
+
+            const box = document.getElementById('messages');
+            
+            // Pobieranie aktualnego czasu (Funkcja 8)
+            const date = new Date();
+            const timeStr = `[${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}]`;
+
+            // Kolor avatara oparty na pierwszej literze
+            const letter = currentUser.charAt(0).toUpperCase();
+            
+            // Tworzenie wizualizacji HTML
+            const msgHTML = `
+                <div class="msg">
+                    <div class="avatar" style="background: ${isAdmin ? '#ff0044' : '#4d3185'}">${letter}</div>
+                    <div style="flex:1;">
+                        <b style="color: ${isAdmin ? '#ff0044' : '#00f2ff'}">${currentUser}</b> 
+                        <span class="time">${timeStr}</span><br>
+                        ${text}
+                    </div>
+                </div>
+            `;
+            
+            box.innerHTML += msgHTML;
+            input.value = "";
+            document.getElementById('charCount').innerText = "0/100";
+            
+            // Funkcja 9: Smooth Scroll
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // Obsługa klawisza Enter
+        function handleEnter(e) { if (e.key === "Enter") sendMessage(); }
+
+        // Licznik znaków
+        document.getElementById('userMsg').addEventListener('input', function() {
+            document.getElementById('charCount').innerText = this.value.length + "/100";
+        });
+
+        // Tworzenie wiadomości systemowych
+        function systemMessage(text) {
+            const box = document.getElementById('messages');
+            box.innerHTML += `<div class="system-msg">${text}</div>`;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // --- 4. FUNKCJE ADMINISTRATORA ---
+        function adminClear() {
+            if (confirm("Czy na pewno chcesz usunąć wszystkie wiadomości?")) {
+                document.getElementById('messages').innerHTML = "";
+                systemMessage("CZAT ZOSTAŁ WYCZYSZCZONY PRZEZ ADMINISTRATORA.");
+            }
+        }
+
+        function adminAnnounce() {
+            const text = prompt("Wpisz treść ogłoszenia systemowego:");
+            if (text) {
+                systemMessage("⚠️ OGŁOSZENIE: " + text);
+            }
+        }
+
+        function adminGlitch() {
+            document.body.classList.toggle('glitch-mode');
+            systemMessage(document.body.classList.contains('glitch-mode') ? "ROZPOCZĘTO PROCES ABSTRAKCJI!" : "ZATRZYMANO ABSTRAKCJĘ.");
+        }
+
+        function adminTheme() {
+            if (document.body.style.background === "black") {
+                document.body.style.background = "#050505"; // Normal
+            } else {
+                document.body.style.background = "black"; // The Void
+                systemMessage("ZMIENIONO MOTYW NA: PUSTKA");
+            }
         }
     </script>
 </body>
