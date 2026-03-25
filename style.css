@@ -1,0 +1,73 @@
+body {
+    background: #050505;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+    /* Tło z efektem siatki (grid) */
+    background-image: 
+        linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+        linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05)),
+        linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent),
+        linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent);
+    background-size: 100% 2px, 3px 100%, 50px 50px, 50px 50px;
+}
+
+.login-container {
+    background: rgba(20, 20, 30, 0.9);
+    border: 4px double #ff0044;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 30px #ff0044;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+/* Styl dla obrazka postaci */
+.char-preview {
+    width: 150px;
+    height: 150px;
+    margin: 10px auto;
+    border-radius: 50%;
+    border: 3px solid #00f2ff;
+    background: url('images/default.png') center/cover; /* Tu będzie Twój obrazek */
+}
+
+h1 {
+    color: #ff0044;
+    text-shadow: 2px 2px #00f2ff;
+    letter-spacing: 3px;
+    font-size: 24px;
+}
+
+input {
+    width: 80%;
+    padding: 12px;
+    background: #111;
+    border: 1px solid #00f2ff;
+    color: #00f2ff;
+    margin: 15px 0;
+    font-size: 18px;
+    text-align: center;
+}
+
+button {
+    background: #ff0044;
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+    box-shadow: 4px 4px 0px #00f2ff;
+}
+
+button:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #00f2ff;
+}
