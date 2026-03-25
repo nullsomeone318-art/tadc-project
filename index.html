@@ -3,49 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Digital Portal</title>
+    <title>TADC Digital Portal</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
+    <style>
+        body { background: #000; color: #ff0044; font-family: sans-serif; text-align: center; padding-top: 50px; }
+        .box { border: 2px solid #f9e11e; padding: 20px; display: inline-block; background: #111; }
+        input { padding: 10px; margin: 10px; border: 1px solid #f9e11e; background: #000; color: #fff; }
+        button { padding: 10px 20px; background: #ff0044; color: #fff; border: none; cursor: pointer; font-weight: bold; }
+    </style>
 </head>
 <body>
-    <div class="scanlines"></div>
-
-    <div class="login-container">
-        <div class="circus-border">
-            <h1>CYFROWY CYRK</h1>
-            <p style="color: #f9e11e; font-weight: bold; margin-bottom: 20px;">WEJŚCIE DO SYSTEMU</p>
-            
-            <div class="input-group">
-                <input type="text" id="charName" placeholder="IMIĘ POSTACI..." autocomplete="off">
-            </div>
-
-            <button onclick="startTransfer()">DALEJ</button>
-            
-            <div id="status-msg"></div>
-        </div>
+    <div class="box">
+        <h1>TADC INSTALLER</h1>
+        <p>Podaj imię postaci:</p>
+        <input type="text" id="charName" placeholder="Twoje imię...">
+        <br>
+        <button onclick="checkSystem()">DALEJ</button>
+        <p id="msg"></p>
     </div>
 
     <script>
-        function startTransfer() {
+        function checkSystem() {
             const name = document.getElementById('charName').value;
-            const status = document.getElementById('status-msg');
+            if(!name) { alert("Wpisz imię!"); return; }
             
-            if(name) {
-                status.style.display = "block";
-                status.innerText = "PRZETWARZANIE DANYCH: " + name.toUpperCase() + "...";
-                status.style.color = "#00f2ff";
-                
-                // Efekt lekkiego błędu/glitcha przy kliknięciu
-                document.body.style.filter = "invert(1) hue-rotate(180deg)";
-                
-                setTimeout(() => {
-                    document.body.style.filter = "none";
-                    alert("Witaj w cyfrowym świecie, " + name + "! Nie zapomnij swojego nowego imienia.");
-                    // Tutaj w przyszłości dodamy przejście do nowej strony
-                }, 1000);
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const msg = document.getElementById('msg');
+
+            if (isAndroid) {
+                msg.innerHTML = "WYKRYTO ANDROID.<br>Kliknij 'Zainstaluj' w menu przeglądarki.";
+            } else if (isiOS) {
+                msg.innerHTML = "WYKRYTO iOS.<br>Kliknij 'Udostępnij' i 'Do ekranu początkowego'.";
             } else {
-                alert("MUSISZ PODAĆ IMIĘ, ABY UNIKNĄĆ ABSTRAKCJI!");
+                msg.innerHTML = "WITAJ " + name + " (PC)!";
             }
+        }
+
+        // Rejestracja Service Workera dla PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
         }
     </script>
 </body>
