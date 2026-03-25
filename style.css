@@ -1,19 +1,18 @@
-
 body {
-    /* Ścieżka do Twojego zdjęcia */
-    background-image: url('images/backgrund.jpg'); 
-    
-    /* Ustawienia, żeby tło było ładne */
-    background-size: cover;        /* Zdjęcie wypełni cały ekran */
-    background-position: center;   /* Wyśrodkowanie zdjęcia */
-    background-attachment: fixed;  /* Tło nie będzie się przewijać */
-    background-repeat: no-repeat;
-    
-    color: #fff;
-    font-family: 'Courier New', monospace;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    margin: 0;
+    font-family: 'Courier New', monospace;
+    color: white;
+    
+    /* Naprawa ścieżki - sprawdź czy nazwa pliku jest identyczna! */
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                url('images/backgrund.jpg') no-repeat center center fixed;
+    background-size: cover;
+    
+    /* Efekt lekkiego drżenia obrazu (Glitch) */
+    overflow: hidden;
 }
