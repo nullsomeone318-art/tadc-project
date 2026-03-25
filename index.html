@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TADC - Digital Entry</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="monitor-overlay"></div>
+    <div class="login-container">
+        <h1>WITAJ W CYRKU</h1>
+        <p>Podaj imię swojej postaci:</p>
+        <input type="text" id="charName" placeholder="np. Pomni, Jax...">
+        <button onclick="login()">DALEJ</button>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        function login() {
+            const name = document.getElementById('charName').value;
+            if(name) {
+                document.getElementById('status').innerText = "Inicjalizacja transferu dla: " + name + "...";
+                // Tutaj można dodać przekierowanie do "wnętrza" cyrku
+                setTimeout(() => {
+                    alert("Witaj w cyfrowym świecie, " + name + "!");
+                }, 1500);
+            } else {
+                alert("Musisz podać imię!");
+            }
+        }
+    </script>
+</body>
+</html>
