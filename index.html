@@ -3,30 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Digital Entry</title>
+    <title>TADC - Digital Portal</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
-    <div class="monitor-overlay"></div>
+    <div class="scanlines"></div>
+
     <div class="login-container">
-        <h1>WITAJ W CYRKU</h1>
-        <p>Podaj imię swojej postaci:</p>
-        <input type="text" id="charName" placeholder="np. Pomni, Jax...">
-        <button onclick="login()">DALEJ</button>
-        <div id="status"></div>
+        <div class="circus-border">
+            <h1>CYFROWY CYRK</h1>
+            <p style="color: #f9e11e; font-weight: bold; margin-bottom: 20px;">WEJŚCIE DO SYSTEMU</p>
+            
+            <div class="input-group">
+                <input type="text" id="charName" placeholder="IMIĘ POSTACI..." autocomplete="off">
+            </div>
+
+            <button onclick="startTransfer()">DALEJ</button>
+            
+            <div id="status-msg"></div>
+        </div>
     </div>
 
     <script>
-        function login() {
+        function startTransfer() {
             const name = document.getElementById('charName').value;
+            const status = document.getElementById('status-msg');
+            
             if(name) {
-                document.getElementById('status').innerText = "Inicjalizacja transferu dla: " + name + "...";
-                // Tutaj można dodać przekierowanie do "wnętrza" cyrku
+                status.style.display = "block";
+                status.innerText = "PRZETWARZANIE DANYCH: " + name.toUpperCase() + "...";
+                status.style.color = "#00f2ff";
+                
+                // Efekt lekkiego błędu/glitcha przy kliknięciu
+                document.body.style.filter = "invert(1) hue-rotate(180deg)";
+                
                 setTimeout(() => {
-                    alert("Witaj w cyfrowym świecie, " + name + "!");
-                }, 1500);
+                    document.body.style.filter = "none";
+                    alert("Witaj w cyfrowym świecie, " + name + "! Nie zapomnij swojego nowego imienia.");
+                    // Tutaj w przyszłości dodamy przejście do nowej strony
+                }, 1000);
             } else {
-                alert("Musisz podać imię!");
+                alert("MUSISZ PODAĆ IMIĘ, ABY UNIKNĄĆ ABSTRAKCJI!");
             }
         }
     </script>
