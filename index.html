@@ -3,18 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Digital Gateway v2.1</title>
+    <title>TADC - Digital Gateway v2.3</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        /* BAZA I TŁO (NAPRAWIONE) */
         body { 
-            /* Tu jest przywrócone Twoje tło z przyciemnieniem */
             background-color: #050505;
-            background-image: linear-gradient(rgba(5, 5, 5, 0.85), rgba(5, 5, 5, 0.85)), url('images/backgrund.jpg');
+            background-image: linear-gradient(rgba(5, 5, 5, 0.8), rgba(5, 5, 5, 0.8)), url('images/backgrund.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            
             color: #00f2ff; 
             font-family: 'Courier New', monospace; 
             margin: 0; 
@@ -23,159 +20,106 @@
             justify-content: center; 
             align-items: center; 
             text-align: center; 
-            overflow: hidden; 
-            cursor: crosshair; 
+            overflow: hidden;
         }
+
         .hidden { display: none !important; }
+        .scanlines { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%); background-size: 100% 4px; pointer-events: none; z-index: 100; }
         
-        /* EFEKT STAREGO MONITORA (CRT) */
-        .scanlines { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%); background-size: 100% 4px; pointer-events: none; z-index: 100; }
-        
-        /* HUD (PASKI INFORMACYJNE) */
-        .hud { position: fixed; top: 10px; padding: 0 20px; width: 100%; box-sizing: border-box; display: flex; justify-content: space-between; font-size: 12px; color: #f9e11e; z-index: 50; text-shadow: 1px 1px #000; }
-        .version { position: fixed; bottom: 10px; right: 20px; font-size: 10px; color: #555; z-index: 50; }
-        .audio-toggle { position: fixed; bottom: 10px; left: 20px; font-size: 20px; cursor: pointer; z-index: 50; }
+        .box { 
+            border: 4px solid #ff0044; 
+            background: rgba(10, 10, 15, 0.9); 
+            padding: 30px; 
+            box-shadow: 0 0 20px #ff0044; 
+            max-width: 400px; 
+            width: 85%; 
+            z-index: 10;
+            backdrop-filter: blur(5px);
+        }
 
-        /* OKNA */
-        .box { border: 4px solid #ff0044; background: rgba(10, 10, 15, 0.85); padding: 40px; box-shadow: 0 0 20px #ff0044; max-width: 450px; width: 90%; position: relative; z-index: 10; backdrop-filter: blur(5px); }
+        h1 { color: #f9e11e; text-shadow: 2px 2px #ff0044; text-transform: uppercase; margin-top: 0; }
         
-        /* TYPOGRAFIA I ANIMACJE */
-        h1 { color: #f9e11e; text-shadow: 2px 2px #ff0044; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; }
-        h1:hover { animation: glitch 0.2s infinite; }
+        input { 
+            padding: 12px; margin: 15px 0; background: #000; border: 2px solid #00f2ff; 
+            color: #00f2ff; font-size: 16px; text-align: center; width: 85%; outline: none;
+        }
         
-        input { padding: 15px; margin: 15px 0; background: rgba(0, 0, 0, 0.7); border: 2px solid #00f2ff; color: #00f2ff; font-size: 18px; text-align: center; width: 80%; outline: none; transition: 0.3s; }
-        input:focus { border-color: #f9e11e; box-shadow: 0 0 15px #f9e11e; }
-        
-        button { padding: 15px 30px; background: #ff0044; color: #fff; border: none; font-size: 18px; cursor: pointer; font-weight: bold; transition: 0.3s; border-bottom: 4px solid #990029; text-transform: uppercase; }
-        button:hover { background: #f9e11e; color: #000; border-bottom: 4px solid #b3a00b; transform: translateY(2px); }
-        .pulse-btn { animation: pulse 1.5s infinite; }
+        button { 
+            padding: 12px 25px; background: #ff0044; color: #fff; border: none; 
+            font-size: 16px; cursor: pointer; font-weight: bold; text-transform: uppercase;
+            border-bottom: 4px solid #990029; transition: 0.2s;
+        }
+        button:hover { background: #f9e11e; color: #000; transform: scale(1.05); }
 
-        /* PASEK POSTĘPU */
-        .progress-bar-container { width: 100%; height: 20px; border: 2px solid #00f2ff; margin-top: 20px; position: relative; background: #000; }
+        .progress-bar-container { width: 100%; height: 15px; border: 1px solid #00f2ff; margin-top: 20px; background: #000; }
         .progress-fill { height: 100%; width: 0%; background: #00f2ff; transition: width 0.2s; }
         
-        .terminal-logs { height: 60px; overflow: hidden; font-size: 12px; color: #00f2ff; text-align: left; margin-top: 15px; background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid #333; }
+        .hud { position: fixed; top: 10px; width: 100%; display: flex; justify-content: space-around; font-size: 12px; color: #f9e11e; }
+        .audio-btn { position: fixed; bottom: 10px; left: 15px; font-size: 24px; cursor: pointer; z-index: 110; }
 
-        /* EFEKTY SPECJALNE */
         @keyframes glitch { 0% { transform: translate(2px, -2px); } 50% { transform: translate(-2px, 2px); } 100% { transform: translate(0); } }
-        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 10px #ff0044; } 50% { transform: scale(1.05); box-shadow: 0 0 30px #ff0044; } 100% { transform: scale(1); box-shadow: 0 0 10px #ff0044; } }
-        
-        .panic-mode { animation: panicAlert 0.5s infinite; }
-        @keyframes panicAlert { 0% { background-color: rgba(34, 0, 0, 0.9); } 50% { background-color: rgba(255, 0, 0, 0.7); } 100% { background-color: rgba(34, 0, 0, 0.9); } }
-
-        /* BOOT SCREEN */
-        #boot-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; text-align: left; padding: 20px; font-size: 14px; z-index: 200; box-sizing: border-box; }
+        .glitch-active { animation: glitch 0.2s infinite; color: #ff0044; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="scanlines"></div>
-    <div class="version">v1.0.34-VOID</div>
-    <div class="audio-toggle">🔇</div>
+    <div class="audio-btn" id="audioBtn" onclick="toggleMusic()">🔇</div>
 
     <div class="hud">
         <span id="clock">00:00:00</span>
-        <span id="battery">Bateria: --%</span>
-        <span id="network">ONLINE</span>
+        <span id="network">STATUS: ONLINE</span>
     </div>
 
-    <div id="boot-screen">
-        C&A BIOS v4.02<br>
-        Loading kernel... OK<br>
-        Mounting virtual reality... OK<br>
-        Checking for exits... 0 FOUND.<br>
-        Starting TADC Gateway...
-    </div>
+    <audio id="bgMusic" loop>
+        <source src="maintheme.mp3" type="audio/mpeg">
+    </audio>
 
-    <div id="step-1" class="box hidden">
-        <h1 id="typewriter"></h1>
-        <p style="color: #fff;">Wprowadź imię swojego nowego awatara:</p>
-        
-        <input type="text" id="nickInput" placeholder="Zostaw puste dla losowego..." oninput="checkIfCaine()" onkeypress="if(event.key==='Enter') startSequence()">
+    <div id="step-1" class="box">
+        <h1>CYFROWY CYRK</h1>
+        <p>Podaj imię swojego awatara:</p>
+        <input type="text" id="nickInput" placeholder="Imię..." oninput="checkCaine()">
         <br>
-        <button id="startBtn" onclick="startSequence()">ZAINICJUJ TRANSFER</button>
+        <button id="startBtn" onclick="startTransfer()">DOŁĄCZ DO CYRKU</button>
 
         <div id="admin-login" class="hidden">
-            <p style="color: #ff0044; font-weight: bold;">[ WYKRYTO KONTO CAINE ]</p>
-            <input type="password" id="pinInput" placeholder="KOD PIN (2222)" onkeypress="if(event.key==='Enter') loginAdmin()">
+            <p style="color: #ff0044;">[ WYKRYTO KONTO ADMINISTRATORA ]</p>
+            <input type="password" id="pinInput" placeholder="WPROWADŹ PIN...">
             <br>
-            <button onclick="loginAdmin()" style="background: #f9e11e; color: #000;">ODBLOKUJ</button>
+            <button onclick="loginAdmin()">AUTORYZUJ</button>
         </div>
     </div>
 
     <div id="step-2" class="box hidden">
         <h1>ŁADOWANIE...</h1>
-        <p id="targetName" style="color: #fff; font-size: 20px; font-weight: bold;"></p>
-        
+        <p id="targetName"></p>
         <div class="progress-bar-container"><div id="progressFill" class="progress-fill"></div></div>
-        <div id="loadingText" style="margin-top: 15px; color: #f9e11e; font-weight: bold;">Nawiązywanie połączenia...</div>
-        
-        <div id="terminalLogs" class="terminal-logs"></div>
+        <p id="loadText" style="color: #f9e11e; font-size: 14px; margin-top: 10px;">Inicjalizacja dusz...</p>
     </div>
 
     <div id="step-3" class="box hidden">
-        <h1 style="color: #00f2ff;">TRANSFER UKOŃCZONY</h1>
-        <p style="color: #fff; font-size: 18px;">Witaj w Cyrku, <span id="finalName" style="color: #f9e11e; font-weight: bold;"></span>!</p>
-        
-        <div id="installMsg" style="color: #fff; padding: 15px; border: 2px dashed #f9e11e; margin-bottom: 20px; background: rgba(0,0,0,0.5);">Sprawdzanie urządzenia...</div>
-        <button class="pulse-btn" onclick="alert('Pamiętaj, aby dodać stronę do ekranu głównego w opcjach przeglądarki!')">ROZUMIEM</button>
-    </div>
-
-    <div id="admin-panel" class="box hidden" style="border-color: #f9e11e; text-align: left;">
-        <h1 style="color: #ff0044; text-align: center;">WITAJ CAINE</h1>
-        <p style="color: #00f2ff;">Panel Zarządzania Cyrkiem</p>
-        <hr style="border-color: #ff0044;">
-        <p style="color: #fff;"><b>Złapane Dusze:</b> <span id="victimCount" style="color: #f9e11e;">0</span></p>
-        <div id="victimList" style="font-size: 12px; color: #aaa; margin-bottom: 15px; height: 60px; overflow-y: auto; background: rgba(0,0,0,0.8); padding: 5px;">Brak danych...</div>
-        
-        <button onclick="document.body.classList.toggle('panic-mode')" style="width: 100%; margin-bottom: 10px;">🚨 ALARM PANIKI</button>
-        <button onclick="clearSystem()" style="width: 100%; background: #333; margin-bottom: 10px;">🗑️ FORMATUJ SYSTEM</button>
-        <button onclick="location.reload()" style="width: 100%; background: #00f2ff; color: #000;">WYLOGUJ</button>
+        <h1 style="color: #00f2ff;">TRANSFER OK</h1>
+        <p>Witaj, <span id="finalName" style="color: #f9e11e;"></span>!</p>
+        <p style="border: 1px dashed #f9e11e; padding: 10px; font-size: 14px;">Zainstaluj aplikację przez menu przeglądarki (Dodaj do ekranu głównego).</p>
+        <button onclick="location.reload()">RESTART</button>
     </div>
 
     <script>
-        // --- FUNKCJE HUD I SYSTEMOWE ---
-        setInterval(() => {
-            const d = new Date();
-            document.getElementById('clock').innerText = d.toLocaleTimeString();
-        }, 1000);
+        // --- ZEGAR ---
+        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
 
-        window.addEventListener('online', () => document.getElementById('network').innerText = "ONLINE");
-        window.addEventListener('offline', () => document.getElementById('network').innerText = "OFFLINE");
-
-        if(navigator.getBattery) {
-            navigator.getBattery().then(batt => {
-                document.getElementById('battery').innerText = `Bateria: ${Math.round(batt.level * 100)}%`;
-            });
+        // --- MUZYKA ---
+        const music = document.getElementById('bgMusic');
+        const audioBtn = document.getElementById('audioBtn');
+        function toggleMusic() {
+            if (music.paused) { music.play(); audioBtn.innerText = '🔊'; }
+            else { music.pause(); audioBtn.innerText = '🔇'; }
         }
 
-        // --- BOOT SEQUENCE ---
-        setTimeout(() => {
-            document.getElementById('boot-screen').classList.add('hidden');
-            document.getElementById('step-1').classList.remove('hidden');
-            typeWriter("CYFROWY CYRK", "typewriter", 100);
-        }, 2000);
-
-        function typeWriter(text, elementId, speed) {
-            let i = 0;
-            document.getElementById(elementId).innerHTML = "";
-            function type() {
-                if (i < text.length) {
-                    document.getElementById(elementId).innerHTML += text.charAt(i);
-                    i++;
-                    setTimeout(type, speed);
-                }
-            }
-            type();
-        }
-
-        // --- LOGIKA ADMINA I FORMULARZA ---
-        const randomNames = ["Pomni", "Jax", "Ragatha", "Gangle", "Kinger", "Zooble", "Kaufmo"];
-        let victims = JSON.parse(localStorage.getItem('tadc_victims')) || [];
-
-        function checkIfCaine() {
+        // --- LOGIKA ---
+        function checkCaine() {
             const nick = document.getElementById('nickInput').value.toLowerCase();
-            if (nick === 'caine') {
+            if(nick === 'caine') {
                 document.getElementById('startBtn').classList.add('hidden');
                 document.getElementById('admin-login').classList.remove('hidden');
             } else {
@@ -185,90 +129,47 @@
         }
 
         function loginAdmin() {
-            if (document.getElementById('pinInput').value === "2222") {
-                document.getElementById('step-1').classList.add('hidden');
-                document.getElementById('admin-panel').classList.remove('hidden');
-                
-                document.getElementById('victimCount').innerText = victims.length;
-                if(victims.length > 0) {
-                    document.getElementById('victimList').innerHTML = victims.join(", ");
-                }
-            } else {
-                alert("BŁĘDNY KOD PIN!");
-            }
+            // Kod wciąż działa, ale nie jest widoczny dla zwykłych graczy
+            if(document.getElementById('pinInput').value === "2222") {
+                alert("Autoryzacja pomyślna. Witaj, Szefie!");
+                startTransfer("CAINE");
+            } else { alert("BŁĘDNY PIN! DOSTĘP ODMOWIONY."); }
         }
 
-        function clearSystem() {
-            if(confirm("Usunąć wszystkie dane graczy z tego urządzenia?")) {
-                localStorage.removeItem('tadc_victims');
-                localStorage.removeItem('tadc_nick');
-                alert("Pamięć wyczyszczona.");
-                location.reload();
-            }
-        }
-
-        // --- SEKWENCJA ŁADOWANIA ---
-        function startSequence() {
-            let nick = document.getElementById('nickInput').value.trim();
-            if (!nick) { 
-                nick = randomNames[Math.floor(Math.random() * randomNames.length)]; 
-            }
-
-            if(!victims.includes(nick)) {
-                victims.push(nick);
-                localStorage.setItem('tadc_victims', JSON.stringify(victims));
-            }
-            localStorage.setItem('tadc_nick', nick);
+        function startTransfer(adminNick) {
+            const nick = adminNick || document.getElementById('nickInput').value.trim() || "Nieznajomy";
+            
+            // Start muzyki przy kliknięciu
+            music.play();
+            audioBtn.innerText = '🔊';
 
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
-            document.getElementById('targetName').innerText = "Cel: " + nick.toUpperCase();
-
-            const fill = document.getElementById('progressFill');
-            const text = document.getElementById('loadingText');
-            const logs = document.getElementById('terminalLogs');
+            document.getElementById('targetName').innerText = "PROFIL: " + nick.toUpperCase();
 
             let progress = 0;
-            const fakeLogs = ["Loading mind...", "Erasing memory...", "Injecting humor.dll", "Bypassing firewall...", "Removing exit.exe", "Connecting to Caine..."];
+            const fill = document.getElementById('progressFill');
+            const loadText = document.getElementById('loadText');
 
             const interval = setInterval(() => {
-                progress += Math.floor(Math.random() * 10) + 5; 
-                if (progress >= 100) progress = 100;
-                
+                progress += Math.floor(Math.random() * 10) + 2;
+                if(progress > 100) progress = 100;
                 fill.style.width = progress + "%";
-                logs.innerHTML = fakeLogs[Math.floor(Math.random() * fakeLogs.length)] + "<br>" + logs.innerHTML;
 
-                if (progress > 20 && progress < 50) text.innerText = "Skanowanie umysłu...";
-                if (progress >= 50 && progress < 80) text.innerText = "Generowanie cyfrowego ciała...";
-                if (progress >= 80 && progress < 99) text.innerText = "Usuwanie drogi ucieczki...";
-                
-                if (progress === 100) {
-                    text.innerHTML = "<span style='color:#ff0044; font-weight:bold; animation: glitch 0.2s infinite;'>BŁĄD: BRAK DROGI POWROTNEJ!</span>";
+                if(progress > 30) loadText.innerText = "Skanowanie świadomości...";
+                if(progress > 70) loadText.innerText = "Usuwanie drogi wyjścia...";
+
+                if(progress === 100) {
                     clearInterval(interval);
-                    setTimeout(() => showInstallScreen(nick), 2500); 
+                    loadText.innerHTML = "<span class='glitch-active'>BŁĄD: NIE MOŻNA ZNALEŹĆ WYJŚCIA</span>";
+                    setTimeout(() => {
+                        document.getElementById('step-2').classList.add('hidden');
+                        document.getElementById('step-3').classList.remove('hidden');
+                        document.getElementById('finalName').innerText = nick;
+                    }, 2500);
                 }
-            }, 500); 
+            }, 300);
         }
-
-        function showInstallScreen(nick) {
-            document.getElementById('step-2').classList.add('hidden');
-            document.getElementById('step-3').classList.remove('hidden');
-            document.getElementById('finalName').innerText = nick.toUpperCase();
-
-            const isAndroid = /Android/i.test(navigator.userAgent);
-            const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const msgBox = document.getElementById('installMsg');
-
-            if (isAndroid) {
-                msgBox.innerHTML = "<b>WYKRYTO ANDROID</b><br><br>Zaraz pojawi się komunikat. Kliknij <b>ZAINSTALUJ</b>, aby wejść do systemu.";
-            } else if (isiOS) {
-                msgBox.innerHTML = "<b>WYKRYTO iOS</b><br><br>Kliknij ikonę <b>Udostępnij</b> na dole i wybierz <b>Dodaj do ekranu początkowego</b>.";
-            } else {
-                msgBox.innerHTML = "<b>WYKRYTO PC</b><br><br>Skopiuj ten link i otwórz na smartfonie, aby zainstalować system.";
-            }
-        }
-
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
     </script>
 </body>
 </html>
