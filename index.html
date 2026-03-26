@@ -6,182 +6,339 @@
     <title>TADC - Global Mainframe OS</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
-        @keyframes crtFlicker { 0% { opacity: 0.98; } 50% { opacity: 0.94; } 100% { opacity: 1; } }
         body { 
-            background-color: #050505; background-image: url('./images/backgrund.jpg');
-            background-size: cover; background-position: center; background-attachment: fixed;
-            color: #00f2ff; font-family: 'Courier New', monospace; 
-            margin: 0; height: 100vh; overflow: hidden;
-            display: flex; justify-content: center; align-items: center; transition: all 0.5s;
+            background-color: #050505; 
+            background-image: url('./images/backgrund.jpg'); /* Używam Twojej dokładnej nazwy pliku */
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed;
+            color: #00f2ff; 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            height: 100vh; 
+            overflow: hidden;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            transition: filter 0.3s;
         }
-        canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.3; pointer-events: none; }
-        .scanlines { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%); background-size: 100% 4px; pointer-events: none; z-index: 100; }
+
+        /* Subtelne linie skanowania (zamiast Matrixa) */
+        .scanlines { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%); background-size: 100% 4px; pointer-events: none; z-index: 50; }
         .hidden { display: none !important; }
+
+        /* OKNA GŁÓWNE */
         .box { 
-            position: relative; background: rgba(10, 10, 15, 0.9); padding: 20px; border: 2px solid #ff0044; border-radius: 12px;
-            box-shadow: 0 0 25px #ff0044, inset 0 0 15px rgba(255,0,68,0.3); width: 85%; max-width: 310px; z-index: 10; backdrop-filter: blur(8px); text-align: center;
+            position: relative; background: rgba(10, 10, 15, 0.95); padding: 25px; border: 2px solid #ff0044; border-radius: 12px;
+            box-shadow: 0 0 30px rgba(255,0,68,0.5), inset 0 0 15px rgba(255,0,68,0.3); width: 85%; max-width: 320px; z-index: 100; text-align: center;
         }
-        h1 { color: #f9e11e; text-shadow: 2px 2px #ff0044; text-transform: uppercase; font-size: 20px; margin-top: 0; }
-        input { padding: 10px; margin: 10px 0; background: #000; border: 2px solid #00f2ff; color: #00f2ff; width: 100%; box-sizing: border-box; text-align: center; }
-        button { padding: 10px; background: #ff0044; color: #fff; border: none; font-weight: bold; width: 100%; cursor: pointer; border-bottom: 3px solid #66001b; }
-        .progress-bar-container { width: 100%; height: 15px; border: 2px solid #00f2ff; margin-top: 15px; background: #111; overflow: hidden; }
-        .progress-fill { height: 100%; width: 0%; background: #00f2ff; transition: width 0.3s; }
-        #dashboard { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; z-index: 10; }
-        #caineTerminal { background: rgba(255, 0, 68, 0.9); padding: 8px; display: flex; gap: 5px; justify-content: center; }
-        .chat-container { flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px; padding-bottom: 80px; }
-        .chat-box { max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
-        .msg { font-size: 13px; text-shadow: 1px 1px 1px #000; }
-        .msg.caine { color: #ff0044; font-weight: bold; }
-        .chat-controls { position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px; background: rgba(0,0,0,0.8); display: flex; gap: 5px; box-sizing: border-box; }
-        .hologram-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 80%; max-width: 300px; z-index: 1000; border: 3px solid #ff0044; transition: 0.4s; pointer-events: none; }
+        h1 { color: #f9e11e; text-shadow: 2px 2px #ff0044; text-transform: uppercase; font-size: 24px; margin-top: 0; letter-spacing: 2px;}
+        input { padding: 12px; margin: 10px 0; background: #000; border: 2px solid #00f2ff; color: #00f2ff; width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; font-family: 'Courier New', monospace; outline: none;}
+        input:focus { border-color: #f9e11e; box-shadow: 0 0 10px #f9e11e; }
+        button { padding: 12px; background: linear-gradient(45deg, #ff0044, #cc0036); color: #fff; border: none; font-weight: bold; width: 100%; cursor: pointer; border-bottom: 4px solid #66001b; font-family: 'Courier New', monospace; text-transform: uppercase;}
+        button:hover { background: #f9e11e; color: #000; border-bottom: 4px solid #b3a00b; }
+
+        /* PASEK ŁADOWANIA */
+        .progress-bar-container { width: 100%; height: 20px; border: 2px solid #00f2ff; margin-top: 20px; background: #111; overflow: hidden; border-radius: 5px;}
+        .progress-fill { height: 100%; width: 0%; background: repeating-linear-gradient(45deg, #00f2ff, #00f2ff 10px, #0099ff 10px, #0099ff 20px); transition: width 0.2s; }
+
+        /* INTERFEJS CZATU I TERMINALA */
+        #dashboard { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; z-index: 60; }
+        
+        #caineTerminal { background: rgba(255, 0, 68, 0.95); padding: 10px; display: flex; gap: 5px; justify-content: center; border-bottom: 2px solid #fff;}
+        #caineTerminal input { margin: 0; background: #000; border: 1px solid #fff; color: #fff; width: 70%; padding: 8px;}
+        #caineTerminal button { width: 30%; background: #000; padding: 8px; border: 1px solid #fff; color: #fff;}
+
+        .chat-container { flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 15px; padding-bottom: 80px; }
+        .chat-box { max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scrollbar-width: none; }
+        
+        .msg { font-size: 14px; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 5px; border-left: 3px solid #00f2ff; width: fit-content; max-width: 90%; word-wrap: break-word; animation: popIn 0.2s ease-out;}
+        .msg.caine { border-left: 3px solid #ff0044; background: rgba(255,0,68,0.15); font-weight: bold; }
+        .msg.sys { border-left: 3px solid #f9e11e; color: #f9e11e; font-style: italic; background: rgba(249,225,30,0.1); width: 100%; max-width: 100%; text-align: center;}
+        
+        @keyframes popIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .chat-controls { position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px; background: rgba(0,0,0,0.9); display: flex; gap: 10px; box-sizing: border-box; border-top: 2px solid #333;}
+        .chat-controls input { margin: 0; border-radius: 20px; background: #111; border: 1px solid #555; }
+        .chat-controls button { width: auto; border-radius: 20px; padding: 10px 20px; background: #00f2ff; color: #000; border-bottom: 3px solid #0088cc;}
+
+        /* EFEKTY GLOBALNE I POPUPY */
+        .hologram-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 350px; z-index: 1000; border: 4px solid #ff0044; box-shadow: 0 0 50px #ff0044; border-radius: 10px; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
         .hologram-popup.active { transform: translate(-50%, -50%) scale(1); }
-        .audio-btn { position: fixed; top: 12px; right: 12px; font-size: 20px; z-index: 110; cursor: pointer; }
+
+        /* NOWOŚĆ: PASEK CENZURY */
+        #censorBar { position: fixed; top: 50%; left: 0; width: 100%; height: 120px; background: repeating-linear-gradient(45deg, #000, #000 20px, #fff 20px, #fff 40px); transform: translateY(-50%) scaleY(0); z-index: 2000; display: flex; justify-content: center; align-items: center; transition: 0.1s; }
+        #censorBar.active { transform: translateY(-50%) scaleY(1); }
+        #censorBar span { background: #ff0044; color: #fff; padding: 10px 30px; font-size: 40px; font-weight: bold; border: 4px solid #000; text-transform: uppercase; transform: rotate(-5deg); letter-spacing: 5px;}
+
+        /* KLASY EFEKTÓW CSS */
+        .effect-glitch { animation: shake 0.1s infinite; filter: hue-rotate(90deg) invert(1); }
+        @keyframes shake { 0% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 100% { transform: translate(5px, -5px); } }
+        .effect-redalert { box-shadow: inset 0 0 150px rgba(255,0,0,0.8); }
+        .effect-nuke { filter: brightness(10) contrast(5); }
+
+        /* HUD STATYSTYKI */
+        .hud-top { position: fixed; top: 10px; left: 10px; font-size: 12px; font-weight: bold; z-index: 110; color: #fff; text-shadow: 1px 1px #000; display: flex; flex-direction: column; gap: 5px;}
+        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: red; margin-right: 5px; box-shadow: 0 0 5px red;}
+        .status-dot.online { background: #00ff00; box-shadow: 0 0 5px #00ff00; }
+        .audio-btn { position: fixed; top: 10px; right: 10px; font-size: 24px; z-index: 110; cursor: pointer; text-shadow: 0 0 10px #00f2ff;}
     </style>
 </head>
 <body>
-    <img id="hologramImg" class="hologram-popup" src="" alt="Entity">
-    <canvas id="matrix"></canvas>
+    
     <div class="scanlines"></div>
+    <img id="hologramImg" class="hologram-popup" src="" alt="Entity">
+    
+    <div id="censorBar"><span>CENZURA</span></div>
+
+    <div class="hud-top">
+        <div id="serverStatus"><span id="sDot" class="status-dot"></span><span id="sText">Rozłączono</span></div>
+    </div>
     <div class="audio-btn" id="audioBtn" onclick="toggleMusic()">🔇</div>
-    <audio id="bgMusic" loop preload="auto"><source src="./music/maintheme.mp3" type="audio/mpeg"></audio>
+    <audio id="bgMusic" loop><source src="./music/maintheme.mp3" type="audio/mpeg"></audio>
 
     <div id="step-1" class="box">
         <h1>CYFROWY CYRK</h1>
-        <input type="text" id="nickInput" placeholder="Imię..." oninput="checkIfCaine()">
-        <button id="startBtn" onclick="start(false)">WEJDŹ</button>
+        <input type="text" id="nickInput" placeholder="Twoje Imię..." oninput="checkIfCaine()">
+        <button id="startBtn" onclick="start(false)">ZALOGUJ</button>
+        
         <div id="admin-login" class="hidden">
-            <p style="color: #ff0044; font-weight: bold; font-size: 11px;">AUTORYZACJA BOGA</p>
-            <input type="password" id="pinInput" placeholder="PIN">
-            <button onclick="loginAdmin()">LOGIN</button>
+            <p style="color: #ff0044; font-weight: bold; font-size: 12px; margin-top: 15px;">[ SYSTEM ROOT ]</p>
+            <input type="password" id="pinInput" placeholder="PIN: ****">
+            <button onclick="loginAdmin()">AUTORYZUJ (CAINE)</button>
         </div>
     </div>
 
     <div id="step-2" class="box hidden">
-        <h1>TRANSFER...</h1>
+        <h1>Pobieranie Dusz...</h1>
         <div class="progress-bar-container"><div id="progressFill" class="progress-fill"></div></div>
-        <p id="loadText" style="color: #f9e11e; font-size: 11px;">Łączenie z serwerem...</p>
+        <p style="color: #f9e11e; font-size: 12px; margin-top: 10px; font-weight: bold;">Proszę czekać.</p>
     </div>
 
     <div id="dashboard" class="hidden">
+        
         <div id="caineTerminal" class="hidden">
-            <input type="text" id="cmdInputTop" placeholder="Komenda...">
-            <button onclick="exeTop()">EXE</button>
+            <input type="text" id="cmdInputTop" placeholder="np. /bubble, /glitch, /censor...">
+            <button onclick="exeTop()">WYKONAJ</button>
         </div>
+
         <div class="chat-container"><div id="chatBox" class="chat-box"></div></div>
+        
         <div class="chat-controls">
-            <input type="text" id="chatInput" placeholder="Napisz wiadomość...">
-            <button onclick="handleChat()">SND</button>
+            <input type="text" id="chatInput" placeholder="Napisz coś...">
+            <button onclick="handleChat()">WYŚLIJ</button>
         </div>
     </div>
 
     <script>
+        // --- OBSŁUGA DŹWIĘKU ---
         const music = document.getElementById('bgMusic');
         const audioBtn = document.getElementById('audioBtn');
-        
+        let audioAllowed = false;
+
         function toggleMusic() {
-            if (music.paused) { music.play(); audioBtn.innerText = '🔊'; }
+            if (music.paused) { music.play(); audioBtn.innerText = '🔊'; audioAllowed = true;}
             else { music.pause(); audioBtn.innerText = '🔇'; }
         }
 
-        // Naprawa muzyki: startuje przy pierwszym kliknięciu gdziekolwiek
-        document.addEventListener('click', () => {
-            if(music.paused) { music.play(); audioBtn.innerText = '🔊'; }
+        // Aktywacja audio przy pierwszej interakcji ze stroną
+        document.body.addEventListener('click', () => {
+            if(!audioAllowed && music.paused) { music.play().catch(e => {}); audioBtn.innerText = '🔊'; audioAllowed = true;}
         }, {once: true});
 
-        const canvas = document.getElementById('matrix'); const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        const drops = []; for(let x = 0; x < canvas.width/20; x++) drops[x] = 1;
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(0,0,0,0.05)'; ctx.fillRect(0,0,canvas.width,canvas.height);
-            ctx.fillStyle = '#ff0044'; ctx.font = '15px Courier';
-            drops.forEach((y, i) => {
-                ctx.fillText('01'[Math.floor(Math.random()*2)], i*20, y*20);
-                if(y*20 > canvas.height && Math.random() > 0.975) drops[i] = 0; drops[i] += 1;
-            });
-        }
-        setInterval(drawMatrix, 50);
+        // --- GLOBALNY SYSTEM CZATU (MQTT) ---
+        let mqtt; 
+        const topic = "cyfrowycyrk/globalchat/final_v3"; // Zmieniony kanał na świeży
+        let user = ""; 
+        let isAdmin = false; 
+        let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
 
-        let mqtt; const topic = "cyfrowycyrk/globalchat/final_v2";
-        let user = ""; let isAdmin = false;
+        function updateStatus(online) {
+            const dot = document.getElementById('sDot');
+            const txt = document.getElementById('sText');
+            if(online) { dot.classList.add('online'); txt.innerText = "Sieć Globalna: OK"; }
+            else { dot.classList.remove('online'); txt.innerText = "Szukanie Sygnału..."; }
+        }
 
         function initMQTT() {
-            try {
-                mqtt = new Paho.MQTT.Client("broker.emqx.io", 8084, "Cyrk_"+Math.random().toString(16).slice(2,10));
-                mqtt.onMessageArrived = (m) => {
+            const clientId = "Cyrk_" + Math.random().toString(16).slice(2, 12); // Bardzo unikalny ID
+            mqtt = new Paho.MQTT.Client("broker.emqx.io", 8084, clientId);
+            
+            mqtt.onConnectionLost = () => { updateStatus(false); setTimeout(initMQTT, 3000); }; // Auto-reconnect
+            
+            mqtt.onMessageArrived = (m) => {
+                try {
                     const d = JSON.parse(m.payloadString);
-                    const b = document.getElementById('chatBox');
-                    if(d.type === "chat") {
-                        b.innerHTML += `<div class="msg ${d.admin?'caine':''}"><b style="color:${d.color}">${d.nick}:</b> ${d.text}</div>`;
-                    } else if(d.type === "cmd") {
-                        runEff(d.cmd);
-                    }
-                    b.scrollTop = b.scrollHeight;
-                };
-                mqtt.connect({useSSL:true, timeout: 3, onSuccess:() => {
+                    if(d.type === "chat") showMsg(d.nick, d.text, d.color, d.admin);
+                    else if(d.type === "sys") showSys(d.text);
+                    else if(d.type === "cmd") runEff(d.cmd);
+                } catch(e) {}
+            };
+            
+            mqtt.connect({
+                useSSL: true, 
+                timeout: 5,
+                onSuccess: () => {
+                    updateStatus(true);
                     mqtt.subscribe(topic);
-                    const msg = new Paho.MQTT.Message(JSON.stringify({type:"chat", nick:"SYSTEM", text:user+" dołączył!", color:"#f9e11e"}));
-                    msg.destinationName = topic; mqtt.send(msg);
-                }});
-            } catch(e) { console.log("MQTT Error - Offline Mode"); }
+                    // System wita gracza
+                    sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ KONTROLĘ NAD CYRKIEM 👑" : `[${user}] został uwięziony.`});
+                },
+                onFailure: () => { updateStatus(false); }
+            });
         }
 
+        function sendData(obj) { 
+            if(mqtt && mqtt.isConnected()) {
+                const msg = new Paho.MQTT.Message(JSON.stringify(obj));
+                msg.destinationName = topic;
+                mqtt.send(msg); 
+            }
+        }
+
+        // --- LOGOWANIE I WEJŚCIE ---
         function checkIfCaine() {
-            const v = document.getElementById('nickInput').value.toLowerCase();
-            document.getElementById('startBtn').classList.toggle('hidden', v==='caine');
-            document.getElementById('admin-login').classList.toggle('hidden', v!=='caine');
+            const v = document.getElementById('nickInput').value.trim().toLowerCase();
+            if(v === 'caine') {
+                document.getElementById('startBtn').classList.add('hidden');
+                document.getElementById('admin-login').classList.remove('hidden');
+            } else {
+                document.getElementById('startBtn').classList.remove('hidden');
+                document.getElementById('admin-login').classList.add('hidden');
+            }
         }
 
         function loginAdmin() { 
             if(document.getElementById('pinInput').value === "2222") start(true); 
-            else alert("WRONG PIN"); 
+            else { alert("ODMOWA DOSTĘPU."); document.getElementById('pinInput').value = "";} 
         }
 
-        function start(admin) {
-            isAdmin = admin; user = (admin ? "CAINE" : document.getElementById('nickInput').value.trim() || "Zguba").toUpperCase();
+        function start(adminState) {
+            isAdmin = adminState; 
+            const rawNick = document.getElementById('nickInput').value.trim();
+            user = (isAdmin ? "CAINE" : (rawNick || "Zguba")).toUpperCase();
+            
+            // Przejście na ekran ładowania
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
+            
+            // Inicjacja serwera w tle
             initMQTT();
             
-            let p = 0;
-            const f = document.getElementById('progressFill');
-            const inv = setInterval(() => {
-                p += 5; f.style.width = p+"%";
+            // Pasek ładowania, który zawsze idzie do końca i wpuszcza do gry
+            let p = 0; 
+            const fill = document.getElementById('progressFill');
+            const interval = setInterval(() => {
+                p += 5; 
+                fill.style.width = p + "%";
                 if(p >= 100) {
-                    clearInterval(inv);
+                    clearInterval(interval);
                     document.getElementById('step-2').classList.add('hidden');
                     document.getElementById('dashboard').classList.remove('hidden');
-                    if(isAdmin) document.getElementById('caineTerminal').classList.remove('hidden');
+                    
+                    if(isAdmin) { document.getElementById('caineTerminal').classList.remove('hidden'); }
                 }
-            }, 50);
+            }, 60); // Wejście trwa około 1.2 sekundy
         }
 
+        // --- INTERFEJS CZATU ---
+        function showMsg(nick, text, color, isCaine) {
+            const box = document.getElementById('chatBox');
+            const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); // Podstawowe zabezpieczenie
+            const className = isCaine ? "msg caine" : "msg";
+            const nickStyle = isCaine ? "" : `style="color:${color};"`;
+            
+            box.innerHTML += `<div class="${className}"><span class="nick" ${nickStyle}>${nick}:</span> <span class="text">${safeText}</span></div>`;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function showSys(text) { 
+            const box = document.getElementById('chatBox'); 
+            box.innerHTML += `<div class="msg sys">${text}</div>`; 
+            box.scrollTop = box.scrollHeight; 
+        }
+
+        // --- WYSYŁANIE WIADOMOŚCI I KOMEND ---
         function handleChat() {
-            const i = document.getElementById('chatInput');
-            if(!i.value.trim() || !mqtt || !mqtt.isConnected()) return;
-            const data = {type:"chat", nick:user, text:i.value, color: isAdmin?"#ff0044":"#00f2ff", admin:isAdmin};
-            const m = new Paho.MQTT.Message(JSON.stringify(data));
-            m.destinationName = topic; mqtt.send(m);
-            i.value="";
+            const input = document.getElementById('chatInput'); 
+            const text = input.value.trim();
+            if(!text) return;
+            
+            // Jeśli Caine używa komendy z dolnego paska
+            if(isAdmin && text.startsWith('/')) { procCmd(text); input.value=""; return; }
+            
+            sendData({type:"chat", nick:user, text:text, color:userColor, admin:isAdmin}); 
+            input.value = "";
         }
 
-        function exeTop() {
-            const i = document.getElementById('cmdInputTop');
-            const cmd = i.value.replace('/','').toLowerCase();
-            if(mqtt && mqtt.isConnected()) {
-                const m = new Paho.MQTT.Message(JSON.stringify({type:"cmd", cmd:cmd}));
-                m.destinationName = topic; mqtt.send(m);
+        // Odpalanie z górnego terminala
+        function exeTop() { 
+            const input = document.getElementById('cmdInputTop'); 
+            let text = input.value.trim();
+            if(!text) return;
+            if(!text.startsWith('/')) text = '/' + text;
+            procCmd(text); 
+            input.value = ""; 
+        }
+
+        // Logika komend
+        function procCmd(cmd) {
+            cmd = cmd.toLowerCase();
+            
+            if(cmd === '/clear') { document.getElementById('chatBox').innerHTML = ""; return; }
+            
+            // Lista komend, które wysyłają efekt do wszystkich
+            const effectList = ["bubble", "gloink", "glitch", "redalert", "nuke", "censor"];
+            const foundEffect = effectList.find(e => cmd.includes(e));
+            
+            if(foundEffect) { 
+                sendData({type:"cmd", cmd:foundEffect}); 
+                sendData({type:"sys", text: `> CAINE AKTYWOWAŁ MODUŁ: [ ${foundEffect.toUpperCase()} ]`}); 
+            } else {
+                showSys("> Błąd: Moduł nie istnieje. Dostępne: /bubble, /gloink, /glitch, /redalert, /nuke, /censor, /clear");
             }
-            i.value="";
         }
 
-        function runEff(c) {
-            const b = document.body;
-            const h = document.getElementById('hologramImg');
-            if(c === "bubble") { h.src='./images/bubble.jpg'; h.classList.add('active'); setTimeout(()=>h.classList.remove('active'),3000); }
-            if(c === "gloink") { h.src=`./images/gloink${Math.floor(Math.random()*3)+1}.jpg`; h.classList.add('active'); setTimeout(()=>h.classList.remove('active'),3000); }
-            if(c === "glitch") { b.style.filter = "hue-rotate(90deg) invert(1)"; setTimeout(()=>b.style.filter="none", 1000); }
-            if(c === "nuke") { b.style.filter = "brightness(5)"; setTimeout(()=>b.style.filter="none", 1000); }
+        // --- SYSTEM WYKONYWANIA EFEKTÓW WIZUALNYCH (MAGIA) ---
+        function runEff(cmd) {
+            const body = document.body;
+            const holo = document.getElementById('hologramImg');
+            const censor = document.getElementById('censorBar');
+            
+            if(cmd === "bubble") { 
+                holo.src = './images/bubble.jpg'; 
+                holo.classList.add('active'); 
+                setTimeout(() => holo.classList.remove('active'), 3000); 
+            }
+            else if(cmd === "gloink") { 
+                holo.src = `./images/gloink${Math.floor(Math.random()*3)+1}.jpg`; 
+                holo.classList.add('active'); 
+                setTimeout(() => holo.classList.remove('active'), 3000); 
+            }
+            else if(cmd === "censor") { 
+                censor.classList.add('active'); 
+                // Możesz tu dorzucić dźwięk cenzury jeśli chcesz!
+                setTimeout(() => censor.classList.remove('active'), 2500); 
+            }
+            else if(cmd === "glitch") { 
+                body.classList.add('effect-glitch'); 
+                setTimeout(() => body.classList.remove('effect-glitch'), 2000); 
+            }
+            else if(cmd === "redalert") { 
+                body.classList.add('effect-redalert'); 
+                setTimeout(() => body.classList.remove('effect-redalert'), 4000); 
+            }
+            else if(cmd === "nuke") { 
+                body.classList.add('effect-nuke'); 
+                setTimeout(() => body.classList.remove('effect-nuke'), 1000); 
+            }
         }
+        
+        // Wsparcie dla wciskania przycisku ENTER
+        document.getElementById('chatInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') handleChat(); });
+        document.getElementById('cmdInputTop').addEventListener('keypress', function (e) { if (e.key === 'Enter') exeTop(); });
+        document.getElementById('nickInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') start(false); });
+        document.getElementById('pinInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') loginAdmin(); });
     </script>
 </body>
 </html>
