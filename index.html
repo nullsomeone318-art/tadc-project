@@ -3,83 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Mainframe OS</title>
+    <title>TADC - Global Mainframe</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
-        /* EFEKTY GLOBALNE I TŁO */
+        @keyframes crtFlicker { 0% { opacity: 0.98; } 50% { opacity: 0.94; } 100% { opacity: 1; } }
+
         body { 
-            background-color: #050505;
-            background-image: url('./images/backgrund.jpg');
+            background-color: #050505; background-image: url('./images/backgrund.jpg');
             background-size: cover; background-position: center; background-attachment: fixed;
             color: #00f2ff; font-family: 'Courier New', monospace; 
             margin: 0; height: 100vh; overflow: hidden;
             display: flex; justify-content: center; align-items: center;
         }
 
-        /* DESZCZ MATRIXA */
         canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.3; pointer-events: none; }
-
         .scanlines { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%); background-size: 100% 4px; pointer-events: none; z-index: 100; }
         .hidden { display: none !important; }
         
-        /* GŁÓWNY POJEMNIK */
+        /* ZMNIEJSZONE OKIENKA LOGOWANIA (DLA TELEFONÓW) */
         .box { 
             position: relative; background: rgba(10, 10, 15, 0.85); 
-            padding: 30px; border: 2px solid #ff0044; border-radius: 12px;
+            padding: 20px; border: 2px solid #ff0044; border-radius: 12px;
             box-shadow: 0 0 25px #ff0044, inset 0 0 15px rgba(255,0,68,0.3); 
-            width: 90%; max-width: 450px; z-index: 10; backdrop-filter: blur(8px); text-align: center;
-            transition: all 0.3s ease;
+            width: 85%; max-width: 320px; z-index: 10; backdrop-filter: blur(8px); text-align: center;
         }
 
-        .box::before { content: ''; position: absolute; top: -8px; left: -8px; right: -8px; bottom: -8px; border: 2px dashed #00f2ff; border-radius: 16px; z-index: -1; opacity: 0.4; }
+        .box::before { content: ''; position: absolute; top: -6px; left: -6px; right: -6px; bottom: -6px; border: 2px dashed #00f2ff; border-radius: 14px; z-index: -1; opacity: 0.4; }
 
-        h1 { color: #f9e11e; text-shadow: 0 0 10px rgba(249, 225, 30, 0.5), 3px 3px #ff0044; text-transform: uppercase; margin-top: 0; font-size: 28px; letter-spacing: 2px;}
+        h1 { color: #f9e11e; text-shadow: 0 0 10px rgba(249, 225, 30, 0.5), 2px 2px #ff0044; text-transform: uppercase; margin-top: 0; font-size: 22px; letter-spacing: 1px;}
         
-        input { padding: 12px; margin: 15px 0; background: rgba(0, 0, 0, 0.9); border: 2px solid #00f2ff; color: #00f2ff; font-size: 16px; text-align: center; width: 90%; outline: none; border-radius: 5px; box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.2); transition: 0.3s; box-sizing: border-box;}
-        input:focus { border-color: #f9e11e; box-shadow: 0 0 15px #f9e11e; }
+        input { padding: 10px; margin: 10px 0; background: rgba(0, 0, 0, 0.9); border: 2px solid #00f2ff; color: #00f2ff; font-size: 14px; text-align: center; width: 100%; outline: none; border-radius: 5px; box-sizing: border-box;}
+        input:focus { border-color: #f9e11e; box-shadow: 0 0 10px #f9e11e; }
         
-        button { padding: 12px 20px; background: linear-gradient(45deg, #ff0044, #cc0036); color: #fff; border: none; font-size: 16px; cursor: pointer; font-weight: bold; text-transform: uppercase; border-radius: 5px; border-bottom: 4px solid #66001b; transition: 0.2s; width: 100%; box-sizing: border-box;}
-        button:hover { background: #f9e11e; color: #000; border-bottom: 4px solid #b3a00b; transform: translateY(2px); }
+        button { padding: 10px 15px; background: linear-gradient(45deg, #ff0044, #cc0036); color: #fff; border: none; font-size: 14px; cursor: pointer; font-weight: bold; border-radius: 5px; border-bottom: 3px solid #66001b; transition: 0.2s; width: 100%; box-sizing: border-box;}
+        button:hover { background: #f9e11e; color: #000; border-bottom: 3px solid #b3a00b; transform: translateY(2px); }
 
-        /* PASEK ŁADOWANIA */
-        .progress-bar-container { width: 100%; height: 20px; border: 2px solid #00f2ff; margin-top: 20px; background: #111; border-radius: 12px; overflow: hidden; }
+        .progress-bar-container { width: 100%; height: 15px; border: 2px solid #00f2ff; margin-top: 15px; background: #111; border-radius: 8px; overflow: hidden; }
         .progress-fill { height: 100%; width: 0%; background: repeating-linear-gradient(45deg, #00f2ff, #00f2ff 10px, #0099ff 10px, #0099ff 20px); transition: width 0.2s; }
         
-        /* DASHBOARD */
-        #dashboard { display: flex; width: 95vw; height: 90vh; z-index: 10; gap: 15px; }
+        /* TIKTOK STYLE CHAT DASHBOARD */
+        #dashboard { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; z-index: 10; background: transparent; }
         
-        /* LEWA: LISTA GRACZY */
-        .sidebar { flex: 1; background: rgba(10, 10, 15, 0.85); border: 2px solid #00f2ff; border-radius: 10px; padding: 15px; display: flex; flex-direction: column; box-shadow: inset 0 0 15px rgba(0, 242, 255, 0.2); overflow-y: auto;}
-        .user-entry { background: rgba(0, 242, 255, 0.1); margin-bottom: 8px; padding: 8px; border-left: 4px solid #f9e11e; font-size: 14px; display: flex; justify-content: space-between;}
+        /* MINI TERMINAL CAINE'A NA GÓRZE */
+        #caineTerminal { background: rgba(255, 0, 68, 0.85); border-bottom: 2px solid #fff; padding: 10px; display: flex; gap: 5px; justify-content: center; backdrop-filter: blur(5px); box-shadow: 0 5px 15px rgba(255,0,68,0.5);}
+        #caineTerminal input { margin: 0; border: 1px solid #fff; color: #fff; background: #000; text-align: left; padding: 8px; font-weight: bold;}
+        #caineTerminal input::placeholder { color: #ff9999; }
+        #caineTerminal button { width: auto; background: #000; border: 1px solid #fff; padding: 8px 15px; font-size: 12px;}
+
+        /* STREFA CZATU */
+        .chat-container { flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px; padding-bottom: 60px; overflow: hidden; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 60%); }
+        .chat-box { max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px; scrollbar-width: none; }
         
-        /* ŚRODEK: CZAT */
-        .chat-container { flex: 3; background: rgba(10, 10, 15, 0.85); border: 2px solid #ff0044; border-radius: 10px; display: flex; flex-direction: column; padding: 15px; position: relative;}
-        .chat-box { flex-grow: 1; background: rgba(0,0,0,0.6); border: 1px solid #333; margin-bottom: 10px; padding: 10px; overflow-y: auto; text-align: left; font-size: 14px;}
-        .msg { margin-bottom: 8px; word-wrap: break-word;}
-        .msg.sys { color: #f9e11e; font-style: italic; }
-        .msg.caine { color: #ff0044; font-weight: bold; text-shadow: 1px 1px #000; }
-        .chat-controls { display: flex; gap: 10px; }
-        .chat-controls input { margin: 0; width: auto; flex-grow: 1; text-align: left; padding: 10px;}
-        .chat-controls button { width: auto; padding: 10px 20px; }
+        /* WIADOMOŚCI JAK NA TIKTOKU */
+        .msg { font-size: 14px; text-shadow: 1px 1px 2px #000, 0px 0px 5px #000; word-wrap: break-word; animation: slideIn 0.3s ease-out; line-height: 1.3;}
+        .msg .nick { font-weight: bold; margin-right: 5px; color: #fff; text-shadow: 1px 1px 0px #000;}
+        .msg.sys { color: #f9e11e; font-style: italic; font-size: 12px; }
+        .msg.caine .nick { color: #ff0044; text-transform: uppercase; border: 1px solid #ff0044; padding: 0 4px; border-radius: 4px; background: rgba(255,0,68,0.3); }
+        .msg.caine .text { color: #ff9999; font-weight: bold; }
 
-        /* PANEL ADMINA (TYLKO DLA CAINE'A) */
-        #adminPanel { background: rgba(255, 0, 68, 0.15); border: 2px dashed #ff0044; padding: 10px; margin-bottom: 10px; border-radius: 5px; display: flex; gap: 10px; justify-content: center;}
-        #adminPanel button { font-size: 12px; padding: 5px 10px; background: #ff0044; border-bottom: 2px solid #880022; }
-        #adminPanel button:hover { background: #fff; color: #ff0044; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
 
-        .hud { position: fixed; top: 10px; width: 100%; display: flex; justify-content: space-around; font-size: 12px; color: #f9e11e; font-weight: bold; z-index: 110;}
-        .audio-btn { position: fixed; bottom: 15px; left: 15px; font-size: 24px; cursor: pointer; z-index: 110; }
+        /* PASEK WPISYWANIA DLA GRACZY NA DOLE */
+        .chat-controls { position: absolute; bottom: 0; left: 0; width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.8); display: flex; gap: 5px; box-sizing: border-box; border-top: 1px solid #333;}
+        .chat-controls input { margin: 0; flex-grow: 1; text-align: left; padding: 10px; border-radius: 20px; font-size: 14px;}
+        .chat-controls button { width: auto; padding: 10px 15px; border-radius: 20px; font-size: 12px; background: #00f2ff; color: #000; border: none; }
 
+        /* HUD */
+        .hud { position: fixed; top: 10px; left: 10px; font-size: 10px; color: #f9e11e; font-weight: bold; z-index: 110; text-shadow: 1px 1px #000; opacity: 0.6;}
+        .audio-btn { position: fixed; top: 10px; right: 10px; font-size: 20px; cursor: pointer; z-index: 110; filter: drop-shadow(0 0 5px #000); }
+
+        /* EFEKTY GLOBALNE (WYWOŁYWANE Z TERMINALA) */
         .super-glitch { animation: shake 0.1s infinite; filter: hue-rotate(90deg) invert(20%); }
         @keyframes shake { 0% { transform: translate(5px, 5px) rotate(1deg); } 50% { transform: translate(-5px, -5px) rotate(-1deg); } 100% { transform: translate(5px, -5px) rotate(1deg); } }
+        .red-alert { background-image: linear-gradient(rgba(255, 0, 0, 0.5), rgba(255, 0, 0, 0.5)), url('./images/backgrund.jpg') !important; }
 
-        @media (max-width: 768px) {
-            .box { padding: 20px; transform: scale(0.9); }
-            h1 { font-size: 24px; }
-            #dashboard { flex-direction: column; height: 95vh; margin-top: 20px;}
-            .sidebar { flex: 1; min-height: 150px; }
-            .chat-container { flex: 2; }
-            #adminPanel { flex-direction: column; }
-        }
     </style>
 </head>
 <body>
@@ -89,68 +86,54 @@
     <div class="audio-btn" id="audioBtn" onclick="toggleMusic()">🔇</div>
 
     <div class="hud">
-        <span id="clock">00:00:00</span>
-        <span id="network">LOCAL MAINFRAME ACTIVE</span>
+        <span id="network">STATUS: OFFLINE</span>
     </div>
 
     <audio id="bgMusic" loop><source src="./music/maintheme.mp3" type="audio/mpeg"></audio>
 
     <div id="step-1" class="box">
         <h1>CYFROWY CYRK</h1>
-        <p style="color: #fff; font-size: 14px;">Wprowadź tożsamość:</p>
+        <p style="color: #fff; font-size: 12px;">Wprowadź tożsamość:</p>
         <input type="text" id="nickInput" placeholder="Imię awatara..." oninput="checkIfCaine()">
         <br>
-        
-        <button id="startBtn" onclick="startTransfer(false)">ZAINICJUJ POŁĄCZENIE</button>
+        <button id="startBtn" onclick="startTransfer(false)">DOŁĄCZ</button>
 
         <div id="admin-login" class="hidden">
-            <p style="color: #ff0044; font-weight: bold; font-size: 14px; animation: blink 1s infinite;">[ WYMAGANA AUTORYZACJA ADMINA ]</p>
-            <input type="password" id="pinInput" placeholder="KOD DOSTĘPU...">
+            <p style="color: #ff0044; font-weight: bold; font-size: 12px; animation: crtFlicker 1s infinite;">[ AUTORYZACJA ]</p>
+            <input type="password" id="pinInput" placeholder="KOD...">
             <br>
-            <button onclick="loginAdmin()">WEJDŹ JAKO CAINE</button>
+            <button onclick="loginAdmin()">WEJDŹ (CAINE)</button>
         </div>
     </div>
 
     <div id="step-2" class="box hidden">
-        <h1 id="loadingTitle">ŁADOWANIE...</h1>
-        <p id="targetName" style="color: #fff; font-weight: bold;"></p>
+        <h1 id="loadingTitle" style="font-size: 18px;">ŁADOWANIE...</h1>
+        <p id="targetName" style="color: #fff; font-weight: bold; font-size: 14px;"></p>
         <div class="progress-bar-container"><div id="progressFill" class="progress-fill"></div></div>
-        <p id="loadText" style="color: #f9e11e; font-size: 14px; margin-top: 10px;">Omijanie zapór sieciowych...</p>
+        <p id="loadText" style="color: #f9e11e; font-size: 12px; margin-top: 10px;">Łączenie z serwerem MQTT...</p>
     </div>
 
     <div id="dashboard" class="hidden">
         
-        <div class="sidebar">
-            <h3 style="margin-top:0; color:#00f2ff; border-bottom:1px solid #00f2ff; padding-bottom:5px;">Zarejestrowane Dusze:</h3>
-            <div id="userListUI"></div>
+        <div id="caineTerminal" class="hidden">
+            <span style="color:#fff; font-weight:bold; font-size:12px; align-self:center;">ROOT:</span>
+            <input type="text" id="cmdInput" placeholder="/wpisz komendę..." onkeypress="if(event.key === 'Enter') executeCommand()">
+            <button onclick="executeCommand()">EXE</button>
         </div>
 
         <div class="chat-container">
-            <h3 style="margin-top:0; color:#ff0044; text-align:center;">TERMINAL GŁÓWNY</h3>
-            
-            <div id="adminPanel" class="hidden">
-                <span style="color: #fff; font-weight: bold; font-size: 12px; align-self: center;">🛠️ NARZĘDZIA BOGA:</span>
-                <button onclick="adminClearChat()">Wyczyść Czat</button>
-                <button onclick="adminWipeMemory()">Formatuj Dusze</button>
-                <button onclick="adminGlobalAlert()">Czerwony Alarm</button>
-            </div>
-
             <div id="chatBox" class="chat-box"></div>
-            
-            <div class="chat-controls">
-                <input type="text" id="chatInput" placeholder="Wpisz wiadomość..." onkeypress="handleEnter(event)">
-                <button onclick="sendChatMessage()">Wyślij</button>
-            </div>
-            <button onclick="location.reload()" style="margin-top: 10px; background: #333; border-bottom: 2px solid #111;">WYLOGUJ</button>
+        </div>
+        
+        <div class="chat-controls">
+            <input type="text" id="chatInput" placeholder="Napisz coś..." onkeypress="if(event.key === 'Enter') sendGlobalMessage()">
+            <button onclick="sendGlobalMessage()">Wyślij</button>
         </div>
 
     </div>
 
     <script>
-        // --- ZEGAR ---
-        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
-
-        // --- MUZYKA (HAKOWANIE AUTOPLAY) ---
+        // --- MUZYKA ---
         const music = document.getElementById('bgMusic');
         const audioBtn = document.getElementById('audioBtn');
         function toggleMusic() {
@@ -161,11 +144,9 @@
             if (music.paused) { music.play().then(() => { audioBtn.innerText = '🔊'; }).catch(()=>{}); }
             document.removeEventListener('click', startAudioOnInteraction);
             document.removeEventListener('touchstart', startAudioOnInteraction);
-            document.removeEventListener('keydown', startAudioOnInteraction);
         };
         document.addEventListener('click', startAudioOnInteraction);
         document.addEventListener('touchstart', startAudioOnInteraction);
-        document.addEventListener('keydown', startAudioOnInteraction);
 
         // --- MATRIX BACKGROUND ---
         const canvas = document.getElementById('matrix');
@@ -176,10 +157,8 @@
         let speedMultiplier = 1;
         for(let x = 0; x < canvas.width/20; x++) drops[x] = 1;
         function drawMatrix() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#ff0044'; 
-            ctx.font = '15px Courier';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ff0044'; ctx.font = '15px Courier';
             for(let i = 0; i < drops.length; i++) {
                 const text = chars[Math.floor(Math.random() * chars.length)];
                 ctx.fillText(text, i * 20, drops[i] * 20);
@@ -189,39 +168,56 @@
         }
         setInterval(drawMatrix, 50);
 
-        // --- BAZA LOKALNA ---
+        // --- GLOBALNY SYSTEM POŁĄCZENIA (MQTT) ---
+        let mqttClient;
+        const globalTopic = "cyfrowycyrk/globalchat/room1";
         let currentUser = "";
-        let users = JSON.parse(localStorage.getItem('tadc_users')) || [];
-        let chat = JSON.parse(localStorage.getItem('tadc_chat')) || [];
         let isAdminActive = false;
+        let userColor = `hsl(${Math.random() * 360}, 100%, 70%)`; // Losowy kolor nicku dla gracza
 
-        function saveLocal() {
-            localStorage.setItem('tadc_users', JSON.stringify(users));
-            localStorage.setItem('tadc_chat', JSON.stringify(chat));
-        }
-
-        function refreshUserList() {
-            const listUI = document.getElementById('userListUI');
-            listUI.innerHTML = "";
-            users.forEach(u => {
-                let adminTag = u.name === "CAINE" ? "👑" : "";
-                listUI.innerHTML += `<div class="user-entry"><span>${adminTag} ${u.name}</span> <span style="color:#ff0044; font-size:12px;">ID:${u.id}</span></div>`;
+        function initMQTT() {
+            const clientId = "Cyrk_" + Math.random().toString(16).substr(2, 8);
+            mqttClient = new Paho.MQTT.Client("broker.emqx.io", 8084, clientId); // Darmowy globalny serwer!
+            
+            mqttClient.onConnectionLost = (resp) => { document.getElementById('network').innerText = "STATUS: OFFLINE"; };
+            mqttClient.onMessageArrived = (msg) => { handleIncomingData(msg.payloadString); };
+            
+            mqttClient.connect({
+                useSSL: true,
+                onSuccess: () => {
+                    document.getElementById('network').innerText = "STATUS: GLOBAL ONLINE";
+                    mqttClient.subscribe(globalTopic);
+                    // Wyślij powiadomienie o wejściu
+                    let joinMsg = isAdminActive ? "CAINE ZALOGOWAŁ SIĘ DO SYSTEMU." : `Gracz [${currentUser}] dołączył.`;
+                    broadcastData({ type: "system", text: joinMsg });
+                },
+                onFailure: (err) => console.log("Błąd MQTT:", err)
             });
         }
 
-        function refreshChat() {
-            const box = document.getElementById('chatBox');
-            box.innerHTML = "";
-            chat.forEach(m => {
-                let cssClass = "msg";
-                if(m.nick === "SYSTEM") cssClass += " sys";
-                if(m.nick === "CAINE") cssClass += " caine";
-                box.innerHTML += `<div class="${cssClass}"><b>[${m.time}] ${m.nick}:</b> ${m.text}</div>`;
-            });
-            box.scrollTop = box.scrollHeight; 
+        function broadcastData(dataObj) {
+            if(!mqttClient || !mqttClient.isConnected()) return;
+            const msg = new Paho.MQTT.Message(JSON.stringify(dataObj));
+            msg.destinationName = globalTopic;
+            mqttClient.send(msg);
         }
 
-        // --- SYSTEM LOGOWANIA CAINE'A ---
+        function handleIncomingData(payload) {
+            try {
+                const data = JSON.parse(payload);
+                if(data.type === "chat") {
+                    displayChat(data.nick, data.text, data.color, data.isAdmin);
+                } 
+                else if(data.type === "system") {
+                    displaySys(data.text);
+                }
+                else if(data.type === "command") {
+                    executeRemoteEffect(data.cmd);
+                }
+            } catch(e) {}
+        }
+
+        // --- LOGOWANIE ---
         function checkIfCaine() {
             const nick = document.getElementById('nickInput').value.trim().toUpperCase();
             if(nick === 'CAINE') {
@@ -234,15 +230,11 @@
         }
 
         function loginAdmin() {
-            const pin = document.getElementById('pinInput').value;
-            if(pin === "7777") { // <--- TWÓJ KOD PIN TO 7777
+            if(document.getElementById('pinInput').value === "2222") { // HASŁO CAINE'A
                 startTransfer(true);
-            } else {
-                alert("BŁĄD: NIEPRAWIDŁOWY KOD DOSTĘPU.");
-            }
+            } else { alert("BŁĄD KODU."); }
         }
 
-        // --- START SYSTEMU ---
         function startTransfer(isAdmin) {
             isAdminActive = isAdmin;
             const nick = isAdmin ? "CAINE" : (document.getElementById('nickInput').value.trim() || "Zguba");
@@ -250,98 +242,96 @@
             
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
-            
-            if(isAdminActive) {
-                document.getElementById('loadingTitle').innerText = "WŁAMYWANIE...";
-                document.getElementById('loadingTitle').style.color = "#ff0044";
-            }
             document.getElementById('targetName').innerText = "PROFIL: " + currentUser;
 
             let progress = 0;
             const fill = document.getElementById('progressFill');
-            const loadText = document.getElementById('loadText');
+            
+            initMQTT(); // Odpal połączenie z globalnym serwerem
 
             const interval = setInterval(() => {
-                progress += Math.floor(Math.random() * 15) + 5;
-                if(progress > 100) progress = 100;
+                progress += 10;
                 fill.style.width = progress + "%";
-
-                if(isAdminActive) {
-                    if(progress > 30) loadText.innerText = "Nadpisywanie uprawnień BOGA...";
-                    if(progress > 70) loadText.innerText = "Przejmowanie kontroli nad Cyrkiem...";
-                } else {
-                    if(progress > 40) loadText.innerText = "Generowanie ID...";
-                    if(progress > 80) loadText.innerText = "Wczytywanie interfejsu...";
-                }
-
-                if(progress === 100) {
+                if(progress >= 100) {
                     clearInterval(interval);
-                    
-                    if(!users.find(u => u.name === currentUser)) {
-                        users.push({ name: currentUser, id: isAdminActive ? "0000" : Math.floor(1000 + Math.random() * 9000) });
-                        let msg = isAdminActive ? "CAINE PRZEJĄŁ KONTROLĘ NAD SYSTEMEM." : `Gracz ${currentUser} dołączył do Cyrku.`;
-                        chat.push({ nick: "SYSTEM", text: msg, time: new Date().toLocaleTimeString() });
-                        saveLocal();
-                    }
-                    
                     document.getElementById('step-2').classList.add('hidden');
                     document.getElementById('dashboard').classList.remove('hidden');
                     
-                    // ODBLOKUJ PANEL ADMINA
                     if(isAdminActive) {
-                        document.getElementById('adminPanel').classList.remove('hidden');
+                        document.getElementById('caineTerminal').classList.remove('hidden');
                     }
-
-                    refreshUserList();
-                    refreshChat();
                 }
-            }, 300);
+            }, 200);
         }
 
-        // --- CZAT ---
-        function handleEnter(e) { if(e.key === 'Enter') sendChatMessage(); }
+        // --- RENDEROWANIE CZATU (TIKTOK STYLE) ---
+        function displayChat(nick, text, color, isCaine) {
+            const box = document.getElementById('chatBox');
+            let cssClass = isCaine ? "msg caine" : "msg";
+            let nickStyle = isCaine ? "" : `style="color: ${color};"`;
+            
+            box.innerHTML += `<div class="${cssClass}"><span class="nick" ${nickStyle}>${nick}:</span><span class="text">${text}</span></div>`;
+            box.scrollTop = box.scrollHeight; // Auto-scroll
+        }
 
-        function sendChatMessage() {
+        function displaySys(text) {
+            const box = document.getElementById('chatBox');
+            box.innerHTML += `<div class="msg sys">${text}</div>`;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function sendGlobalMessage() {
             const input = document.getElementById('chatInput');
             const text = input.value.trim();
             if(!text) return;
 
-            const timeNow = new Date().toLocaleTimeString();
+            broadcastData({ type: "chat", nick: currentUser, text: text, color: userColor, isAdmin: isAdminActive });
+            input.value = "";
+        }
 
-            if(text === '/glitch') {
-                document.body.classList.add('super-glitch');
-                chat.push({ nick: "SYSTEM", text: "OSTRZEŻENIE: Niestabilność rdzenia!", time: timeNow });
-                setTimeout(() => document.body.classList.remove('super-glitch'), 3000);
+        // ==========================================
+        // 🔥 TERMINAL CAINE'A I 120 KOMEND 🔥
+        // ==========================================
+        function executeCommand() {
+            const input = document.getElementById('cmdInput');
+            const cmdText = input.value.trim().toLowerCase();
+            if(!cmdText) return;
+
+            // Pokaż, że Caine wpisał komendę
+            displaySys(`> CAINE-OS Wykonał: ${cmdText}`);
+
+            // Lista 120 komend (symulacja potęgi)
+            if(cmdText === '/help') {
+                displaySys(`[ BAZA KOMEND ROOT ]<br>Dostępne 120 modułów. Główne:<br>/glitch - Psucie ekranu<br>/redalert - Alarm globalny<br>/matrix - Przyspiesza kod<br>/clear - Czyści Twój ekran<br>/kick_all - Wyrzuca (symulacja)<br>/ban, /mute, /spawn, /delete...`);
+            }
+            else if(cmdText === '/clear') {
+                document.getElementById('chatBox').innerHTML = "";
+            }
+            else if(cmdText === '/glitch' || cmdText === '/redalert' || cmdText === '/matrix') {
+                // To wysyła sygnał DO WSZYSTKICH TELEFONÓW NA ŚWIECIE
+                broadcastData({ type: "command", cmd: cmdText.substring(1) }); 
             }
             else {
-                chat.push({ nick: currentUser, text: text, time: timeNow });
+                displaySys(`Moduł ${cmdText} załadowany pomyślnie. Brak fizycznych ofiar.`);
             }
-
             input.value = "";
-            saveLocal();
-            refreshChat();
         }
 
-        // --- FUNKCJE BOGA (PANEL CAINE'A) ---
-        function adminClearChat() {
-            chat = [{ nick: "SYSTEM", text: "CAINE WYCZYŚCIŁ HISTORIĘ TERMINALA.", time: new Date().toLocaleTimeString() }];
-            saveLocal(); refreshChat();
-        }
-
-        function adminWipeMemory() {
-            if(confirm("Czy na pewno chcesz usunąć wszystkie dusze z Cyrku?")) {
-                users = [{ name: "CAINE", id: "0000" }]; // Zostawia tylko Ciebie
-                saveLocal(); refreshUserList();
-                chat.push({ nick: "SYSTEM", text: "UWAGA: CAINE SFORMATOWAŁ PAMIĘĆ DUSZ.", time: new Date().toLocaleTimeString() });
-                saveLocal(); refreshChat();
+        // ZDALNE EFEKTY (Gdy odbierzesz komendę od Caine'a)
+        function executeRemoteEffect(cmd) {
+            if(cmd === "glitch") {
+                document.body.classList.add('super-glitch');
+                setTimeout(() => document.body.classList.remove('super-glitch'), 3000);
             }
-        }
-
-        function adminGlobalAlert() {
-            document.body.classList.add('super-glitch');
-            chat.push({ nick: "CAINE", text: "!!! GLOBALNY ALARM !!! WSZYSCY WRACAĆ NA MIEJSCA !!!", time: new Date().toLocaleTimeString() });
-            saveLocal(); refreshChat();
-            setTimeout(() => document.body.classList.remove('super-glitch'), 2000);
+            else if(cmd === "redalert") {
+                document.body.classList.add('red-alert');
+                displaySys("⚠️ UWAGA: KRYTYCZNY BŁĄD SYSTEMU ⚠️");
+                setTimeout(() => document.body.classList.remove('red-alert'), 5000);
+            }
+            else if(cmd === "matrix") {
+                speedMultiplier = 4;
+                setTimeout(() => speedMultiplier = 1, 4000);
+            }
         }
     </script>
 </body>
