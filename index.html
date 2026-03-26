@@ -8,7 +8,7 @@
     <style>
         body { 
             background-color: #050505; 
-            background-image: url('./images/backgrund.jpg'); /* Używam Twojej dokładnej nazwy pliku */
+            background-image: url('./images/backgrund.jpg'); 
             background-size: cover; 
             background-position: center; 
             background-attachment: fixed;
@@ -20,10 +20,9 @@
             display: flex; 
             justify-content: center; 
             align-items: center; 
-            transition: filter 0.3s;
+            transition: all 0.3s;
         }
 
-        /* Subtelne linie skanowania (zamiast Matrixa) */
         .scanlines { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%); background-size: 100% 4px; pointer-events: none; z-index: 50; }
         .hidden { display: none !important; }
 
@@ -38,7 +37,6 @@
         button { padding: 12px; background: linear-gradient(45deg, #ff0044, #cc0036); color: #fff; border: none; font-weight: bold; width: 100%; cursor: pointer; border-bottom: 4px solid #66001b; font-family: 'Courier New', monospace; text-transform: uppercase;}
         button:hover { background: #f9e11e; color: #000; border-bottom: 4px solid #b3a00b; }
 
-        /* PASEK ŁADOWANIA */
         .progress-bar-container { width: 100%; height: 20px; border: 2px solid #00f2ff; margin-top: 20px; background: #111; overflow: hidden; border-radius: 5px;}
         .progress-fill { height: 100%; width: 0%; background: repeating-linear-gradient(45deg, #00f2ff, #00f2ff 10px, #0099ff 10px, #0099ff 20px); transition: width 0.2s; }
 
@@ -62,20 +60,32 @@
         .chat-controls input { margin: 0; border-radius: 20px; background: #111; border: 1px solid #555; }
         .chat-controls button { width: auto; border-radius: 20px; padding: 10px 20px; background: #00f2ff; color: #000; border-bottom: 3px solid #0088cc;}
 
-        /* EFEKTY GLOBALNE I POPUPY */
+        /* POPUPY */
         .hologram-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 350px; z-index: 1000; border: 4px solid #ff0044; box-shadow: 0 0 50px #ff0044; border-radius: 10px; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
         .hologram-popup.active { transform: translate(-50%, -50%) scale(1); }
 
-        /* NOWOŚĆ: PASEK CENZURY */
+        /* PASEK CENZURY */
         #censorBar { position: fixed; top: 50%; left: 0; width: 100%; height: 120px; background: repeating-linear-gradient(45deg, #000, #000 20px, #fff 20px, #fff 40px); transform: translateY(-50%) scaleY(0); z-index: 2000; display: flex; justify-content: center; align-items: center; transition: 0.1s; }
         #censorBar.active { transform: translateY(-50%) scaleY(1); }
         #censorBar span { background: #ff0044; color: #fff; padding: 10px 30px; font-size: 40px; font-weight: bold; border: 4px solid #000; text-transform: uppercase; transform: rotate(-5deg); letter-spacing: 5px;}
 
+        /* EKRAN KICKA */
+        #kickScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ff0000; color: #fff; z-index: 3000; display: flex; justify-content: center; align-items: center; text-align: center; flex-direction: column; opacity: 0; pointer-events: none; transition: 0.2s;}
+        #kickScreen.active { opacity: 1; pointer-events: auto; }
+        #kickScreen h1 { font-size: 40px; color: #fff; text-shadow: none; letter-spacing: 0;}
+
         /* KLASY EFEKTÓW CSS */
         .effect-glitch { animation: shake 0.1s infinite; filter: hue-rotate(90deg) invert(1); }
+        .effect-shake { animation: violentShake 0.05s infinite; }
         @keyframes shake { 0% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 100% { transform: translate(5px, -5px); } }
+        @keyframes violentShake { 0% { transform: translate(15px, 15px) rotate(2deg); } 50% { transform: translate(-15px, -15px) rotate(-2deg); } 100% { transform: translate(15px, -15px) rotate(2deg); } }
+        
         .effect-redalert { box-shadow: inset 0 0 150px rgba(255,0,0,0.8); }
         .effect-nuke { filter: brightness(10) contrast(5); }
+        .effect-void { background-image: none !important; background-color: #000 !important; }
+        .effect-abstract { filter: hue-rotate(180deg) saturate(300%) contrast(200%) blur(3px); }
+        .effect-flip { transform: rotate(180deg); }
+        .effect-blur { filter: blur(15px); }
 
         /* HUD STATYSTYKI */
         .hud-top { position: fixed; top: 10px; left: 10px; font-size: 12px; font-weight: bold; z-index: 110; color: #fff; text-shadow: 1px 1px #000; display: flex; flex-direction: column; gap: 5px;}
@@ -90,6 +100,11 @@
     <img id="hologramImg" class="hologram-popup" src="" alt="Entity">
     
     <div id="censorBar"><span>CENZURA</span></div>
+    
+    <div id="kickScreen">
+        <h1>BŁĄD 404</h1>
+        <p>DUSZA ZOSTAŁA USUNIĘTA Z SYSTEMU</p>
+    </div>
 
     <div class="hud-top">
         <div id="serverStatus"><span id="sDot" class="status-dot"></span><span id="sText">Rozłączono</span></div>
@@ -116,9 +131,8 @@
     </div>
 
     <div id="dashboard" class="hidden">
-        
         <div id="caineTerminal" class="hidden">
-            <input type="text" id="cmdInputTop" placeholder="np. /bubble, /glitch, /censor...">
+            <input type="text" id="cmdInputTop" placeholder="np. /void, /abstract, /flip...">
             <button onclick="exeTop()">WYKONAJ</button>
         </div>
 
@@ -131,7 +145,6 @@
     </div>
 
     <script>
-        // --- OBSŁUGA DŹWIĘKU ---
         const music = document.getElementById('bgMusic');
         const audioBtn = document.getElementById('audioBtn');
         let audioAllowed = false;
@@ -141,14 +154,12 @@
             else { music.pause(); audioBtn.innerText = '🔇'; }
         }
 
-        // Aktywacja audio przy pierwszej interakcji ze stroną
         document.body.addEventListener('click', () => {
             if(!audioAllowed && music.paused) { music.play().catch(e => {}); audioBtn.innerText = '🔊'; audioAllowed = true;}
         }, {once: true});
 
-        // --- GLOBALNY SYSTEM CZATU (MQTT) ---
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v3"; // Zmieniony kanał na świeży
+        const topic = "cyfrowycyrk/globalchat/final_v4"; 
         let user = ""; 
         let isAdmin = false; 
         let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
@@ -161,10 +172,10 @@
         }
 
         function initMQTT() {
-            const clientId = "Cyrk_" + Math.random().toString(16).slice(2, 12); // Bardzo unikalny ID
+            const clientId = "Cyrk_" + Math.random().toString(16).slice(2, 12);
             mqtt = new Paho.MQTT.Client("broker.emqx.io", 8084, clientId);
             
-            mqtt.onConnectionLost = () => { updateStatus(false); setTimeout(initMQTT, 3000); }; // Auto-reconnect
+            mqtt.onConnectionLost = () => { updateStatus(false); setTimeout(initMQTT, 3000); };
             
             mqtt.onMessageArrived = (m) => {
                 try {
@@ -176,12 +187,10 @@
             };
             
             mqtt.connect({
-                useSSL: true, 
-                timeout: 5,
+                useSSL: true, timeout: 5,
                 onSuccess: () => {
                     updateStatus(true);
                     mqtt.subscribe(topic);
-                    // System wita gracza
                     sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ KONTROLĘ NAD CYRKIEM 👑" : `[${user}] został uwięziony.`});
                 },
                 onFailure: () => { updateStatus(false); }
@@ -196,7 +205,6 @@
             }
         }
 
-        // --- LOGOWANIE I WEJŚCIE ---
         function checkIfCaine() {
             const v = document.getElementById('nickInput').value.trim().toLowerCase();
             if(v === 'caine') {
@@ -218,36 +226,28 @@
             const rawNick = document.getElementById('nickInput').value.trim();
             user = (isAdmin ? "CAINE" : (rawNick || "Zguba")).toUpperCase();
             
-            // Przejście na ekran ładowania
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
-            
-            // Inicjacja serwera w tle
             initMQTT();
             
-            // Pasek ładowania, który zawsze idzie do końca i wpuszcza do gry
             let p = 0; 
             const fill = document.getElementById('progressFill');
             const interval = setInterval(() => {
-                p += 5; 
-                fill.style.width = p + "%";
+                p += 5; fill.style.width = p + "%";
                 if(p >= 100) {
                     clearInterval(interval);
                     document.getElementById('step-2').classList.add('hidden');
                     document.getElementById('dashboard').classList.remove('hidden');
-                    
                     if(isAdmin) { document.getElementById('caineTerminal').classList.remove('hidden'); }
                 }
-            }, 60); // Wejście trwa około 1.2 sekundy
+            }, 60);
         }
 
-        // --- INTERFEJS CZATU ---
         function showMsg(nick, text, color, isCaine) {
             const box = document.getElementById('chatBox');
-            const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); // Podstawowe zabezpieczenie
+            const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             const className = isCaine ? "msg caine" : "msg";
             const nickStyle = isCaine ? "" : `style="color:${color};"`;
-            
             box.innerHTML += `<div class="${className}"><span class="nick" ${nickStyle}>${nick}:</span> <span class="text">${safeText}</span></div>`;
             box.scrollTop = box.scrollHeight;
         }
@@ -258,20 +258,16 @@
             box.scrollTop = box.scrollHeight; 
         }
 
-        // --- WYSYŁANIE WIADOMOŚCI I KOMEND ---
         function handleChat() {
             const input = document.getElementById('chatInput'); 
             const text = input.value.trim();
             if(!text) return;
             
-            // Jeśli Caine używa komendy z dolnego paska
             if(isAdmin && text.startsWith('/')) { procCmd(text); input.value=""; return; }
-            
             sendData({type:"chat", nick:user, text:text, color:userColor, admin:isAdmin}); 
             input.value = "";
         }
 
-        // Odpalanie z górnego terminala
         function exeTop() { 
             const input = document.getElementById('cmdInputTop'); 
             let text = input.value.trim();
@@ -281,60 +277,50 @@
             input.value = ""; 
         }
 
-        // Logika komend
+        // --- BAZA KOMEND ---
         function procCmd(cmd) {
             cmd = cmd.toLowerCase();
-            
             if(cmd === '/clear') { document.getElementById('chatBox').innerHTML = ""; return; }
             
-            // Lista komend, które wysyłają efekt do wszystkich
-            const effectList = ["bubble", "gloink", "glitch", "redalert", "nuke", "censor"];
+            // Nowa, rozszerzona lista modułów
+            const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "kickall"];
             const foundEffect = effectList.find(e => cmd.includes(e));
             
             if(foundEffect) { 
                 sendData({type:"cmd", cmd:foundEffect}); 
                 sendData({type:"sys", text: `> CAINE AKTYWOWAŁ MODUŁ: [ ${foundEffect.toUpperCase()} ]`}); 
             } else {
-                showSys("> Błąd: Moduł nie istnieje. Dostępne: /bubble, /gloink, /glitch, /redalert, /nuke, /censor, /clear");
+                showSys("> Błąd: Moduł nie istnieje. Dostępne: /bubble, /gloink, /pomni, /glitch, /shake, /redalert, /nuke, /censor, /void, /abstract, /flip, /blur, /kickall, /clear");
             }
         }
 
-        // --- SYSTEM WYKONYWANIA EFEKTÓW WIZUALNYCH (MAGIA) ---
+        // --- SYSTEM WYKONYWANIA EFEKTÓW ---
         function runEff(cmd) {
             const body = document.body;
             const holo = document.getElementById('hologramImg');
             const censor = document.getElementById('censorBar');
+            const kick = document.getElementById('kickScreen');
             
-            if(cmd === "bubble") { 
-                holo.src = './images/bubble.jpg'; 
-                holo.classList.add('active'); 
-                setTimeout(() => holo.classList.remove('active'), 3000); 
-            }
-            else if(cmd === "gloink") { 
-                holo.src = `./images/gloink${Math.floor(Math.random()*3)+1}.jpg`; 
-                holo.classList.add('active'); 
-                setTimeout(() => holo.classList.remove('active'), 3000); 
-            }
-            else if(cmd === "censor") { 
-                censor.classList.add('active'); 
-                // Możesz tu dorzucić dźwięk cenzury jeśli chcesz!
-                setTimeout(() => censor.classList.remove('active'), 2500); 
-            }
-            else if(cmd === "glitch") { 
-                body.classList.add('effect-glitch'); 
-                setTimeout(() => body.classList.remove('effect-glitch'), 2000); 
-            }
-            else if(cmd === "redalert") { 
-                body.classList.add('effect-redalert'); 
-                setTimeout(() => body.classList.remove('effect-redalert'), 4000); 
-            }
-            else if(cmd === "nuke") { 
-                body.classList.add('effect-nuke'); 
-                setTimeout(() => body.classList.remove('effect-nuke'), 1000); 
-            }
+            // Pojawiające się byty (Obrazki)
+            if(cmd === "bubble") { holo.src = './images/bubble.jpg'; holo.classList.add('active'); setTimeout(() => holo.classList.remove('active'), 3000); }
+            else if(cmd === "gloink") { holo.src = `./images/gloink${Math.floor(Math.random()*3)+1}.jpg`; holo.classList.add('active'); setTimeout(() => holo.classList.remove('active'), 3000); }
+            else if(cmd === "pomni") { holo.src = './images/pomni.jpg'; holo.classList.add('active'); setTimeout(() => holo.classList.remove('active'), 3000); }
+            
+            // Cenzura i Kick
+            else if(cmd === "censor") { censor.classList.add('active'); setTimeout(() => censor.classList.remove('active'), 2500); }
+            else if(cmd === "kickall") { kick.classList.add('active'); setTimeout(() => kick.classList.remove('active'), 3500); }
+            
+            // Efekty wizualne całego ekranu
+            else if(cmd === "glitch") { body.classList.add('effect-glitch'); setTimeout(() => body.classList.remove('effect-glitch'), 2000); }
+            else if(cmd === "shake") { body.classList.add('effect-shake'); setTimeout(() => body.classList.remove('effect-shake'), 3000); }
+            else if(cmd === "redalert") { body.classList.add('effect-redalert'); setTimeout(() => body.classList.remove('effect-redalert'), 4000); }
+            else if(cmd === "nuke") { body.classList.add('effect-nuke'); setTimeout(() => body.classList.remove('effect-nuke'), 1000); }
+            else if(cmd === "void") { body.classList.add('effect-void'); setTimeout(() => body.classList.remove('effect-void'), 4000); }
+            else if(cmd === "abstract") { body.classList.add('effect-abstract'); setTimeout(() => body.classList.remove('effect-abstract'), 5000); }
+            else if(cmd === "flip") { body.classList.add('effect-flip'); setTimeout(() => body.classList.remove('effect-flip'), 5000); }
+            else if(cmd === "blur") { body.classList.add('effect-blur'); setTimeout(() => body.classList.remove('effect-blur'), 4000); }
         }
         
-        // Wsparcie dla wciskania przycisku ENTER
         document.getElementById('chatInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') handleChat(); });
         document.getElementById('cmdInputTop').addEventListener('keypress', function (e) { if (e.key === 'Enter') exeTop(); });
         document.getElementById('nickInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') start(false); });
