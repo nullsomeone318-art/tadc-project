@@ -3,39 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Global Mainframe OS</title>
+    <title>TADC - Global Mainframe OS v6</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
+        /* --- NOWE ANIMACJE TŁA I OKIEN --- */
+        @keyframes crtFlicker { 0% { opacity: 0.98; } 50% { opacity: 0.94; } 100% { opacity: 1; } }
+        @keyframes breatheGlow {
+            0% { box-shadow: 0 0 20px rgba(255,0,68,0.4), inset 0 0 10px rgba(255,0,68,0.2); }
+            50% { box-shadow: 0 0 40px rgba(255,0,68,0.7), inset 0 0 20px rgba(255,0,68,0.4); }
+            100% { box-shadow: 0 0 20px rgba(255,0,68,0.4), inset 0 0 10px rgba(255,0,68,0.2); }
+        }
+        @keyframes textBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes audioPulse { 0% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.6; } }
+
         body { 
             background-color: #050505; 
             background-image: url('./images/backgrund.jpg'); 
-            background-size: cover; 
-            background-position: center; 
-            background-attachment: fixed;
-            color: #00f2ff; 
-            font-family: 'Courier New', monospace; 
-            margin: 0; 
-            height: 100vh; 
-            overflow: hidden;
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
+            background-size: cover; background-position: center; background-attachment: fixed;
+            color: #00f2ff; font-family: 'Courier New', monospace; 
+            margin: 0; height: 100vh; overflow: hidden;
+            display: flex; justify-content: center; align-items: center; 
             transition: all 0.3s;
         }
 
         .scanlines { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%); background-size: 100% 4px; pointer-events: none; z-index: 50; }
-        .hidden { display: none !important; }
+        .hidden { display: none !important; opacity: 0; transform: scale(0.9) !important; pointer-events: none; }
 
-        /* OKNA LOGOWANIA */
+        /* OKNA GŁÓWNE - Z ANIMACJĄ BREATHING */
         .box { 
             position: relative; background: rgba(10, 10, 15, 0.95); padding: 25px; border: 2px solid #ff0044; border-radius: 12px;
-            box-shadow: 0 0 30px rgba(255,0,68,0.5), inset 0 0 15px rgba(255,0,68,0.3); width: 85%; max-width: 320px; z-index: 100; text-align: center;
+            width: 85%; max-width: 320px; z-index: 100; text-align: center;
+            animation: breatheGlow 3s infinite ease-in-out;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            transform: scale(1); opacity: 1;
         }
         h1 { color: #f9e11e; text-shadow: 2px 2px #ff0044; text-transform: uppercase; font-size: 24px; margin-top: 0; letter-spacing: 2px;}
-        input { padding: 12px; margin: 10px 0; background: #000; border: 2px solid #00f2ff; color: #00f2ff; width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; font-family: 'Courier New', monospace; outline: none;}
+        input { padding: 12px; margin: 10px 0; background: #000; border: 2px solid #00f2ff; color: #00f2ff; width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; font-family: 'Courier New', monospace; outline: none; transition: 0.2s;}
         input:focus { border-color: #f9e11e; box-shadow: 0 0 10px #f9e11e; }
-        button { padding: 12px; background: linear-gradient(45deg, #ff0044, #cc0036); color: #fff; border: none; font-weight: bold; width: 100%; cursor: pointer; border-bottom: 4px solid #66001b; font-family: 'Courier New', monospace; text-transform: uppercase;}
-        button:hover { background: #f9e11e; color: #000; border-bottom: 4px solid #b3a00b; }
+        button { padding: 12px; background: linear-gradient(45deg, #ff0044, #cc0036); color: #fff; border: none; font-weight: bold; width: 100%; cursor: pointer; border-bottom: 4px solid #66001b; font-family: 'Courier New', monospace; text-transform: uppercase; transition: 0.2s;}
+        button:hover { background: #f9e11e; color: #000; border-bottom: 4px solid #b3a00b; transform: translateY(-2px);}
 
         .progress-bar-container { width: 100%; height: 20px; border: 2px solid #00f2ff; margin-top: 20px; background: #111; overflow: hidden; border-radius: 5px;}
         .progress-fill { height: 100%; width: 0%; background: repeating-linear-gradient(45deg, #00f2ff, #00f2ff 10px, #0099ff 10px, #0099ff 20px); transition: width 0.2s; }
@@ -43,82 +49,112 @@
         /* ==================================================== */
         /* WSPÓLNY INTERFEJS CZATU (BAZA)                       */
         /* ==================================================== */
-        #dashboard { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 60; display: flex; flex-direction: column;}
+        #dashboard { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 60; display: flex; flex-direction: column; transition: 0.5s;}
         
-        #caineTerminal { background: rgba(255, 0, 68, 0.95); padding: 10px; display: flex; gap: 5px; justify-content: center; border-bottom: 2px solid #fff; flex-shrink: 0;}
+        #caineTerminal { background: rgba(255, 0, 68, 0.95); padding: 10px; display: flex; gap: 5px; justify-content: center; border-bottom: 2px solid #fff; flex-shrink: 0; animation: breatheGlow 3s infinite ease-in-out; z-index: 10;}
         #caineTerminal input { margin: 0; background: #000; border: 1px solid #fff; color: #fff; width: 70%; padding: 8px;}
         #caineTerminal button { width: 30%; background: #000; padding: 8px; border: 1px solid #fff; color: #fff;}
 
         .chat-box { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scrollbar-width: thin; scrollbar-color: #00f2ff #111; padding-right: 5px;}
         
-        /* Wygląd pojedynczej wiadomości - poprawione zawijanie tekstu */
-        .msg { font-size: 14px; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.6); padding: 7px 12px; border-radius: 8px; border-left: 3px solid #00f2ff; width: fit-content; max-width: 90%; word-break: break-word; overflow-wrap: break-word; animation: popIn 0.2s ease-out;}
-        .msg.caine { border-left: 3px solid #ff0044; background: rgba(255,0,68,0.15); font-weight: bold; }
-        .msg.sys { border-left: 3px solid #f9e11e; color: #f9e11e; font-style: italic; background: rgba(249,225,30,0.1); width: 100%; max-width: 100%; text-align: center;}
-        @keyframes popIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { from { opacity: 0; transform: translateY(15px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes caineShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(1px); } 75% { transform: translateX(-1px); } }
+
+        .msg { font-size: 14px; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.6); padding: 7px 12px; border-radius: 8px; border-left: 3px solid #00f2ff; width: fit-content; max-width: 90%; word-break: break-word; overflow-wrap: break-word; animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;}
+        
+        /* Caine drży */
+        .msg.caine { border-left: 3px solid #ff0044; background: rgba(255,0,68,0.15); font-weight: bold; animation: popIn 0.3s forwards, caineShake 0.1s infinite; }
+        
+        .msg.sys { border-left: 3px solid #f9e11e; color: #f9e11e; font-style: italic; background: rgba(249,225,30,0.1); width: 100%; max-width: 100%; text-align: center; animation: popIn 0.3s forwards, textBlink 1s infinite;}
 
         /* ==================================================== */
-        /* STYL DLA TELEFONÓW (DOMYŚLNY - TIKTOK STYLE)         */
+        /* STYLE DLA TEL I PC                                   */
         /* ==================================================== */
         .chat-container { flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 15px; padding-bottom: 80px; }
         .chat-box { max-height: 70vh; }
-        
         .chat-controls { position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px; background: rgba(0,0,0,0.9); display: flex; gap: 10px; box-sizing: border-box; border-top: 2px solid #333;}
-        .chat-controls input { margin: 0; border-radius: 20px; background: #111; border: 1px solid #555; }
+        .chat-controls input { margin: 0; border-radius: 20px; background: #111; border: 1px solid #555; text-align: left; padding-left: 15px;}
         .chat-controls button { width: auto; border-radius: 20px; padding: 10px 20px; background: #00f2ff; color: #000; border-bottom: 3px solid #0088cc;}
 
-        /* ==================================================== */
-        /* STYL DLA KOMPUTERÓW (TERMINAL HAKERA)                */
-        /* ==================================================== */
         @media (min-width: 768px) {
-            #dashboard { justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-            
+            #dashboard { justify-content: center; align-items: center; padding: 20px; }
             #caineTerminal { width: 80%; max-width: 800px; border-radius: 10px 10px 0 0; border-bottom: none; }
-            
-            .chat-container { width: 80%; max-width: 800px; height: 75vh; background: rgba(10, 10, 15, 0.9); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; padding-bottom: 20px; box-shadow: 0 0 40px rgba(0, 242, 255, 0.15); display: flex; flex-direction: column; justify-content: space-between; flex-grow: 0;}
-            
+            .chat-container { width: 80%; max-width: 800px; height: 75vh; background: rgba(10, 10, 15, 0.95); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 40px rgba(0, 242, 255, 0.15); display: flex; flex-direction: column; justify-content: space-between; flex-grow: 0; animation: breatheGlow 3s infinite ease-in-out;}
             .chat-box { flex-grow: 1; max-height: none; padding-bottom: 15px; }
-            
             .chat-controls { position: relative; width: 100%; background: transparent; padding: 0; border-top: none; }
-            .chat-controls input { border-radius: 8px; background: rgba(0,0,0,0.8); border: 1px solid #00f2ff; }
+            .chat-controls input { border-radius: 8px; background: rgba(0,0,0,0.8); border: 1px solid #00f2ff; text-align: left;}
             .chat-controls button { border-radius: 8px; padding: 12px 25px; }
         }
 
-        /* POPUPY I EFEKTY */
-        .hologram-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 350px; z-index: 1000; border: 4px solid #ff0044; box-shadow: 0 0 50px #ff0044; border-radius: 10px; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
-        .hologram-popup.active { transform: translate(-50%, -50%) scale(1); }
+        /* ==================================================== */
+        /* HOLOGRAMY I POPUPY - USUNIĘTA RAMKA                  */
+        /* ==================================================== */
+        .hologram-popup { 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); 
+            width: 85%; max-width: 350px; z-index: 1000; 
+            /* USUNIĘTO RAMKĘ I ZAOKRĄGLENIE, ZWIĘKSZONO GLOW */
+            border: none; 
+            border-radius: 0;
+            box-shadow: 0 0 60px 10px rgba(255, 0, 68, 0.7); 
+            transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); 
+            pointer-events: none; 
+            opacity: 0;
+        }
+        .hologram-popup.active { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 
-        #censorBar { position: fixed; top: 50%; left: 0; width: 100%; height: 120px; background: repeating-linear-gradient(45deg, #000, #000 20px, #fff 20px, #fff 40px); transform: translateY(-50%) scaleY(0); z-index: 2000; display: flex; justify-content: center; align-items: center; transition: 0.1s; }
-        #censorBar.active { transform: translateY(-50%) scaleY(1); }
-        #censorBar span { background: #ff0044; color: #fff; padding: 10px 30px; font-size: 40px; font-weight: bold; border: 4px solid #000; text-transform: uppercase; transform: rotate(-5deg); letter-spacing: 5px;}
+        /* PASEK CENZURY */
+        #censorBar { position: fixed; top: 50%; left: 0; width: 100%; height: 120px; background: repeating-linear-gradient(45deg, #000, #000 20px, #fff 20px, #fff 40px); transform: translateY(-50%) scaleY(0); z-index: 2000; display: flex; justify-content: center; align-items: center; transition: 0.1s; pointer-events: none;}
+        #censorBar.active { transform: translateY(-50%) scaleY(1); pointer-events: auto;}
+        #censorBar span { background: #ff0044; color: #fff; padding: 10px 30px; font-size: 40px; font-weight: bold; border: 4px solid #000; text-transform: uppercase; transform: rotate(-5deg); letter-spacing: 5px; animation: textBlink 0.5s infinite;}
 
-        #kickScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ff0000; color: #fff; z-index: 3000; display: flex; justify-content: center; align-items: center; text-align: center; flex-direction: column; opacity: 0; pointer-events: none; transition: 0.2s;}
-        #kickScreen.active { opacity: 1; pointer-events: auto; }
-        #kickScreen h1 { font-size: 40px; color: #fff; text-shadow: none; letter-spacing: 0;}
+        /* EKRAN KICKA */
+        #kickScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ff0000; color: #fff; z-index: 3000; display: flex; justify-content: center; align-items: center; text-align: center; flex-direction: column; opacity: 0; pointer-events: none; transition: 0.2s; font-weight: bold;}
+        #kickScreen.active { opacity: 1; pointer-events: auto; animation: effect-nuke 0.5s infinite;}
+        #kickScreen h1 { font-size: 40px; color: #fff; text-shadow: none; letter-spacing: 0; animation: textBlink 0.2s infinite;}
 
-        /* KLASY EFEKTÓW CSS */
+        /* ==================================================== */
+        /* DESZCZ GLOINKÓW (NOWOŚĆ!)                            */
+        /* ==================================================== */
+        @keyframes gloinkFall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+        .falling-gloink {
+            position: fixed; top: -10vh;
+            width: 50px; height: 50px;
+            z-index: 1001; pointer-events: none;
+            /* Glow zamiast ramki */
+            filter: drop-shadow(0 0 5px #ff0044);
+            animation: gloinkFall 3s linear forwards;
+        }
+
+        /* EFEKTY GLOBALNE */
         .effect-glitch { animation: shake 0.1s infinite; filter: hue-rotate(90deg) invert(1); }
         .effect-shake { animation: violentShake 0.05s infinite; }
         @keyframes shake { 0% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 100% { transform: translate(5px, -5px); } }
         @keyframes violentShake { 0% { transform: translate(15px, 15px) rotate(2deg); } 50% { transform: translate(-15px, -15px) rotate(-2deg); } 100% { transform: translate(15px, -15px) rotate(2deg); } }
         .effect-redalert { box-shadow: inset 0 0 150px rgba(255,0,0,0.8); }
-        .effect-nuke { filter: brightness(10) contrast(5); }
-        .effect-void { background-image: none !important; background-color: #000 !important; }
+        @keyframes effect-nuke { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(10) contrast(5); } }
+        .effect-nuke-run { animation: effect-nuke 1s forwards; }
+        .effect-void { background-image: none !important; background-color: #000 !important; filter: brightness(0.5); }
         .effect-abstract { filter: hue-rotate(180deg) saturate(300%) contrast(200%) blur(3px); }
         .effect-flip { transform: rotate(180deg); }
         .effect-blur { filter: blur(15px); }
 
         /* HUD STATYSTYKI */
-        .hud-top { position: fixed; top: 10px; left: 10px; font-size: 12px; font-weight: bold; z-index: 110; color: #fff; text-shadow: 1px 1px #000; display: flex; flex-direction: column; gap: 5px;}
+        .hud-top { position: fixed; top: 10px; left: 10px; font-size: 12px; font-weight: bold; z-index: 110; color: #fff; text-shadow: 1px 1px #000; display: flex; flex-direction: column; gap: 5px; opacity: 0.7;}
         .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: red; margin-right: 5px; box-shadow: 0 0 5px red;}
         .status-dot.online { background: #00ff00; box-shadow: 0 0 5px #00ff00; }
-        .audio-btn { position: fixed; top: 10px; right: 10px; font-size: 24px; z-index: 110; cursor: pointer; text-shadow: 0 0 10px #00f2ff;}
+        
+        /* Pulsujący przycisk audio */
+        .audio-btn { position: fixed; top: 10px; right: 10px; font-size: 24px; z-index: 110; cursor: pointer; text-shadow: 0 0 10px #00f2ff; animation: audioPulse 1.5s infinite;}
     </style>
 </head>
 <body>
     
     <div class="scanlines"></div>
     <img id="hologramImg" class="hologram-popup" src="" alt="Entity">
+    
     <div id="censorBar"><span>CENZURA</span></div>
     
     <div id="kickScreen">
@@ -138,21 +174,21 @@
         <button id="startBtn" onclick="start(false)">ZALOGUJ</button>
         
         <div id="admin-login" class="hidden">
-            <p style="color: #ff0044; font-weight: bold; font-size: 12px; margin-top: 15px;">[ SYSTEM ROOT ]</p>
+            <p style="color: #ff0044; font-weight: bold; font-size: 12px; margin-top: 15px; animation: textBlink 1s infinite;">[ SYSTEM ROOT ]</p>
             <input type="password" id="pinInput" placeholder="PIN: ****">
             <button onclick="loginAdmin()">AUTORYZUJ (CAINE)</button>
         </div>
     </div>
 
     <div id="step-2" class="box hidden">
-        <h1>Pobieranie Dusz...</h1>
+        <h1 style="animation: textBlink 1s infinite;">Pobieranie Dusz...</h1>
         <div class="progress-bar-container"><div id="progressFill" class="progress-fill"></div></div>
         <p style="color: #f9e11e; font-size: 12px; margin-top: 10px; font-weight: bold;">Proszę czekać.</p>
     </div>
 
     <div id="dashboard" class="hidden">
         <div id="caineTerminal" class="hidden">
-            <input type="text" id="cmdInputTop" placeholder="np. /void, /abstract, /flip...">
+            <input type="text" id="cmdInputTop" placeholder="Komenda: /gloink, /void, /censor...">
             <button onclick="exeTop()">WYKONAJ</button>
         </div>
 
@@ -181,7 +217,7 @@
         }, {once: true});
 
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v5"; 
+        const topic = "cyfrowycyrk/globalchat/final_v6"; // NOWY KANAŁ V6
         let user = ""; 
         let isAdmin = false; 
         let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
@@ -189,8 +225,8 @@
         function updateStatus(online) {
             const dot = document.getElementById('sDot');
             const txt = document.getElementById('sText');
-            if(online) { dot.classList.add('online'); txt.innerText = "Sieć Globalna: OK"; }
-            else { dot.classList.remove('online'); txt.innerText = "Szukanie Sygnału..."; }
+            if(online) { dot.classList.add('online'); txt.innerText = "Sieć: OK"; }
+            else { dot.classList.remove('online'); txt.innerText = "Szukanie..."; }
         }
 
         function initMQTT() {
@@ -213,7 +249,7 @@
                 onSuccess: () => {
                     updateStatus(true);
                     mqtt.subscribe(topic);
-                    sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ KONTROLĘ NAD CYRKIEM 👑" : `[${user}] został uwięziony.`});
+                    sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM 👑" : `[${user}] dołączył do Cyrku.`});
                 },
                 onFailure: () => { updateStatus(false); }
             });
@@ -265,23 +301,30 @@
             }, 60);
         }
 
-        // NAPRAWIONY CZAT - idealne zawijanie i autoscroll
+        // --- NAPRAWIONY CZAT Z AUTOSCROLLEM ---
         function showMsg(nick, text, color, isCaine) {
             const box = document.getElementById('chatBox');
+            // Zabezpieczenie HTML
             const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            
             const className = isCaine ? "msg caine" : "msg";
             const nickStyle = isCaine ? "" : `style="color:${color};"`;
             
+            // Dodanie wiadomości
             box.innerHTML += `<div class="${className}"><span class="nick" ${nickStyle}>${nick}:</span> <span class="text">${safeText}</span></div>`;
             
-            // Poprawiony autoscroll
-            setTimeout(() => { box.scrollTop = box.scrollHeight; }, 10);
+            // Wymuszenie autoscrolla na dół
+            requestAnimationFrame(() => {
+                box.scrollTop = box.scrollHeight;
+            });
         }
 
         function showSys(text) { 
             const box = document.getElementById('chatBox'); 
             box.innerHTML += `<div class="msg sys">${text}</div>`; 
-            setTimeout(() => { box.scrollTop = box.scrollHeight; }, 10);
+            requestAnimationFrame(() => {
+                box.scrollTop = box.scrollHeight;
+            });
         }
 
         function handleChat() {
@@ -312,33 +355,64 @@
             
             if(foundEffect) { 
                 sendData({type:"cmd", cmd:foundEffect}); 
-                sendData({type:"sys", text: `> CAINE AKTYWOWAŁ MODUŁ: [ ${foundEffect.toUpperCase()} ]`}); 
+                sendData({type:"sys", text: `> CAINE AKTYWOWAŁ: [ ${foundEffect.toUpperCase()} ]`}); 
             } else {
-                showSys("> Błąd: Moduł nie istnieje. Dostępne: /bubble, /gloink, /pomni, /glitch, /shake, /redalert, /nuke, /censor, /void, /abstract, /flip, /blur, /kickall, /clear");
+                showSys("> Błąd: Moduł nie istnieje.");
             }
         }
 
+        // ====================================================
+        // 🔥 NOWY SYSTEM GLOINK RAIN (DESZCZ GLOINKÓW)         */
+        // ====================================================
+        function createGloinkRain() {
+            const container = document.body;
+            const gloinkCount = 30; // Ile Gloinków ma spaść
+
+            for(let i = 0; i < gloinkCount; i++) {
+                const num = Math.floor(Math.random() * 3) + 1; // 1, 2 lub 3
+                const gloink = document.createElement('img');
+                gloink.src = `./images/gloink${num}.jpg`;
+                gloink.classList.add('falling-gloink');
+                
+                // Losowa pozycja startowa poziom, czas trwania i opóźnienie
+                gloink.style.left = Math.random() * 100 + 'vw';
+                gloink.style.animationDuration = (Math.random() * 2 + 2) + 's'; // Spadanie 2-4s
+                gloink.style.animationDelay = (Math.random() * 1.5) + 's'; // Opóźnienie startu
+
+                container.appendChild(gloink);
+
+                // Usuń element po zakończeniu animacji, żeby nie zapchać przeglądarki
+                setTimeout(() => {
+                    gloink.remove();
+                }, 4000); 
+            }
+        }
+
+        // --- SYSTEM WYKONYWANIA EFEKTÓW ---
         function runEff(cmd) {
             const body = document.body;
             const holo = document.getElementById('hologramImg');
             const censor = document.getElementById('censorBar');
             const kick = document.getElementById('kickScreen');
             
-            if(cmd === "bubble") { holo.src = './images/bubble.jpg'; holo.classList.add('active'); setTimeout(() => holo.classList.remove('active'), 3000); }
-            else if(cmd === "gloink") { holo.src = `./images/gloink${Math.floor(Math.random()*3)+1}.jpg`; holo.classList.add('active'); setTimeout(() => holo.classList.remove('active'), 3000); }
-            else if(cmd === "pomni") { holo.src = './images/pomni.jpg'; holo.classList.add('active'); setTimeout(() => holo.classList.remove('active'), 3000); }
+            // Popupy bez ramek
+            if(cmd === "bubble") { holo.src = './images/bubble.jpg'; holo.classList.add('active'); setTimeout(()=>holo.classList.remove('active'),3000); }
+            else if(cmd === "pomni") { holo.src = './images/pomni.jpg'; holo.classList.add('active'); setTimeout(()=>holo.classList.remove('active'),3000); }
             
-            else if(cmd === "censor") { censor.classList.add('active'); setTimeout(() => censor.classList.remove('active'), 2500); }
-            else if(cmd === "kickall") { kick.classList.add('active'); setTimeout(() => kick.classList.remove('active'), 3500); }
+            // 🔥 NOWOŚĆ: DESZCZ GLOINKÓW ZAMIAST POPUPU 🔥
+            else if(cmd === "gloink") { createGloinkRain(); }
             
-            else if(cmd === "glitch") { body.classList.add('effect-glitch'); setTimeout(() => body.classList.remove('effect-glitch'), 2000); }
-            else if(cmd === "shake") { body.classList.add('effect-shake'); setTimeout(() => body.classList.remove('effect-shake'), 3000); }
-            else if(cmd === "redalert") { body.classList.add('effect-redalert'); setTimeout(() => body.classList.remove('effect-redalert'), 4000); }
-            else if(cmd === "nuke") { body.classList.add('effect-nuke'); setTimeout(() => body.classList.remove('effect-nuke'), 1000); }
-            else if(cmd === "void") { body.classList.add('effect-void'); setTimeout(() => body.classList.remove('effect-void'), 4000); }
-            else if(cmd === "abstract") { body.classList.add('effect-abstract'); setTimeout(() => body.classList.remove('effect-abstract'), 5000); }
-            else if(cmd === "flip") { body.classList.add('effect-flip'); setTimeout(() => body.classList.remove('effect-flip'), 5000); }
-            else if(cmd === "blur") { body.classList.add('effect-blur'); setTimeout(() => body.classList.remove('effect-blur'), 4000); }
+            else if(cmd === "censor") { censor.classList.add('active'); setTimeout(()=>censor.classList.remove('active'),2500); }
+            else if(cmd === "kickall") { kick.classList.add('active'); setTimeout(()=>kick.classList.remove('active'),3500); }
+            
+            else if(cmd === "glitch") { body.classList.add('effect-glitch'); setTimeout(()=>body.classList.remove('effect-glitch'),2000); }
+            else if(cmd === "shake") { body.classList.add('effect-shake'); setTimeout(()=>body.classList.remove('effect-shake'),3000); }
+            else if(cmd === "redalert") { body.classList.add('effect-redalert'); setTimeout(()=>body.classList.remove('effect-redalert'),4000); }
+            else if(cmd === "nuke") { body.classList.add('effect-nuke-run'); setTimeout(()=>body.classList.remove('effect-nuke-run'),1000); }
+            else if(cmd === "void") { body.classList.add('effect-void'); setTimeout(()=>body.classList.remove('effect-void'),4000); }
+            else if(cmd === "abstract") { body.classList.add('effect-abstract'); setTimeout(()=>body.classList.remove('effect-abstract'),5000); }
+            else if(cmd === "flip") { body.classList.add('effect-flip'); setTimeout(()=>body.classList.remove('effect-flip'),5000); }
+            else if(cmd === "blur") { body.classList.add('effect-blur'); setTimeout(()=>body.classList.remove('effect-blur'),4000); }
         }
         
         document.getElementById('chatInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') handleChat(); });
