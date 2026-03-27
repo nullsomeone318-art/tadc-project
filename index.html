@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Global Mainframe OS v16</title>
+    <title>TADC - Global Mainframe OS v17</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
         @keyframes crtFlicker { 0% { opacity: 0.98; } 50% { opacity: 0.94; } 100% { opacity: 1; } }
@@ -41,7 +41,6 @@
         #caineTerminal input { margin: 0; background: #000; border: 1px solid #fff; color: #fff; width: 70%; padding: 8px;}
         #caineTerminal button { width: 30%; background: #000; padding: 8px; border: 1px solid #fff; color: #fff;}
 
-        /* WSPÓLNY STYL OKIENEK POPUP */
         .popup-window { 
             position: absolute; top: 10%; left: 50%; transform: translateX(-50%); width: 95%; max-width: 550px;
             background: rgba(5, 5, 10, 0.98); border: 2px solid #00f2ff; border-radius: 8px;
@@ -98,6 +97,7 @@
         #jailScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent, transparent 40px, #111 40px, #111 60px), repeating-linear-gradient(0deg, transparent, transparent 150px, #111 150px, #111 170px); z-index: 2500; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: inset 0 0 100px #000;}
         #jailScreen.active { opacity: 0.8; pointer-events: auto; }
 
+        /* 🔥 EFEKTY CSS GLOBALNE + NOWE EFEKTY 3D 🔥 */
         .effect-glitch { animation: shake 0.1s infinite; filter: hue-rotate(90deg) invert(1); }
         @keyframes shake { 0% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 100% { transform: translate(5px, -5px); } }
         .effect-redalert { box-shadow: inset 0 0 150px rgba(255,0,0,0.8); }
@@ -113,6 +113,18 @@
         .effect-dance { animation: danceAnim 0.4s infinite; }
         @keyframes danceAnim { 0% {transform: translateY(0) rotate(0);} 25% {transform: translateY(-15px) rotate(5deg);} 75% {transform: translateY(15px) rotate(-5deg);} 100% {transform: translateY(0) rotate(0);} }
         .effect-gravity { transform: translateY(-30vh) rotate(5deg); }
+
+        /* 💥 NOWOŚĆ: MAGIA CSS 3D 💥 */
+        body.effect-3d-active { perspective: 1000px; }
+        body.effect-3d-active #dashboard, body.effect-3d-active .box {
+            transform-style: preserve-3d;
+            animation: wobble3d 4s infinite alternate ease-in-out;
+            box-shadow: 20px 20px 60px rgba(0, 242, 255, 0.3), -20px -20px 60px rgba(255, 0, 68, 0.3);
+        }
+        @keyframes wobble3d {
+            0% { transform: rotateX(15deg) rotateY(-20deg) translateZ(50px) scale(0.85); }
+            100% { transform: rotateX(-15deg) rotateY(20deg) translateZ(-50px) scale(0.85); }
+        }
 
         .hud-top { position: fixed; top: 10px; left: 10px; font-size: 12px; font-weight: bold; z-index: 110; color: #fff; text-shadow: 1px 1px #000; display: flex; flex-direction: column; gap: 8px; opacity: 0.9;}
         .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: red; margin-right: 5px; box-shadow: 0 0 5px red;}
@@ -216,20 +228,17 @@
             censorAudio.onended = () => { isCensoring = false; document.body.classList.remove('effect-censor-alert'); if (wasPlaying && audioAllowed) music.play(); };
         }
 
-        // --- MQTT ---
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v16"; 
+        const topic = "cyfrowycyrk/globalchat/final_v17"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let activeUsers = {}; 
 
-        // STAN KAMPANII 10 ETAPÓW
         let activeAdventure = false;
         let advStep = 0;
         let advTheme = "";
         let currentAdvResults = {};
         let advPool = [];
 
-        // 10 UNIKALNYCH SZABLONÓW
         const loreTemplates = [
             { text: "Korytarze Namiotu wydają się dziś węższe. {GROUP_TEXT} Nagle szachownica podłogowa zaczyna się zapadać! Z oddali słychać śmiech Abstrakcji.\nA) Rzucacie Gloinkiem w przepaść.\nB) Hakujecie system podłogi.\nC) Udajecie manekiny.\nD) Skaczecie prosto w Pustkę.",
               res: { "A": "Gloink znika, podłoga się stabilizuje. -1 do populacji Gloinków.", "B": "Basen z piłeczkami ratuje wam życie!", "C": "Abstrakcja mija was obojętnie.", "D": "Caine wyciąga was za fraki. Auć!" } },
@@ -269,23 +278,18 @@
                     const d = JSON.parse(m.payloadString);
                     if(d.type === "chat") {
                         showMsg(d.nick, d.text, d.color, d.admin);
-                        
-                        // NASŁUCHIWANIE ODPOWIEDZI NA PRZYGODĘ LORE
                         if(isAdmin && activeAdventure) {
                             let ans = d.text.trim().toUpperCase();
                             if(['A','B','C','D'].includes(ans)) {
-                                activeAdventure = false; // Pauza nasłuchu by nie zduplikować
+                                activeAdventure = false; 
                                 sendData({type: "sys", text: `> WYNIK DLA [${d.nick}] -> Wybrano ${ans}:\n${currentAdvResults[ans]}`});
-                                
                                 advStep++;
                                 if (advStep <= 10) {
-                                    // Dodatkowy auto-efekt przy co drugim etapie dla klimatu
                                     if(advStep % 2 === 0) sendData({type:"cmd", cmd:"shake"});
-                                    
-                                    setTimeout(() => { nextEncounter(); }, 5000); // 5 sekund na oddech i czytanie
+                                    setTimeout(() => { nextEncounter(); }, 5000); 
                                 } else {
                                     setTimeout(() => { 
-                                        sendData({type: "sys", text: `🎪 KONIEC KAMPANII: "${advTheme}" 🎪\nPrzetrwaliście wszystkie 10 etapów szaleństwa! Caine gratuluje (albo i nie). Wracajcie do pokoi!`});
+                                        sendData({type: "sys", text: `🎪 KONIEC KAMPANII: "${advTheme}" 🎪\nPrzetrwaliście wszystkie 10 etapów szaleństwa! Caine gratuluje.`});
                                         sendData({type:"cmd", cmd:"confetti"});
                                     }, 4000);
                                 }
@@ -310,8 +314,7 @@
         }
 
         setInterval(() => {
-            const now = Date.now();
-            let changed = false;
+            const now = Date.now(); let changed = false;
             for(let nick in activeUsers) { if(now - activeUsers[nick].time > 3000) { delete activeUsers[nick]; changed = true; } }
             updateActiveUsersUI();
         }, 100);
@@ -368,7 +371,7 @@
         function handleChat() { const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return; if(isAdmin && text.startsWith('/')) { procCmd(text); input.value=""; return; } sendData({type:"chat", nick:user, text:text, color:userColor, admin:isAdmin}); input.value = ""; }
         function exeTop() { const input = document.getElementById('cmdInputTop'); let text = input.value.trim(); if(!text) return; if(!text.startsWith('/')) text = '/' + text; procCmd(text); input.value = ""; }
 
-        const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "squish", "stretch", "dance", "zoom", "grayscale", "confetti", "jail", "unjail", "gravity"];
+        const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "squish", "stretch", "dance", "zoom", "grayscale", "confetti", "jail", "unjail", "gravity", "vr"];
         const loreCommands = [ { c: "/ragatha", d: "Ragatha próbuje utrzymać wszystkich w ryzach." }, { c: "/jax", d: "Jax uśmiecha się podejrzanie..." }, { c: "/exit", d: "BŁĄD: DRZWI WYJŚCIOWE NIE ISTNIEJĄ." } ];
 
         function populateCmdWindow() {
@@ -385,17 +388,12 @@
         function toggleUsers() { document.getElementById('usersWindow').classList.toggle('hidden'); }
         function toggleAdventure() { document.getElementById('adventureModal').classList.toggle('hidden'); }
 
-        // --- SILNIK KAMPANII 10 RUND ---
-        function fillAdvPool() {
-            advPool = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-            advPool.sort(() => Math.random() - 0.5); // Mocne tasowanie 10 przygód
-        }
+        function fillAdvPool() { advPool = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]; advPool.sort(() => Math.random() - 0.5); }
 
         function fireAdventure() {
             advTheme = document.getElementById('advThemeInput').value.trim() || "Zgubieni w Kodzie";
             toggleAdventure(); 
-            advStep = 1;
-            fillAdvPool(); 
+            advStep = 1; fillAdvPool(); 
             sendData({type:"sys", text: `> ROZPOCZYNAMY KAMPANIĘ 10 ETAPÓW:\n"${advTheme.toUpperCase()}"\nTrzymajcie się mocno...`});
             setTimeout(() => { nextEncounter(); }, 2000);
         }
@@ -403,14 +401,11 @@
         function nextEncounter() {
             const pCount = Math.max(1, Object.keys(activeUsers).length);
             const groupText = pCount === 1 ? "Jesteś tu zupełnie SAM." : `Jest was tu dokładnie ${pCount} przerażonych dusz.`;
-            
             if(advPool.length === 0) fillAdvPool(); 
             const templateIndex = advPool.pop(); 
             const template = loreTemplates[templateIndex];
-            
             const finalAdvText = `[KROK ${advStep}/10] 🌟\n\n` + template.text.replace("{GROUP_TEXT}", groupText) + "\n\n[Wpisz A, B, C lub D!]";
             currentAdvResults = template.res;
-            
             sendData({type:"sys", text: finalAdvText});
             activeAdventure = true; 
         }
@@ -468,6 +463,8 @@
             else if(cmd === "dance") { b.classList.add('effect-dance'); setTimeout(() => b.classList.remove('effect-dance'), 5000); }
             else if(cmd === "zoom") { b.classList.add('effect-zoom'); setTimeout(() => b.classList.remove('effect-zoom'), 3000); }
             else if(cmd === "grayscale") { b.classList.add('effect-grayscale'); setTimeout(() => b.classList.remove('effect-grayscale'), 5000); }
+            // 🔥 NOWA KOMENDA VR 🔥
+            else if(cmd === "vr") { b.classList.add('effect-3d-active'); setTimeout(() => b.classList.remove('effect-3d-active'), 10000); }
         }
         
         document.getElementById('chatInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') handleChat(); });
