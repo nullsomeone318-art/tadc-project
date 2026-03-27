@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Global Mainframe OS v13</title>
+    <title>TADC - Global Mainframe OS v14</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
         @keyframes crtFlicker { 0% { opacity: 0.98; } 50% { opacity: 0.94; } 100% { opacity: 1; } }
@@ -44,19 +44,18 @@
 
         /* WSPÓLNY STYL OKIENEK POPUP */
         .popup-window { 
-            position: absolute; top: 15%; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px;
+            position: absolute; top: 10%; left: 50%; transform: translateX(-50%); width: 95%; max-width: 550px;
             background: rgba(5, 5, 10, 0.98); border: 2px solid #00f2ff; border-radius: 8px;
             z-index: 2000; display: flex; flex-direction: column; box-shadow: 0 0 40px rgba(0, 242, 255, 0.5);
             transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .cmd-header { display: flex; justify-content: space-between; padding: 10px; background: #00f2ff; color: #000; font-weight: bold; font-size: 14px;}
         .cmd-header button { background: #000; color: #00f2ff; border: 1px solid #000; font-weight: bold; padding: 2px 8px; cursor: pointer;}
-        .cmd-list { padding: 10px; max-height: 50vh; overflow-y: auto; text-align: left; font-size: 12px; color: #fff; scrollbar-width: thin; scrollbar-color: #00f2ff #000;}
+        .cmd-list { padding: 10px; max-height: 55vh; overflow-y: auto; text-align: left; font-size: 12px; color: #fff; scrollbar-width: thin; scrollbar-color: #00f2ff #000;}
         .cmd-list div { padding: 8px 0; border-bottom: 1px dashed #333; display: flex; flex-direction: column;}
         .cmd-real { color: #f9e11e; font-weight: bold; font-size: 14px; }
         .cmd-desc { color: #aaa; font-style: italic; margin-top: 3px;}
 
-        /* OKNO GENERATORA PRZYGÓD */
         #adventureModal .cmd-list { padding: 20px; text-align: center; }
         #advThemeInput { width: 90%; padding: 10px; margin-bottom: 15px; border: 1px solid #f9e11e; background: #111; color: #fff; font-weight: bold;}
         #advBtn { background: #f9e11e; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px;}
@@ -66,7 +65,7 @@
         @keyframes popIn { from { opacity: 0; transform: translateY(15px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes caineShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(1px); } 75% { transform: translateX(-1px); } }
 
-        .msg { font-size: 14px; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.6); padding: 7px 12px; border-radius: 8px; border-left: 3px solid #00f2ff; width: fit-content; max-width: 90%; word-break: break-word; overflow-wrap: break-word; animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;}
+        .msg { font-size: 14px; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.6); padding: 7px 12px; border-radius: 8px; border-left: 3px solid #00f2ff; width: fit-content; max-width: 90%; word-break: break-word; overflow-wrap: break-word; animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; line-height: 1.4;}
         .msg.caine { border-left: 3px solid #ff0044; background: rgba(255,0,68,0.15); font-weight: bold; animation: popIn 0.3s forwards, caineShake 0.1s infinite; }
         .msg.sys { border-left: 3px solid #f9e11e; color: #f9e11e; font-style: italic; background: rgba(249,225,30,0.15); width: 100%; max-width: 100%; text-align: center; animation: popIn 0.3s forwards, textBlink 1.5s infinite; border-right: 3px solid #f9e11e;}
 
@@ -101,7 +100,6 @@
         #jailScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent, transparent 40px, #111 40px, #111 60px), repeating-linear-gradient(0deg, transparent, transparent 150px, #111 150px, #111 170px); z-index: 2500; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: inset 0 0 100px #000;}
         #jailScreen.active { opacity: 0.8; pointer-events: auto; }
 
-        /* EFEKTY CSS GLOBALNE */
         .effect-glitch { animation: shake 0.1s infinite; filter: hue-rotate(90deg) invert(1); }
         @keyframes shake { 0% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 100% { transform: translate(5px, -5px); } }
         .effect-redalert { box-shadow: inset 0 0 150px rgba(255,0,0,0.8); }
@@ -171,11 +169,11 @@
         </div>
 
         <div id="adventureModal" class="popup-window hidden">
-            <div class="cmd-header"><span>🤖 AI GENERATOR PRZYGÓD</span><button onclick="toggleAdventure()">[X]</button></div>
+            <div class="cmd-header"><span>🤖 GENERATOR PRZYGÓD TADC</span><button onclick="toggleAdventure()">[X]</button></div>
             <div class="cmd-list">
-                <p style="color:#00f2ff; margin-top:0;">Wpisz temat dla graczy:</p>
-                <input type="text" id="advThemeInput" placeholder="np. Bezimienny Strach...">
-                <button id="advBtn" onclick="fireAdventure()">GENERUJ I WYŚLIJ</button>
+                <p style="color:#00f2ff; margin-top:0;">Wpisz motyw przewodni horroru/przygody:</p>
+                <input type="text" id="advThemeInput" placeholder="np. Zgubieni w Biurach...">
+                <button id="advBtn" onclick="fireAdventure()">WYŚLIJ GRACZOM</button>
             </div>
         </div>
 
@@ -227,18 +225,44 @@
 
         // --- MQTT & SYSTEM 0.1s ---
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v13"; 
+        const topic = "cyfrowycyrk/globalchat/final_v14"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let activeUsers = {}; 
 
-        // STAN PRZYGODY AI
+        // STAN PRZYGODY LORE
         let activeAdventure = false;
-        const advResults = {
-            "A": "Kopnąłeś w drzwi! Zza ściany wyszedł potwór i... zapytał, czy masz pożyczyć trochę cukru. Uff!",
-            "B": "Uderzyłeś głową w ścianę. System zaktualizował Twój status na: 'Lekki wstrząs mózgu'.",
-            "C": "Lustro pękło! Twoja fryzura była zbyt potężna dla tego wymiaru.",
-            "D": "Bańka wybuchła! Usłyszałeś beknięcie Gloinka i drzwi otworzyły się same."
-        };
+        let currentAdvResults = {};
+
+        // 3 POTĘŻNE SZABLONY PRZYGÓD W CYRKU
+        const loreTemplates = [
+            {
+                text: "🎪 CYFROWA PRZYGODA: \"{THEME}\" 🎪\n\nBłąkasz się po korytarzach Namiotu, gdy nagle podłoga pod Twoimi stopami zaczyna przypominać glitczującą się szachownicę. Z oddali słyszysz obłąkańczy śmiech... to Kaufmo, a raczej to, co z niego zostało po Abstrakcji! Jax uciekł, zostawiając Cię na pastwę losu.\nCo robisz w tej beznadziejnej sytuacji?!\n\nA) Rzucasz w Zabstraktyzowanego Kaufmo przypadkowym Gloinkiem.\nB) Próbujesz zhakować panel podłogowy, żeby uciec.\nC) Udajesz, że też uległeś Abstrakcji, machając rękami.\nD) Skaczesz prosto w Pustkę (The Void).",
+                res: {
+                    "A": "Gloink zostaje wchłonięty, a potwór patrzy na Ciebie z wyrzutem. Uciekasz, ale gubisz cyfrowego buta!",
+                    "B": "Haker z Ciebie żaden, ale podłoga pęka i wpadasz prosto do basenu z cyfrowymi piłeczkami. Bezpieczny!",
+                    "C": "Potwór patrzy na Ciebie, puka się w głowę i odchodzi. Twój plan był tak głupi, że aż zadziałał!",
+                    "D": "Spadasz i spadasz... Caine musi użyć uprawnień admina, by wyciągnąć Cię za fraki z Nicości. -10 pkt godności."
+                }
+            },
+            {
+                text: "🚪 KOSZMAR WYJŚCIA: \"{THEME}\" 🚪\n\nIdziesz przez cyrk, gdy nagle zauważasz coś niemożliwego... Czerwone drzwi z napisem 'WYJŚCIE'. Otwierasz je i trafiasz do nieskończonego labiryntu biurowych korytarzy. Pomni siedzi w kącie powtarzając, że to wszystko iluzja. Nagle słyszysz kroki cyfrowego potwora z kaset VHS.\nMusisz podjąć decyzję!\n\nA) Chwytasz Pomni za rękę i biegniesz na oślep przed siebie.\nB) Rozbijasz biurową jarzeniówkę, żeby stworzyć ciemność.\nC) Próbujesz negocjować z potworem, dając mu wirtualną kanapkę.\nD) Zamykasz oczy, zatykasz uszy i krzyczysz 'TO TYLKO VR!'.",
+                res: {
+                    "A": "Wpadacie na płaską teksturę ściany. Potwór dogania Was... ale okazuje się być tylko głupim żartem Jaxa w kostiumie!",
+                    "B": "W ciemności potwór gubi trop, ale Ty wpadasz na Kingera, który zbudował tu tajny fort. Przynajmniej żyjecie!",
+                    "C": "Potwór zjada kanapkę i dziękuje w języku BASIC. Okazuje się, że to Caine testował nowy moduł przygód.",
+                    "D": "System nie restartuje się, ale Twój krzyk aktywuje Bubble'a, który pożera potwora, po czym pęka. Triumf!"
+                }
+            },
+            {
+                text: "🐛 INWAZJA: \"{THEME}\" 🐛\n\nKatastrofa w Namiocie! Królowa Gloinków obudziła się i żąda zwrotu poddanych. Jax ukradł klucze do pokoi i zamknął się w wieży. Zooble znowu została rozebrana na części i jej noga kica gdzieś w oddali. Musisz powstrzymać inwazję, zanim Caine wróci z wakacji!\nJak uratujesz sytuację?!\n\nA) Używasz Gangle jako liny, by wspiąć się na wieżę Jaxa.\nB) Rzucasz się w tłum Gloinków ratować ramię Zooble.\nC) Wyzywasz Królową Gloinków na pojedynek taneczny.\nD) Chowasz się u Kingera i czekasz, aż problem zniknie.",
+                res: {
+                    "A": "Gangle płacze, bo pękła jej maska radości, ale udaje Ci się wejść! Jax jest w szoku i oddaje klucze. Bohater!",
+                    "B": "Gloinki oblepiają Cię całkowicie! Zamiast uratować Zooble, stajesz się wielką kulą z Gloinków toczącą się po Cyrku.",
+                    "C": "Zaczynasz tańczyć Breakdance! Królowa jest tak pod wrażeniem, że ogłasza Cię nowym królem cyfrowych owadów!",
+                    "D": "Twój pokój zostaje zasypany Gloinkami. Będziesz w nich spać przez najbliższe 3 wirtualne tygodnie."
+                }
+            }
+        ];
 
         const badWords = [ "kurw", "kurv", "jeb", "chuj", "huj", "pierdol", "pierdal", "piedol", "piedal", "spierd", "wypierd", "wypied", "zajeb", "zjeb", "dziwk", "suka", "szmat", "cwel", "pedał", "pedal", "pizd", "fiut", "rucha", "fuck", "shit", "bitch", "debil", "idiot", "kurna", "psiawoker" ];
 
@@ -257,12 +281,12 @@
                     if(d.type === "chat") {
                         showMsg(d.nick, d.text, d.color, d.admin);
                         
-                        // NASŁUCHIWANIE ODPOWIEDZI NA PRZYGODĘ (Tylko komputer Caine'a to sprawdza)
+                        // NASŁUCHIWANIE ODPOWIEDZI NA PRZYGODĘ LORE
                         if(isAdmin && activeAdventure) {
                             let ans = d.text.trim().toUpperCase();
                             if(['A','B','C','D'].includes(ans)) {
-                                sendData({type: "sys", text: `> GRACZ [${d.nick}] WYBRAŁ [${ans}]: ${advResults[ans]}`});
-                                activeAdventure = false; // Koniec przygody
+                                sendData({type: "sys", text: `> WYNIK DLA [${d.nick}] -> Opcja ${ans}:\n${currentAdvResults[ans]}`});
+                                activeAdventure = false; 
                             }
                         }
 
@@ -279,8 +303,6 @@
                 onSuccess: () => {
                     updateStatus(true); mqtt.subscribe(topic);
                     sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM 👑" : `[${user}] dołączył do Cyrku.`});
-                    
-                    // PING (Sygnał życia co 1s, bezpiecznie dla serwera)
                     setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin}); }, 1000);
                     activeUsers[user] = { time: Date.now(), isAdmin: isAdmin };
                 },
@@ -288,16 +310,15 @@
             });
         }
 
-        // ULTRA DOKŁADNE SPRAWDZANIE STATUSU CO 0.1 SEC (100ms)
+        // RADAR 0.1s
         setInterval(() => {
             const now = Date.now();
             let changed = false;
             for(let nick in activeUsers) {
-                if(now - activeUsers[nick].time > 3000) { // Jeśli ktoś nie pinguje przez 3 sekundy = znika
+                if(now - activeUsers[nick].time > 3000) { 
                     delete activeUsers[nick]; changed = true;
                 }
             }
-            // Aktualizuj UI co 0.1s
             updateActiveUsersUI();
         }, 100);
 
@@ -310,7 +331,7 @@
                 let color = activeUsers[nick].isAdmin ? "#ff0044" : "#00f2ff";
                 html += `<div><span style="color:${color}; font-weight:bold;">${icon} ${nick}</span> <span style="float:right; color:#00ff00;">● Online</span></div>`;
             }
-            if(uList.innerHTML !== html) uList.innerHTML = html; // Renderuj tylko jeśli zaszła zmiana
+            if(uList.innerHTML !== html) uList.innerHTML = html; 
             uBtn.innerText = `👥 Aktywni: ${count}`;
         }
 
@@ -351,7 +372,7 @@
             }
         }
 
-        function showSys(text) { const box = document.getElementById('chatBox'); box.innerHTML += `<div class="msg sys" style="white-space: pre-wrap;">${text}</div>`; requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; }); }
+        function showSys(text) { const box = document.getElementById('chatBox'); box.innerHTML += `<div class="msg sys" style="white-space: pre-wrap; text-align: left;">${text}</div>`; requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; }); }
 
         function handleChat() { const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return; if(isAdmin && text.startsWith('/')) { procCmd(text); input.value=""; return; } sendData({type:"chat", nick:user, text:text, color:userColor, admin:isAdmin}); input.value = ""; }
         function exeTop() { const input = document.getElementById('cmdInputTop'); let text = input.value.trim(); if(!text) return; if(!text.startsWith('/')) text = '/' + text; procCmd(text); input.value = ""; }
@@ -361,7 +382,7 @@
 
         function populateCmdWindow() {
             const list = document.getElementById('cmdList');
-            let html = `<div><span class="cmd-real">/przygoda</span> <span class="cmd-desc">Otwiera Generator Przygód AI.</span></div>`;
+            let html = `<div><span class="cmd-real">/przygoda</span> <span class="cmd-desc">Otwiera Generator Przygód LORE AI.</span></div>`;
             html += `<div><span class="cmd-real">/cmd</span> <span class="cmd-desc">Pokazuje tę listę.</span></div>`;
             html += `<div><span class="cmd-real">/clear</span> <span class="cmd-desc">Czyści czat (lokalnie).</span></div>`;
             effectList.forEach(e => html += `<div><span class="cmd-real">/${e}</span> <span class="cmd-desc">Globalny efekt wizualny.</span></div>`);
@@ -373,21 +394,28 @@
         function toggleUsers() { document.getElementById('usersWindow').classList.toggle('hidden'); }
         function toggleAdventure() { document.getElementById('adventureModal').classList.toggle('hidden'); }
 
-        // GENERATOR PRZYGÓD
+        // GENERATOR PRZYGÓD LORE TADC
         function fireAdventure() {
-            const theme = document.getElementById('advThemeInput').value.trim() || "Zgubiona Dusza";
-            toggleAdventure(); // Zamknij modal
+            const theme = document.getElementById('advThemeInput').value.trim() || "Cyfrowe Halucynacje";
+            toggleAdventure(); 
             
-            const advText = `🌑 KONTYNUACJA: "${theme.toUpperCase()}" 🌑\n\nStoisz przed drzwiami, na których widnieje napis: "TUTAJ MIESZKAJĄ TWOJE NIEZAPŁACONE RACHUNKI". Zza drzwi dobiega dźwięk skrobania pazurami o tablicę.\nJesteś tu SAM. Co robisz?!\n\nA) Kopiesz w drzwi i krzyczysz.\nB) Próbujesz przejść przez ścianę.\nC) Wyciągasz z kieszeni Lustro Prawdy.\nD) Rzucasz w drzwi Bańką.\n\n[Wpisz A, B, C lub D na czacie!]`;
+            // Losuj 1 z 3 epickich historii TADC
+            const template = loreTemplates[Math.floor(Math.random() * loreTemplates.length)];
             
-            sendData({type:"sys", text: advText});
-            activeAdventure = true; // Uruchom nasłuchiwanie
+            // Wstrzyknij temat do tytułu
+            const finalAdvText = template.text.replace("{THEME}", theme.toUpperCase()) + "\n\n[Wpisz A, B, C lub D na czacie!]";
+            
+            // Ustaw oczekiwane wyniki
+            currentAdvResults = template.res;
+            
+            sendData({type:"sys", text: finalAdvText});
+            activeAdventure = true; 
         }
 
         function procCmd(cmd) {
             cmd = cmd.toLowerCase();
             if(cmd === '/cmd' || cmd === '/help') { toggleCmd(); return; }
-            if(cmd === '/przygoda') { toggleAdventure(); return; } // NOWOŚĆ
+            if(cmd === '/przygoda') { toggleAdventure(); return; } 
             if(cmd === '/clear') { document.getElementById('chatBox').innerHTML = ""; return; }
             const foundEffect = effectList.find(e => cmd.includes(e));
             if(foundEffect) { sendData({type:"cmd", cmd:foundEffect}); sendData({type:"sys", text: `> CAINE AKTYWOWAŁ MODUŁ: [ ${foundEffect.toUpperCase()} ]`}); return;}
