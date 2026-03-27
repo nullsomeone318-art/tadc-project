@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Global Mainframe OS v14</title>
+    <title>TADC - Global Mainframe OS v15</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
         @keyframes crtFlicker { 0% { opacity: 0.98; } 50% { opacity: 0.94; } 100% { opacity: 1; } }
@@ -100,6 +100,7 @@
         #jailScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent, transparent 40px, #111 40px, #111 60px), repeating-linear-gradient(0deg, transparent, transparent 150px, #111 150px, #111 170px); z-index: 2500; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: inset 0 0 100px #000;}
         #jailScreen.active { opacity: 0.8; pointer-events: auto; }
 
+        /* INNE EFEKTY CSS GLOBALNE */
         .effect-glitch { animation: shake 0.1s infinite; filter: hue-rotate(90deg) invert(1); }
         @keyframes shake { 0% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 100% { transform: translate(5px, -5px); } }
         .effect-redalert { box-shadow: inset 0 0 150px rgba(255,0,0,0.8); }
@@ -169,9 +170,9 @@
         </div>
 
         <div id="adventureModal" class="popup-window hidden">
-            <div class="cmd-header"><span>🤖 GENERATOR PRZYGÓD TADC</span><button onclick="toggleAdventure()">[X]</button></div>
+            <div class="cmd-header"><span>🤖 MISTRZ GRY AI</span><button onclick="toggleAdventure()">[X]</button></div>
             <div class="cmd-list">
-                <p style="color:#00f2ff; margin-top:0;">Wpisz motyw przewodni horroru/przygody:</p>
+                <p style="color:#00f2ff; margin-top:0;">Wpisz motyw przewodni przygody:</p>
                 <input type="text" id="advThemeInput" placeholder="np. Zgubieni w Biurach...">
                 <button id="advBtn" onclick="fireAdventure()">WYŚLIJ GRACZOM</button>
             </div>
@@ -225,44 +226,77 @@
 
         // --- MQTT & SYSTEM 0.1s ---
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v14"; 
+        const topic = "cyfrowycyrk/globalchat/final_v15"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let activeUsers = {}; 
 
-        // STAN PRZYGODY LORE
+        // STAN PRZYGODY LORE I WOREK LOSUJĄCY
         let activeAdventure = false;
         let currentAdvResults = {};
+        let advPool = [];
 
-        // 3 POTĘŻNE SZABLONY PRZYGÓD W CYRKU
+        // 6 POTĘŻNYCH SZABLONÓW PRZYGÓD
         const loreTemplates = [
             {
-                text: "🎪 CYFROWA PRZYGODA: \"{THEME}\" 🎪\n\nBłąkasz się po korytarzach Namiotu, gdy nagle podłoga pod Twoimi stopami zaczyna przypominać glitczującą się szachownicę. Z oddali słyszysz obłąkańczy śmiech... to Kaufmo, a raczej to, co z niego zostało po Abstrakcji! Jax uciekł, zostawiając Cię na pastwę losu.\nCo robisz w tej beznadziejnej sytuacji?!\n\nA) Rzucasz w Zabstraktyzowanego Kaufmo przypadkowym Gloinkiem.\nB) Próbujesz zhakować panel podłogowy, żeby uciec.\nC) Udajesz, że też uległeś Abstrakcji, machając rękami.\nD) Skaczesz prosto w Pustkę (The Void).",
+                text: "🎪 CYFROWA PRZYGODA: \"{THEME}\" 🎪\n\nKorytarze Namiotu wydają się dziś węższe. {GROUP_TEXT} Nagle podłoga pod waszymi stopami zaczyna przypominać glitczującą się szachownicę. Z oddali słychać obłąkańczy śmiech... to Zabstraktyzowany Kaufmo!\nCo robicie?!\n\nA) Rzucacie w Kaufmo przypadkowym Gloinkiem.\nB) Próbujecie zhakować panel podłogowy.\nC) Udajecie Abstrakcję, wymachując rękami.\nD) Skaczecie prosto w Pustkę (The Void).",
                 res: {
-                    "A": "Gloink zostaje wchłonięty, a potwór patrzy na Ciebie z wyrzutem. Uciekasz, ale gubisz cyfrowego buta!",
-                    "B": "Haker z Ciebie żaden, ale podłoga pęka i wpadasz prosto do basenu z cyfrowymi piłeczkami. Bezpieczny!",
-                    "C": "Potwór patrzy na Ciebie, puka się w głowę i odchodzi. Twój plan był tak głupi, że aż zadziałał!",
-                    "D": "Spadasz i spadasz... Caine musi użyć uprawnień admina, by wyciągnąć Cię za fraki z Nicości. -10 pkt godności."
+                    "A": "Gloink zostaje wchłonięty, a potwór patrzy na Was z wyrzutem. Uciekacie, ale gubicie wirtualne buty!",
+                    "B": "Podłoga pęka i wpadacie prosto do basenu z cyfrowymi piłeczkami. Caine jest zły, że zrobiliście bałagan.",
+                    "C": "Potwór patrzy na Was, puka się w głowę i odchodzi. Wasz plan był tak głupi, że aż zadziałał!",
+                    "D": "Spadacie i spadacie... Caine musi użyć komendy /noclip, by Was wyciągnąć. -10 pkt godności."
                 }
             },
             {
-                text: "🚪 KOSZMAR WYJŚCIA: \"{THEME}\" 🚪\n\nIdziesz przez cyrk, gdy nagle zauważasz coś niemożliwego... Czerwone drzwi z napisem 'WYJŚCIE'. Otwierasz je i trafiasz do nieskończonego labiryntu biurowych korytarzy. Pomni siedzi w kącie powtarzając, że to wszystko iluzja. Nagle słyszysz kroki cyfrowego potwora z kaset VHS.\nMusisz podjąć decyzję!\n\nA) Chwytasz Pomni za rękę i biegniesz na oślep przed siebie.\nB) Rozbijasz biurową jarzeniówkę, żeby stworzyć ciemność.\nC) Próbujesz negocjować z potworem, dając mu wirtualną kanapkę.\nD) Zamykasz oczy, zatykasz uszy i krzyczysz 'TO TYLKO VR!'.",
+                text: "🚪 KOSZMAR WYJŚCIA: \"{THEME}\" 🚪\n\nPrzechadzacie się po Cyrku, gdy nagle widzicie... Czerwone drzwi z napisem 'WYJŚCIE'. Otwieracie je i wpadacie do nieskończonych biur. {GROUP_TEXT} Pomni siedzi w kącie panikując. Nagle słychać kroki cyfrowego potwora!\nJak reagujecie?!\n\nA) Łapiecie Pomni i biegniecie na oślep.\nB) Rozbijacie jarzeniówki, żeby stworzyć ciemność.\nC) Próbujecie przekupić potwora wirtualną kanapką.\nD) Zamykacie oczy i krzyczycie 'TO TYLKO VR!'.",
                 res: {
-                    "A": "Wpadacie na płaską teksturę ściany. Potwór dogania Was... ale okazuje się być tylko głupim żartem Jaxa w kostiumie!",
-                    "B": "W ciemności potwór gubi trop, ale Ty wpadasz na Kingera, który zbudował tu tajny fort. Przynajmniej żyjecie!",
-                    "C": "Potwór zjada kanapkę i dziękuje w języku BASIC. Okazuje się, że to Caine testował nowy moduł przygód.",
-                    "D": "System nie restartuje się, ale Twój krzyk aktywuje Bubble'a, który pożera potwora, po czym pęka. Triumf!"
+                    "A": "Wpadacie na płaską teksturę ściany. Potwór dogania Was... ale to tylko Jax w strasznym kostiumie!",
+                    "B": "W ciemności wpadacie na Kingera, który zbudował tu tajny fort. Przynajmniej żyjecie!",
+                    "C": "Potwór zjada kanapkę. Okazuje się, że to Caine testował nowy silnik NPC.",
+                    "D": "Twój krzyk aktywuje Bubble'a, który pożera potwora, po czym pęka. Triumf!"
                 }
             },
             {
-                text: "🐛 INWAZJA: \"{THEME}\" 🐛\n\nKatastrofa w Namiocie! Królowa Gloinków obudziła się i żąda zwrotu poddanych. Jax ukradł klucze do pokoi i zamknął się w wieży. Zooble znowu została rozebrana na części i jej noga kica gdzieś w oddali. Musisz powstrzymać inwazję, zanim Caine wróci z wakacji!\nJak uratujesz sytuację?!\n\nA) Używasz Gangle jako liny, by wspiąć się na wieżę Jaxa.\nB) Rzucasz się w tłum Gloinków ratować ramię Zooble.\nC) Wyzywasz Królową Gloinków na pojedynek taneczny.\nD) Chowasz się u Kingera i czekasz, aż problem zniknie.",
+                text: "🐛 INWAZJA: \"{THEME}\" 🐛\n\nKatastrofa w Namiocie! Królowa Gloinków obudziła się! {GROUP_TEXT} Jax ukradł klucze do pokoi i zamknął się w wieży. Zooble znowu została rozebrana na części i jej noga kica gdzieś w oddali. Caine'a nie ma!\nJak uratujecie sytuację?!\n\nA) Używacie Gangle jako liny, by wejść na wieżę.\nB) Rzucacie się w tłum Gloinków ratować ramię Zooble.\nC) Wyzywacie Królową Gloinków na Dance Battle.\nD) Chowacie się u Kingera i czekacie.",
                 res: {
-                    "A": "Gangle płacze, bo pękła jej maska radości, ale udaje Ci się wejść! Jax jest w szoku i oddaje klucze. Bohater!",
-                    "B": "Gloinki oblepiają Cię całkowicie! Zamiast uratować Zooble, stajesz się wielką kulą z Gloinków toczącą się po Cyrku.",
-                    "C": "Zaczynasz tańczyć Breakdance! Królowa jest tak pod wrażeniem, że ogłasza Cię nowym królem cyfrowych owadów!",
-                    "D": "Twój pokój zostaje zasypany Gloinkami. Będziesz w nich spać przez najbliższe 3 wirtualne tygodnie."
+                    "A": "Gangle płacze, bo pękła jej maska, ale dajecie radę! Jax oddaje klucze. Jesteście bohaterami!",
+                    "B": "Gloinki oblepiają Was całkowicie! Stajecie się wielką kulą toczącą się po Cyrku.",
+                    "C": "Zaczynacie tańczyć Breakdance! Królowa jest w szoku i ogłasza Was nowymi lordami owadów!",
+                    "D": "Wasz pokój zostaje zasypany Gloinkami. Będziecie w nich spać przez najbliższe 3 wirtualne tygodnie."
+                }
+            },
+            {
+                text: "🌊 USTERKA NA JEZIORZE: \"{THEME}\" 🌊\n\nCaine wysłał Was nad Cyfrowe Jezioro na 'relaks'. {GROUP_TEXT} Woda nagle zmienia kolor na neonowo-zielony, a tekstury zaczynają się rozmazywać. Z głębin wyłania się gigantyczne ramię z kodem binarnym!\nSzybko, co robicie?!\n\nA) Próbujecie wypić jezioro, żeby zniszczyć potwora.\nB) Wołacie Bubble'a na pomoc.\nC) Rzucacie Jaxem w macki potwora.\nD) Uciekacie na wirtualnej motorówce.",
+                res: {
+                    "A": "Twój awatar dostaje błędu przepełnienia bufora. Zaczynasz świecić w ciemności!",
+                    "B": "Bubble pojawia się, mówi 'Smacznego!' i zlizuje kod z macki. Potwór znika.",
+                    "C": "Jax w locie rzuca ripostą, a macka odrzuca go z powrotem na brzeg. Przynajmniej było zabawnie.",
+                    "D": "Motorówka wbija się w niewidzialną ścianę mapy. Utknęliście w teksturze góry."
+                }
+            },
+            {
+                text: "🎡 KOSZMARNY KARNAWAŁ: \"{THEME}\" 🎡\n\nCyrkowe Wesołe Miasteczko zwariowało. {GROUP_TEXT} Karuzele kręcą się z prędkością światła, a z głośników leci dziwna, odwrócona muzyka. Zauważacie, że z Namiotu Luster wyszedł ktoś, kto wygląda DOKŁADNIE tak samo jak wy, ale ma czerwone oczy!\nJak postąpicie?!\n\nA) Wyzywacie klony na pojedynek na spojrzenia.\nB) Hakujecie system zasilania karuzeli.\nC) Udajecie manekiny, żeby ich zmylić.\nD) Pytacie klonów, czy mają pożyczyć 5 wirtualnych dolców.",
+                res: {
+                    "A": "Klony mrugają pierwsze! Z żalu rozpadają się na piksele. Wygraliście psychologiczną wojnę.",
+                    "B": "Zamiast wyłączyć karuzelę, włączacie tryb 'Turbo'. Wszyscy wymiotują cyfrowym konfetti.",
+                    "C": "Klony podchodzą, malują wam wąsy cyfrowym markerem i odchodzą. Sukces, ale z hańbą.",
+                    "D": "Klony patrzą z obrzydzeniem, mówią, że jesteście spłukani nawet w VR i wracają do lustra."
+                }
+            },
+            {
+                text: "🌑 PIWNICA: \"{THEME}\" 🌑\n\nZeszliście za głęboko. {GROUP_TEXT} W Piwnicy leżą dziesiątki wyciszonych dusz. Nagle gasną jedyne jarzeniówki. W absolutnej ciemności słyszycie cichy szept: 'Caine kłamał...'.\nCo robicie w mroku?!\n\nA) Zapalacie wirtualną latarkę z ekwipunku.\nB) Płaczecie i wzywacie Ragathę.\nC) Próbujecie wejść w interakcję z wyciszonymi ciałami.\nD) Krzyczycie: 'Caine, wiemy, co ukrywasz!'.",
+                res: {
+                    "A": "Światło ukazuje Jaxa ze straszną maską. 'Ale daliście się nabrać!' - śmieje się i ucieka.",
+                    "B": "Ragatha nie przychodzi, ale Kinger rzuca wam z góry linę zrobioną z prześcieradeł. Uratowani!",
+                    "C": "Wyciszone ciało nagle otwiera jedno oko i daje wam 'kciuk w górę'. Przerażające, ale miłe.",
+                    "D": "Ekran zamraża się, pojawia się wielki czerwony błąd i po chwili respawnujecie się w swoich pokojach. Caine usłyszał."
                 }
             }
         ];
+
+        function fillAdvPool() {
+            advPool = [0, 1, 2, 3, 4, 5];
+            advPool.sort(() => Math.random() - 0.5); // Tasowanie przygód
+        }
 
         const badWords = [ "kurw", "kurv", "jeb", "chuj", "huj", "pierdol", "pierdal", "piedol", "piedal", "spierd", "wypierd", "wypied", "zajeb", "zjeb", "dziwk", "suka", "szmat", "cwel", "pedał", "pedal", "pizd", "fiut", "rucha", "fuck", "shit", "bitch", "debil", "idiot", "kurna", "psiawoker" ];
 
@@ -281,11 +315,11 @@
                     if(d.type === "chat") {
                         showMsg(d.nick, d.text, d.color, d.admin);
                         
-                        // NASŁUCHIWANIE ODPOWIEDZI NA PRZYGODĘ LORE
+                        // NASŁUCHIWANIE ODPOWIEDZI NA PRZYGODĘ
                         if(isAdmin && activeAdventure) {
                             let ans = d.text.trim().toUpperCase();
                             if(['A','B','C','D'].includes(ans)) {
-                                sendData({type: "sys", text: `> WYNIK DLA [${d.nick}] -> Opcja ${ans}:\n${currentAdvResults[ans]}`});
+                                sendData({type: "sys", text: `> WYNIK DLA [${d.nick}] -> Wybrano ${ans}:\n${currentAdvResults[ans]}`});
                                 activeAdventure = false; 
                             }
                         }
@@ -343,6 +377,7 @@
         function start(adminState) {
             isAdmin = adminState; user = (isAdmin ? "CAINE" : (document.getElementById('nickInput').value.trim() || "Zguba")).toUpperCase();
             document.getElementById('step-1').classList.add('hidden'); document.getElementById('step-2').classList.remove('hidden');
+            fillAdvPool(); // Przygotuj przygody
             initMQTT(); populateCmdWindow();
             let p = 0; const fill = document.getElementById('progressFill');
             const interval = setInterval(() => { p += 5; fill.style.width = p + "%"; if(p >= 100) { clearInterval(interval); document.getElementById('step-2').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); document.getElementById('usersBtn').classList.remove('hidden'); if(isAdmin) { document.getElementById('caineTerminal').classList.remove('hidden'); } } }, 60);
@@ -394,22 +429,29 @@
         function toggleUsers() { document.getElementById('usersWindow').classList.toggle('hidden'); }
         function toggleAdventure() { document.getElementById('adventureModal').classList.toggle('hidden'); }
 
-        // GENERATOR PRZYGÓD LORE TADC
+        // GENERATOR PRZYGÓD TADC (Z ADAPTACJĄ DUSZ)
         function fireAdventure() {
-            const theme = document.getElementById('advThemeInput').value.trim() || "Cyfrowe Halucynacje";
+            const theme = document.getElementById('advThemeInput').value.trim() || "Zgubieni w Kodzie";
             toggleAdventure(); 
             
-            // Losuj 1 z 3 epickich historii TADC
-            const template = loreTemplates[Math.floor(Math.random() * loreTemplates.length)];
+            // Ile osób gra? Zabezpieczenie minimum 1.
+            const pCount = Math.max(1, Object.keys(activeUsers).length);
+            const groupText = pCount === 1 ? "Jesteś tu zupełnie SAM, bez nadziei na ratunek." : `Jest was tu dokładnie ${pCount} przerażonych dusz, tłoczących się w strachu.`;
             
-            // Wstrzyknij temat do tytułu
-            const finalAdvText = template.text.replace("{THEME}", theme.toUpperCase()) + "\n\n[Wpisz A, B, C lub D na czacie!]";
+            // Losuj z puli bez powtórzeń
+            if(advPool.length === 0) fillAdvPool(); // Jeśli pusto, napełnij i przetasuj
             
-            // Ustaw oczekiwane wyniki
+            const templateIndex = advPool.pop(); // Wyciągnij ostatnią liczbę z potasowanej tablicy
+            const template = loreTemplates[templateIndex];
+            
+            // Zastąp zmienne w tekście
+            const finalAdvText = template.text
+                .replace("{THEME}", theme.toUpperCase())
+                .replace("{GROUP_TEXT}", groupText) + "\n\n[Wpisz A, B, C lub D na czacie!]";
+            
             currentAdvResults = template.res;
-            
-            sendData({type:"sys", text: finalAdvText});
             activeAdventure = true; 
+            sendData({type:"sys", text: finalAdvText});
         }
 
         function procCmd(cmd) {
