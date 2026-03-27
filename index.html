@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Global Mainframe OS v10</title>
+    <title>TADC - Global Mainframe OS v11</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
         @keyframes crtFlicker { 0% { opacity: 0.98; } 50% { opacity: 0.94; } 100% { opacity: 1; } }
@@ -316,7 +316,8 @@
         function exeTop() { const input = document.getElementById('cmdInputTop'); let text = input.value.trim(); if(!text) return; if(!text.startsWith('/')) text = '/' + text; procCmd(text); input.value = ""; }
 
         // --- BAZA KOMEND ---
-        const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "squish", "stretch", "dance", "zoom", "grayscale", "confetti", "jail", "gravity"];
+        // DODANO UNJAIL
+        const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "squish", "stretch", "dance", "zoom", "grayscale", "confetti", "jail", "unjail", "gravity"];
         
         const loreCommands = [
             { c: "/ragatha", d: "Ragatha próbuje utrzymać wszystkich w ryzach." },
@@ -382,7 +383,9 @@
             else if(cmd === "gloink") { createFallingEntities("gloink"); }
             else if(cmd === "confetti") { createFallingEntities("confetti"); } 
             
-            else if(cmd === "jail") { jail.classList.add('active'); setTimeout(() => jail.classList.remove('active'), 6000); }
+            else if(cmd === "jail") { jail.classList.add('active'); } // Więzienie na zawsze!
+            else if(cmd === "unjail") { jail.classList.remove('active'); } // Zdejmuje kratę
+            
             else if(cmd === "gravity") { chatCont.classList.add('effect-gravity'); setTimeout(() => chatCont.classList.remove('effect-gravity'), 5000); }
             
             else if(cmd === "censor") { c.classList.add('active'); setTimeout(() => c.classList.remove('active'), 2500); }
