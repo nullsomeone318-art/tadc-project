@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Global Mainframe OS v11</title>
+    <title>TADC - Global Mainframe OS v13</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
         @keyframes crtFlicker { 0% { opacity: 0.98; } 50% { opacity: 0.94; } 100% { opacity: 1; } }
@@ -36,15 +36,14 @@
         .progress-bar-container { width: 100%; height: 20px; border: 2px solid #00f2ff; margin-top: 20px; background: #111; overflow: hidden; border-radius: 5px;}
         .progress-fill { height: 100%; width: 0%; background: repeating-linear-gradient(45deg, #00f2ff, #00f2ff 10px, #0099ff 10px, #0099ff 20px); transition: width 0.2s; }
 
-        /* INTERFEJS CZATU */
         #dashboard { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 60; display: flex; flex-direction: column; transition: 0.5s;}
         
         #caineTerminal { background: rgba(255, 0, 68, 0.95); padding: 10px; display: flex; gap: 5px; justify-content: center; border-bottom: 2px solid #fff; flex-shrink: 0; animation: breatheGlow 3s infinite ease-in-out; z-index: 10;}
         #caineTerminal input { margin: 0; background: #000; border: 1px solid #fff; color: #fff; width: 70%; padding: 8px;}
         #caineTerminal button { width: 30%; background: #000; padding: 8px; border: 1px solid #fff; color: #fff;}
 
-        /* OKNO CMD */
-        #cmdWindow { 
+        /* WSPÓLNY STYL OKIENEK POPUP */
+        .popup-window { 
             position: absolute; top: 15%; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px;
             background: rgba(5, 5, 10, 0.98); border: 2px solid #00f2ff; border-radius: 8px;
             z-index: 2000; display: flex; flex-direction: column; box-shadow: 0 0 40px rgba(0, 242, 255, 0.5);
@@ -57,6 +56,11 @@
         .cmd-real { color: #f9e11e; font-weight: bold; font-size: 14px; }
         .cmd-desc { color: #aaa; font-style: italic; margin-top: 3px;}
 
+        /* OKNO GENERATORA PRZYGÓD */
+        #adventureModal .cmd-list { padding: 20px; text-align: center; }
+        #advThemeInput { width: 90%; padding: 10px; margin-bottom: 15px; border: 1px solid #f9e11e; background: #111; color: #fff; font-weight: bold;}
+        #advBtn { background: #f9e11e; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px;}
+
         .chat-box { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scrollbar-width: thin; scrollbar-color: #00f2ff #111; padding-right: 5px;}
         
         @keyframes popIn { from { opacity: 0; transform: translateY(15px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
@@ -66,7 +70,6 @@
         .msg.caine { border-left: 3px solid #ff0044; background: rgba(255,0,68,0.15); font-weight: bold; animation: popIn 0.3s forwards, caineShake 0.1s infinite; }
         .msg.sys { border-left: 3px solid #f9e11e; color: #f9e11e; font-style: italic; background: rgba(249,225,30,0.15); width: 100%; max-width: 100%; text-align: center; animation: popIn 0.3s forwards, textBlink 1.5s infinite; border-right: 3px solid #f9e11e;}
 
-        /* INLINE CENZURA */
         .inline-censor { height: 2.2em; vertical-align: middle; border-radius: 4px; border: 1px solid #ff0044; margin: 0 4px; transform: rotate(-3deg); animation: crtFlicker 0.2s infinite, miniShake 0.1s infinite; }
 
         .chat-container { flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 15px; padding-bottom: 80px; transition: transform 2s ease-in-out; }
@@ -83,7 +86,6 @@
             .chat-controls button { border-radius: 8px; padding: 12px 25px; }
         }
 
-        /* POPUPY I GLOINKI */
         .hologram-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 350px; z-index: 1000; border: none; border-radius: 0; box-shadow: 0 0 60px 10px rgba(255, 0, 68, 0.7); transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); pointer-events: none; opacity: 0; }
         .hologram-popup.active { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 
@@ -91,18 +93,15 @@
         .falling-gloink { position: fixed; top: -10vh; width: 60px; height: 60px; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 5px #ff0044); animation: entityFall 3s linear forwards; }
         .falling-confetti { position: fixed; top: -10vh; width: 10px; height: 10px; border-radius: 50%; z-index: 1001; pointer-events: none; animation: entityFall 2s linear forwards; }
 
-        /* DUŻA CENZURA EKRANU */
         #censorBar { position: fixed; top: 50%; left: 0; width: 100%; height: 120px; background: repeating-linear-gradient(45deg, #000, #000 20px, #fff 20px, #fff 40px); transform: translateY(-50%) scaleY(0); z-index: 3000; display: flex; justify-content: center; align-items: center; transition: 0.1s; pointer-events: none;}
         #censorBar.active { transform: translateY(-50%) scaleY(1); pointer-events: auto;}
         #censorBar span { background: #ff0044; color: #fff; padding: 10px 30px; font-size: 40px; font-weight: bold; border: 4px solid #000; text-transform: uppercase; transform: rotate(-5deg); letter-spacing: 5px; animation: textBlink 0.5s infinite;}
 
-        /* NOWOŚĆ: EFEKTY WIZUALNE (CENZURA VIGNETTE + KRATY) */
         .effect-censor-alert { box-shadow: inset 0 0 100px rgba(255,0,0,0.8); transition: 0.2s; }
-        
         #jailScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent, transparent 40px, #111 40px, #111 60px), repeating-linear-gradient(0deg, transparent, transparent 150px, #111 150px, #111 170px); z-index: 2500; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: inset 0 0 100px #000;}
         #jailScreen.active { opacity: 0.8; pointer-events: auto; }
 
-        /* INNE EFEKTY CSS GLOBALNE */
+        /* EFEKTY CSS GLOBALNE */
         .effect-glitch { animation: shake 0.1s infinite; filter: hue-rotate(90deg) invert(1); }
         @keyframes shake { 0% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 100% { transform: translate(5px, -5px); } }
         .effect-redalert { box-shadow: inset 0 0 150px rgba(255,0,0,0.8); }
@@ -119,10 +118,11 @@
         @keyframes danceAnim { 0% {transform: translateY(0) rotate(0);} 25% {transform: translateY(-15px) rotate(5deg);} 75% {transform: translateY(15px) rotate(-5deg);} 100% {transform: translateY(0) rotate(0);} }
         .effect-gravity { transform: translateY(-30vh) rotate(5deg); }
 
-        /* HUD STATYSTYKI */
-        .hud-top { position: fixed; top: 10px; left: 10px; font-size: 12px; font-weight: bold; z-index: 110; color: #fff; text-shadow: 1px 1px #000; display: flex; flex-direction: column; gap: 5px; opacity: 0.7;}
+        .hud-top { position: fixed; top: 10px; left: 10px; font-size: 12px; font-weight: bold; z-index: 110; color: #fff; text-shadow: 1px 1px #000; display: flex; flex-direction: column; gap: 8px; opacity: 0.9;}
         .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: red; margin-right: 5px; box-shadow: 0 0 5px red;}
         .status-dot.online { background: #00ff00; box-shadow: 0 0 5px #00ff00; }
+        .users-btn { background: rgba(0,0,0,0.6); padding: 5px 10px; border: 1px solid #00f2ff; border-radius: 5px; cursor: pointer; color: #00f2ff; transition: 0.2s;}
+        .users-btn:hover { background: #00f2ff; color: #000; }
         .audio-btn { position: fixed; top: 10px; right: 10px; font-size: 24px; z-index: 110; cursor: pointer; text-shadow: 0 0 10px #00f2ff; animation: audioPulse 1.5s infinite;}
     </style>
 </head>
@@ -131,9 +131,11 @@
     <div class="scanlines"></div>
     <img id="hologramImg" class="hologram-popup" src="" alt="Entity">
     <div id="censorBar"><span>CENZURA</span></div>
-    
-    <div id="jailScreen"></div> <div class="hud-top">
+    <div id="jailScreen"></div>
+
+    <div class="hud-top">
         <div id="serverStatus"><span id="sDot" class="status-dot"></span><span id="sText">Rozłączono</span></div>
+        <div id="usersBtn" class="users-btn hidden" onclick="toggleUsers()">👥 Aktywni: 0</div>
     </div>
     <div class="audio-btn" id="audioBtn" onclick="toggleMusic()">🔇</div>
     
@@ -159,16 +161,27 @@
 
     <div id="dashboard" class="hidden">
         <div id="caineTerminal" class="hidden">
-            <input type="text" id="cmdInputTop" placeholder="Wpisz komendę (np. /cmd) ...">
+            <input type="text" id="cmdInputTop" placeholder="Wpisz komendę (np. /przygoda) ...">
             <button onclick="exeTop()">WYKONAJ</button>
         </div>
 
-        <div id="cmdWindow" class="hidden">
-            <div class="cmd-header">
-                <span>💻 BAZA DANYCH ROOT</span>
-                <button onclick="toggleCmd()">ZWIŃ [X]</button>
-            </div>
+        <div id="cmdWindow" class="popup-window hidden">
+            <div class="cmd-header"><span>💻 BAZA DANYCH ROOT</span><button onclick="toggleCmd()">[X]</button></div>
             <div id="cmdList" class="cmd-list"></div>
+        </div>
+
+        <div id="adventureModal" class="popup-window hidden">
+            <div class="cmd-header"><span>🤖 AI GENERATOR PRZYGÓD</span><button onclick="toggleAdventure()">[X]</button></div>
+            <div class="cmd-list">
+                <p style="color:#00f2ff; margin-top:0;">Wpisz temat dla graczy:</p>
+                <input type="text" id="advThemeInput" placeholder="np. Bezimienny Strach...">
+                <button id="advBtn" onclick="fireAdventure()">GENERUJ I WYŚLIJ</button>
+            </div>
+        </div>
+
+        <div id="usersWindow" class="popup-window hidden">
+            <div class="cmd-header"><span>🟢 ZAREJESTROWANE DUSZE</span><button onclick="toggleUsers()">[X]</button></div>
+            <div id="usersList" class="cmd-list"></div>
         </div>
 
         <div class="chat-container" id="chatContainer">
@@ -181,23 +194,18 @@
     </div>
 
     <script>
-        // --- ZARZĄDZANIE DŹWIĘKIEM I CENZURĄ ---
         const music = document.getElementById('bgMusic');
         const censorAudio = document.getElementById('censorAudio');
         const audioBtn = document.getElementById('audioBtn');
         let audioAllowed = false;
         let isCensoring = false;
 
-        music.volume = 0.3; // Zciszona muzyka główna (30%)
-        censorAudio.volume = 1.0; // Dźwięk niewolno na 100%
+        music.volume = 0.3; 
+        censorAudio.volume = 1.0; 
 
         function toggleMusic() {
-            if (music.paused) { 
-                if(!isCensoring) music.play(); 
-                audioBtn.innerText = '🔊'; audioAllowed = true;
-            } else { 
-                music.pause(); audioBtn.innerText = '🔇'; 
-            }
+            if (music.paused) { if(!isCensoring) music.play(); audioBtn.innerText = '🔊'; audioAllowed = true;} 
+            else { music.pause(); audioBtn.innerText = '🔇'; }
         }
 
         document.body.addEventListener('click', () => {
@@ -205,43 +213,38 @@
         }, {once: true});
 
         function triggerNiewolno() {
-            if(isCensoring) {
-                censorAudio.currentTime = 0; // Nie stakuj, zacznij od nowa
-                return;
-            }
-            
+            if(isCensoring) { censorAudio.currentTime = 0; return; }
             isCensoring = true;
             const wasPlaying = !music.paused;
-            music.pause(); // Wycisz muzykę z cyrku
-            
+            music.pause(); 
             censorAudio.play().catch(e => console.log(e));
-            document.body.classList.add('effect-censor-alert'); // Czerwone rogi ekranu
-            
+            document.body.classList.add('effect-censor-alert'); 
             censorAudio.onended = () => {
-                isCensoring = false;
-                document.body.classList.remove('effect-censor-alert');
-                if (wasPlaying && audioAllowed) music.play(); // Wznów muzykę z cyrku
+                isCensoring = false; document.body.classList.remove('effect-censor-alert');
+                if (wasPlaying && audioAllowed) music.play(); 
             };
         }
 
-        // --- MQTT ---
+        // --- MQTT & SYSTEM 0.1s ---
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v10"; 
-        let user = ""; 
-        let isAdmin = false; 
-        let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
+        const topic = "cyfrowycyrk/globalchat/final_v13"; 
+        let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
+        let activeUsers = {}; 
 
-        const badWords = [
-            "kurw", "kurv", "jeb", "chuj", "huj", "pierdol", "pierdal", "piedol", "piedal", 
-            "spierd", "wypierd", "wypied", "zajeb", "zjeb", "dziwk", "suka", "szmat", "cwel", 
-            "pedał", "pedal", "pizd", "fiut", "rucha", "fuck", "shit", "bitch", "debil", 
-            "idiot", "kurna", "psiawoker"
-        ];
+        // STAN PRZYGODY AI
+        let activeAdventure = false;
+        const advResults = {
+            "A": "Kopnąłeś w drzwi! Zza ściany wyszedł potwór i... zapytał, czy masz pożyczyć trochę cukru. Uff!",
+            "B": "Uderzyłeś głową w ścianę. System zaktualizował Twój status na: 'Lekki wstrząs mózgu'.",
+            "C": "Lustro pękło! Twoja fryzura była zbyt potężna dla tego wymiaru.",
+            "D": "Bańka wybuchła! Usłyszałeś beknięcie Gloinka i drzwi otworzyły się same."
+        };
+
+        const badWords = [ "kurw", "kurv", "jeb", "chuj", "huj", "pierdol", "pierdal", "piedol", "piedal", "spierd", "wypierd", "wypied", "zajeb", "zjeb", "dziwk", "suka", "szmat", "cwel", "pedał", "pedal", "pizd", "fiut", "rucha", "fuck", "shit", "bitch", "debil", "idiot", "kurna", "psiawoker" ];
 
         function updateStatus(online) {
             const dot = document.getElementById('sDot'); const txt = document.getElementById('sText');
-            if(online) { dot.classList.add('online'); txt.innerText = "Sieć: OK"; }
-            else { dot.classList.remove('online'); txt.innerText = "Szukanie..."; }
+            if(online) { dot.classList.add('online'); txt.innerText = "Sieć: OK"; } else { dot.classList.remove('online'); txt.innerText = "Szukanie..."; }
         }
 
         function initMQTT() {
@@ -251,9 +254,24 @@
             mqtt.onMessageArrived = (m) => {
                 try {
                     const d = JSON.parse(m.payloadString);
-                    if(d.type === "chat") showMsg(d.nick, d.text, d.color, d.admin);
+                    if(d.type === "chat") {
+                        showMsg(d.nick, d.text, d.color, d.admin);
+                        
+                        // NASŁUCHIWANIE ODPOWIEDZI NA PRZYGODĘ (Tylko komputer Caine'a to sprawdza)
+                        if(isAdmin && activeAdventure) {
+                            let ans = d.text.trim().toUpperCase();
+                            if(['A','B','C','D'].includes(ans)) {
+                                sendData({type: "sys", text: `> GRACZ [${d.nick}] WYBRAŁ [${ans}]: ${advResults[ans]}`});
+                                activeAdventure = false; // Koniec przygody
+                            }
+                        }
+
+                    }
                     else if(d.type === "sys") showSys(d.text);
                     else if(d.type === "cmd") runEff(d.cmd);
+                    else if(d.type === "ping") {
+                        activeUsers[d.nick] = { time: Date.now(), isAdmin: d.admin };
+                    }
                 } catch(e) {}
             };
             mqtt.connect({
@@ -261,15 +279,44 @@
                 onSuccess: () => {
                     updateStatus(true); mqtt.subscribe(topic);
                     sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM 👑" : `[${user}] dołączył do Cyrku.`});
+                    
+                    // PING (Sygnał życia co 1s, bezpiecznie dla serwera)
+                    setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin}); }, 1000);
+                    activeUsers[user] = { time: Date.now(), isAdmin: isAdmin };
                 },
                 onFailure: () => { updateStatus(false); }
             });
         }
 
+        // ULTRA DOKŁADNE SPRAWDZANIE STATUSU CO 0.1 SEC (100ms)
+        setInterval(() => {
+            const now = Date.now();
+            let changed = false;
+            for(let nick in activeUsers) {
+                if(now - activeUsers[nick].time > 3000) { // Jeśli ktoś nie pinguje przez 3 sekundy = znika
+                    delete activeUsers[nick]; changed = true;
+                }
+            }
+            // Aktualizuj UI co 0.1s
+            updateActiveUsersUI();
+        }, 100);
+
+        function updateActiveUsersUI() {
+            const uList = document.getElementById('usersList'); const uBtn = document.getElementById('usersBtn');
+            let html = ""; let count = 0;
+            for(let nick in activeUsers) {
+                count++;
+                let icon = activeUsers[nick].isAdmin ? "👑" : "👤";
+                let color = activeUsers[nick].isAdmin ? "#ff0044" : "#00f2ff";
+                html += `<div><span style="color:${color}; font-weight:bold;">${icon} ${nick}</span> <span style="float:right; color:#00ff00;">● Online</span></div>`;
+            }
+            if(uList.innerHTML !== html) uList.innerHTML = html; // Renderuj tylko jeśli zaszła zmiana
+            uBtn.innerText = `👥 Aktywni: ${count}`;
+        }
+
         function sendData(obj) { if(mqtt && mqtt.isConnected()) { const msg = new Paho.MQTT.Message(JSON.stringify(obj)); msg.destinationName = topic; mqtt.send(msg); } }
 
         function checkIfCaine() { const v = document.getElementById('nickInput').value.trim().toLowerCase(); if(v === 'caine') { document.getElementById('startBtn').classList.add('hidden'); document.getElementById('admin-login').classList.remove('hidden'); } else { document.getElementById('startBtn').classList.remove('hidden'); document.getElementById('admin-login').classList.add('hidden'); } }
-
         function loginAdmin() { if(document.getElementById('pinInput').value === "2222") start(true); else { alert("ODMOWA DOSTĘPU."); document.getElementById('pinInput').value = "";} }
 
         function start(adminState) {
@@ -277,7 +324,7 @@
             document.getElementById('step-1').classList.add('hidden'); document.getElementById('step-2').classList.remove('hidden');
             initMQTT(); populateCmdWindow();
             let p = 0; const fill = document.getElementById('progressFill');
-            const interval = setInterval(() => { p += 5; fill.style.width = p + "%"; if(p >= 100) { clearInterval(interval); document.getElementById('step-2').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); if(isAdmin) { document.getElementById('caineTerminal').classList.remove('hidden'); } } }, 60);
+            const interval = setInterval(() => { p += 5; fill.style.width = p + "%"; if(p >= 100) { clearInterval(interval); document.getElementById('step-2').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); document.getElementById('usersBtn').classList.remove('hidden'); if(isAdmin) { document.getElementById('caineTerminal').classList.remove('hidden'); } } }, 60);
         }
 
         function censorText(text) {
@@ -293,55 +340,54 @@
         function showMsg(nick, text, color, isCaine) {
             const box = document.getElementById('chatBox');
             const processedText = censorText(text); 
-            
             const className = isCaine ? "msg caine" : "msg";
             const nickStyle = isCaine ? "" : `style="color:${color};"`;
             box.innerHTML += `<div class="${className}"><span class="nick" ${nickStyle}>${nick}:</span> <span class="text">${processedText}</span></div>`;
             requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
 
-            // Jeśli system wykrył wulgaryzm, odpal alarm
             if(processedText.includes('class="inline-censor"')) {
                 triggerNiewolno();
-                // Dodatkowa reprymenda z systemu
-                setTimeout(() => {
-                    showSys("⚠️ SYSTEM OCHRONY CYRKU: Wykryto nieautoryzowane słownictwo!");
-                }, 500);
+                setTimeout(() => { showSys("⚠️ SYSTEM OCHRONY CYRKU: Wykryto nieautoryzowane słownictwo!"); }, 500);
             }
         }
 
-        function showSys(text) { const box = document.getElementById('chatBox'); box.innerHTML += `<div class="msg sys">${text}</div>`; requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; }); }
+        function showSys(text) { const box = document.getElementById('chatBox'); box.innerHTML += `<div class="msg sys" style="white-space: pre-wrap;">${text}</div>`; requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; }); }
 
         function handleChat() { const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return; if(isAdmin && text.startsWith('/')) { procCmd(text); input.value=""; return; } sendData({type:"chat", nick:user, text:text, color:userColor, admin:isAdmin}); input.value = ""; }
-
         function exeTop() { const input = document.getElementById('cmdInputTop'); let text = input.value.trim(); if(!text) return; if(!text.startsWith('/')) text = '/' + text; procCmd(text); input.value = ""; }
 
-        // --- BAZA KOMEND ---
-        // DODANO UNJAIL
         const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "squish", "stretch", "dance", "zoom", "grayscale", "confetti", "jail", "unjail", "gravity"];
-        
-        const loreCommands = [
-            { c: "/ragatha", d: "Ragatha próbuje utrzymać wszystkich w ryzach." },
-            { c: "/jax", d: "Jax uśmiecha się podejrzanie..." },
-            { c: "/gangle", d: "Maska komediowa Gangle znowu pękła." },
-            { c: "/kinger", d: "Kinger buduje fort z poduszek." },
-            { c: "/exit", d: "BŁĄD: DRZWI WYJŚCIOWE NIE ISTNIEJĄ." }
-        ];
+        const loreCommands = [ { c: "/ragatha", d: "Ragatha próbuje utrzymać wszystkich w ryzach." }, { c: "/jax", d: "Jax uśmiecha się podejrzanie..." }, { c: "/exit", d: "BŁĄD: DRZWI WYJŚCIOWE NIE ISTNIEJĄ." } ];
 
         function populateCmdWindow() {
             const list = document.getElementById('cmdList');
-            let html = `<div><span class="cmd-real">/cmd</span> <span class="cmd-desc">Pokazuje tę listę.</span></div>`;
+            let html = `<div><span class="cmd-real">/przygoda</span> <span class="cmd-desc">Otwiera Generator Przygód AI.</span></div>`;
+            html += `<div><span class="cmd-real">/cmd</span> <span class="cmd-desc">Pokazuje tę listę.</span></div>`;
             html += `<div><span class="cmd-real">/clear</span> <span class="cmd-desc">Czyści czat (lokalnie).</span></div>`;
             effectList.forEach(e => html += `<div><span class="cmd-real">/${e}</span> <span class="cmd-desc">Globalny efekt wizualny.</span></div>`);
             loreCommands.forEach(l => html += `<div><span class="cmd-real">${l.c}</span> <span class="cmd-desc">Komunikat systemowy.</span></div>`);
-            for(let i=1; i<=10; i++) html += `<div><span style="color:#444">/MOD_${Math.random().toString(16).slice(2,6).toUpperCase()}</span> <span class="cmd-desc">[ZABLOKOWANE]</span></div>`;
             list.innerHTML = html;
         }
 
-        function toggleCmd() { const win = document.getElementById('cmdWindow'); win.classList.contains('hidden') ? win.classList.remove('hidden') : win.classList.add('hidden'); }
+        function toggleCmd() { document.getElementById('cmdWindow').classList.toggle('hidden'); }
+        function toggleUsers() { document.getElementById('usersWindow').classList.toggle('hidden'); }
+        function toggleAdventure() { document.getElementById('adventureModal').classList.toggle('hidden'); }
+
+        // GENERATOR PRZYGÓD
+        function fireAdventure() {
+            const theme = document.getElementById('advThemeInput').value.trim() || "Zgubiona Dusza";
+            toggleAdventure(); // Zamknij modal
+            
+            const advText = `🌑 KONTYNUACJA: "${theme.toUpperCase()}" 🌑\n\nStoisz przed drzwiami, na których widnieje napis: "TUTAJ MIESZKAJĄ TWOJE NIEZAPŁACONE RACHUNKI". Zza drzwi dobiega dźwięk skrobania pazurami o tablicę.\nJesteś tu SAM. Co robisz?!\n\nA) Kopiesz w drzwi i krzyczysz.\nB) Próbujesz przejść przez ścianę.\nC) Wyciągasz z kieszeni Lustro Prawdy.\nD) Rzucasz w drzwi Bańką.\n\n[Wpisz A, B, C lub D na czacie!]`;
+            
+            sendData({type:"sys", text: advText});
+            activeAdventure = true; // Uruchom nasłuchiwanie
+        }
 
         function procCmd(cmd) {
             cmd = cmd.toLowerCase();
             if(cmd === '/cmd' || cmd === '/help') { toggleCmd(); return; }
+            if(cmd === '/przygoda') { toggleAdventure(); return; } // NOWOŚĆ
             if(cmd === '/clear') { document.getElementById('chatBox').innerHTML = ""; return; }
             const foundEffect = effectList.find(e => cmd.includes(e));
             if(foundEffect) { sendData({type:"cmd", cmd:foundEffect}); sendData({type:"sys", text: `> CAINE AKTYWOWAŁ MODUŁ: [ ${foundEffect.toUpperCase()} ]`}); return;}
@@ -351,25 +397,17 @@
         }
 
         function createFallingEntities(type) {
-            const container = document.body;
-            const count = type === "gloink" ? 25 : 70;
+            const container = document.body; const count = type === "gloink" ? 25 : 70;
             for(let i = 0; i < count; i++) {
                 const entity = document.createElement(type === "gloink" ? 'img' : 'div');
                 if(type === "gloink") {
-                    const num = Math.floor(Math.random() * 3) + 1;
-                    entity.src = `./images/gloink${num}.jpg`;
-                    entity.classList.add('falling-gloink');
-                    const size = Math.random() * 40 + 40;
-                    entity.style.width = size + 'px'; entity.style.height = size + 'px';
+                    const num = Math.floor(Math.random() * 3) + 1; entity.src = `./images/gloink${num}.jpg`; entity.classList.add('falling-gloink');
+                    const size = Math.random() * 40 + 40; entity.style.width = size + 'px'; entity.style.height = size + 'px';
                 } else {
-                    entity.classList.add('falling-confetti');
-                    entity.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
+                    entity.classList.add('falling-confetti'); entity.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
                 }
-                entity.style.left = Math.random() * 100 + 'vw';
-                entity.style.animationDuration = (Math.random() * 2 + 2) + 's';
-                entity.style.animationDelay = (Math.random() * 1.5) + 's';
-                container.appendChild(entity);
-                setTimeout(() => entity.remove(), 4000); 
+                entity.style.left = Math.random() * 100 + 'vw'; entity.style.animationDuration = (Math.random() * 2 + 2) + 's'; entity.style.animationDelay = (Math.random() * 1.5) + 's';
+                container.appendChild(entity); setTimeout(() => entity.remove(), 4000); 
             }
         }
 
@@ -382,12 +420,9 @@
             else if(cmd === "pomni") { h.src = './images/pomni.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); }
             else if(cmd === "gloink") { createFallingEntities("gloink"); }
             else if(cmd === "confetti") { createFallingEntities("confetti"); } 
-            
-            else if(cmd === "jail") { jail.classList.add('active'); } // Więzienie na zawsze!
-            else if(cmd === "unjail") { jail.classList.remove('active'); } // Zdejmuje kratę
-            
+            else if(cmd === "jail") { jail.classList.add('active'); } 
+            else if(cmd === "unjail") { jail.classList.remove('active'); } 
             else if(cmd === "gravity") { chatCont.classList.add('effect-gravity'); setTimeout(() => chatCont.classList.remove('effect-gravity'), 5000); }
-            
             else if(cmd === "censor") { c.classList.add('active'); setTimeout(() => c.classList.remove('active'), 2500); }
             else if(cmd === "glitch") { b.classList.add('effect-glitch'); setTimeout(() => b.classList.remove('effect-glitch'), 2000); }
             else if(cmd === "shake") { b.classList.add('effect-shake'); setTimeout(() => b.classList.remove('effect-shake'), 3000); }
