@@ -3,22 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Global Mainframe OS v7</title>
+    <title>TADC - Global Mainframe OS v10</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
         @keyframes crtFlicker { 0% { opacity: 0.98; } 50% { opacity: 0.94; } 100% { opacity: 1; } }
         @keyframes breatheGlow { 0% { box-shadow: 0 0 20px rgba(255,0,68,0.4), inset 0 0 10px rgba(255,0,68,0.2); } 50% { box-shadow: 0 0 40px rgba(255,0,68,0.7), inset 0 0 20px rgba(255,0,68,0.4); } 100% { box-shadow: 0 0 20px rgba(255,0,68,0.4), inset 0 0 10px rgba(255,0,68,0.2); } }
         @keyframes textBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         @keyframes audioPulse { 0% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.6; } }
+        @keyframes miniShake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, -1px); } }
 
         body { 
-            background-color: #050505; 
-            background-image: url('./images/backgrund.jpg'); 
+            background-color: #050505; background-image: url('./images/backgrund.jpg'); 
             background-size: cover; background-position: center; background-attachment: fixed;
-            color: #00f2ff; font-family: 'Courier New', monospace; 
-            margin: 0; height: 100vh; overflow: hidden;
-            display: flex; justify-content: center; align-items: center; 
-            transition: all 0.3s;
+            color: #00f2ff; font-family: 'Courier New', monospace; margin: 0; height: 100vh; overflow: hidden;
+            display: flex; justify-content: center; align-items: center; transition: all 0.3s;
         }
 
         .scanlines { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%); background-size: 100% 4px; pointer-events: none; z-index: 50; }
@@ -45,7 +43,7 @@
         #caineTerminal input { margin: 0; background: #000; border: 1px solid #fff; color: #fff; width: 70%; padding: 8px;}
         #caineTerminal button { width: 30%; background: #000; padding: 8px; border: 1px solid #fff; color: #fff;}
 
-        /* PRZYWRÓCONY OKNO CMD */
+        /* OKNO CMD */
         #cmdWindow { 
             position: absolute; top: 15%; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px;
             background: rgba(5, 5, 10, 0.98); border: 2px solid #00f2ff; border-radius: 8px;
@@ -66,13 +64,12 @@
 
         .msg { font-size: 14px; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.6); padding: 7px 12px; border-radius: 8px; border-left: 3px solid #00f2ff; width: fit-content; max-width: 90%; word-break: break-word; overflow-wrap: break-word; animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;}
         .msg.caine { border-left: 3px solid #ff0044; background: rgba(255,0,68,0.15); font-weight: bold; animation: popIn 0.3s forwards, caineShake 0.1s infinite; }
-        .msg.sys { border-left: 3px solid #f9e11e; color: #f9e11e; font-style: italic; background: rgba(249,225,30,0.1); width: 100%; max-width: 100%; text-align: center; animation: popIn 0.3s forwards, textBlink 1s infinite;}
+        .msg.sys { border-left: 3px solid #f9e11e; color: #f9e11e; font-style: italic; background: rgba(249,225,30,0.15); width: 100%; max-width: 100%; text-align: center; animation: popIn 0.3s forwards, textBlink 1.5s infinite; border-right: 3px solid #f9e11e;}
 
         /* INLINE CENZURA */
-        .inline-censor { height: 1.3em; vertical-align: middle; border-radius: 3px; border: 1px solid #ff0044; margin: 0 3px; animation: crtFlicker 0.2s infinite;}
+        .inline-censor { height: 2.2em; vertical-align: middle; border-radius: 4px; border: 1px solid #ff0044; margin: 0 4px; transform: rotate(-3deg); animation: crtFlicker 0.2s infinite, miniShake 0.1s infinite; }
 
-        .chat-container { flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 15px; padding-bottom: 80px; }
-        .chat-box { max-height: 70vh; }
+        .chat-container { flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 15px; padding-bottom: 80px; transition: transform 2s ease-in-out; }
         .chat-controls { position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px; background: rgba(0,0,0,0.9); display: flex; gap: 10px; box-sizing: border-box; border-top: 2px solid #333;}
         .chat-controls input { margin: 0; border-radius: 20px; background: #111; border: 1px solid #555; text-align: left; padding-left: 15px;}
         .chat-controls button { width: auto; border-radius: 20px; padding: 10px 20px; background: #00f2ff; color: #000; border-bottom: 3px solid #0088cc;}
@@ -81,7 +78,6 @@
             #dashboard { justify-content: center; align-items: center; padding: 20px; }
             #caineTerminal { width: 80%; max-width: 800px; border-radius: 10px 10px 0 0; border-bottom: none; }
             .chat-container { width: 80%; max-width: 800px; height: 75vh; background: rgba(10, 10, 15, 0.95); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 40px rgba(0, 242, 255, 0.15); display: flex; flex-direction: column; justify-content: space-between; flex-grow: 0; animation: breatheGlow 3s infinite ease-in-out;}
-            .chat-box { flex-grow: 1; max-height: none; padding-bottom: 15px; }
             .chat-controls { position: relative; width: 100%; background: transparent; padding: 0; border-top: none; }
             .chat-controls input { border-radius: 8px; background: rgba(0,0,0,0.8); border: 1px solid #00f2ff; text-align: left;}
             .chat-controls button { border-radius: 8px; padding: 12px 25px; }
@@ -91,37 +87,37 @@
         .hologram-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 350px; z-index: 1000; border: none; border-radius: 0; box-shadow: 0 0 60px 10px rgba(255, 0, 68, 0.7); transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); pointer-events: none; opacity: 0; }
         .hologram-popup.active { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 
-        @keyframes gloinkFall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
-        .falling-gloink { position: fixed; top: -10vh; width: 60px; height: 60px; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 5px #ff0044); animation: gloinkFall 3s linear forwards; }
+        @keyframes entityFall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+        .falling-gloink { position: fixed; top: -10vh; width: 60px; height: 60px; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 5px #ff0044); animation: entityFall 3s linear forwards; }
+        .falling-confetti { position: fixed; top: -10vh; width: 10px; height: 10px; border-radius: 50%; z-index: 1001; pointer-events: none; animation: entityFall 2s linear forwards; }
 
-        /* DUŻA CENZURA EKRANU (KOMENDA /CENSOR) */
+        /* DUŻA CENZURA EKRANU */
         #censorBar { position: fixed; top: 50%; left: 0; width: 100%; height: 120px; background: repeating-linear-gradient(45deg, #000, #000 20px, #fff 20px, #fff 40px); transform: translateY(-50%) scaleY(0); z-index: 3000; display: flex; justify-content: center; align-items: center; transition: 0.1s; pointer-events: none;}
         #censorBar.active { transform: translateY(-50%) scaleY(1); pointer-events: auto;}
         #censorBar span { background: #ff0044; color: #fff; padding: 10px 30px; font-size: 40px; font-weight: bold; border: 4px solid #000; text-transform: uppercase; transform: rotate(-5deg); letter-spacing: 5px; animation: textBlink 0.5s infinite;}
 
-        /* EKRAN KICKA */
-        #kickScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ff0000; color: #fff; z-index: 3000; display: flex; justify-content: center; align-items: center; text-align: center; flex-direction: column; opacity: 0; pointer-events: none; transition: 0.2s; font-weight: bold;}
-        #kickScreen.active { opacity: 1; pointer-events: auto; }
-        #kickScreen h1 { font-size: 40px; color: #fff; text-shadow: none; letter-spacing: 0; animation: textBlink 0.2s infinite;}
+        /* NOWOŚĆ: EFEKTY WIZUALNE (CENZURA VIGNETTE + KRATY) */
+        .effect-censor-alert { box-shadow: inset 0 0 100px rgba(255,0,0,0.8); transition: 0.2s; }
+        
+        #jailScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent, transparent 40px, #111 40px, #111 60px), repeating-linear-gradient(0deg, transparent, transparent 150px, #111 150px, #111 170px); z-index: 2500; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: inset 0 0 100px #000;}
+        #jailScreen.active { opacity: 0.8; pointer-events: auto; }
 
-        /* 🔥 EFEKTY CSS GLOBALNE (ROZSZERZONE) 🔥 */
+        /* INNE EFEKTY CSS GLOBALNE */
         .effect-glitch { animation: shake 0.1s infinite; filter: hue-rotate(90deg) invert(1); }
-        .effect-shake { animation: violentShake 0.05s infinite; }
         @keyframes shake { 0% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 100% { transform: translate(5px, -5px); } }
-        @keyframes violentShake { 0% { transform: translate(15px, 15px) rotate(2deg); } 50% { transform: translate(-15px, -15px) rotate(-2deg); } 100% { transform: translate(15px, -15px) rotate(2deg); } }
         .effect-redalert { box-shadow: inset 0 0 150px rgba(255,0,0,0.8); }
         .effect-nuke { filter: brightness(10) contrast(5); }
         .effect-void { background-image: none !important; background-color: #000 !important; filter: brightness(0.5); }
         .effect-abstract { filter: hue-rotate(180deg) saturate(300%) contrast(200%) blur(3px); }
         .effect-flip { transform: rotate(180deg); }
         .effect-blur { filter: blur(15px); }
-        /* Nowe efekty */
         .effect-squish { transform: scaleY(0.2); }
         .effect-stretch { transform: scaleY(2); }
         .effect-zoom { transform: scale(1.5); }
         .effect-grayscale { filter: grayscale(100%); }
         .effect-dance { animation: danceAnim 0.4s infinite; }
         @keyframes danceAnim { 0% {transform: translateY(0) rotate(0);} 25% {transform: translateY(-15px) rotate(5deg);} 75% {transform: translateY(15px) rotate(-5deg);} 100% {transform: translateY(0) rotate(0);} }
+        .effect-gravity { transform: translateY(-30vh) rotate(5deg); }
 
         /* HUD STATYSTYKI */
         .hud-top { position: fixed; top: 10px; left: 10px; font-size: 12px; font-weight: bold; z-index: 110; color: #fff; text-shadow: 1px 1px #000; display: flex; flex-direction: column; gap: 5px; opacity: 0.7;}
@@ -136,16 +132,13 @@
     <img id="hologramImg" class="hologram-popup" src="" alt="Entity">
     <div id="censorBar"><span>CENZURA</span></div>
     
-    <div id="kickScreen">
-        <h1>BŁĄD 404</h1>
-        <p>DUSZA ZOSTAŁA USUNIĘTA Z SYSTEMU</p>
-    </div>
-
-    <div class="hud-top">
+    <div id="jailScreen"></div> <div class="hud-top">
         <div id="serverStatus"><span id="sDot" class="status-dot"></span><span id="sText">Rozłączono</span></div>
     </div>
     <div class="audio-btn" id="audioBtn" onclick="toggleMusic()">🔇</div>
+    
     <audio id="bgMusic" loop><source src="./music/maintheme.mp3" type="audio/mpeg"></audio>
+    <audio id="censorAudio"><source src="./music/niewolno.mp3" type="audio/mpeg"></audio>
 
     <div id="step-1" class="box">
         <h1>CYFROWY CYRK</h1>
@@ -178,7 +171,7 @@
             <div id="cmdList" class="cmd-list"></div>
         </div>
 
-        <div class="chat-container">
+        <div class="chat-container" id="chatContainer">
             <div id="chatBox" class="chat-box"></div>
             <div class="chat-controls">
                 <input type="text" id="chatInput" placeholder="Napisz coś...">
@@ -188,31 +181,65 @@
     </div>
 
     <script>
+        // --- ZARZĄDZANIE DŹWIĘKIEM I CENZURĄ ---
         const music = document.getElementById('bgMusic');
+        const censorAudio = document.getElementById('censorAudio');
         const audioBtn = document.getElementById('audioBtn');
         let audioAllowed = false;
+        let isCensoring = false;
+
+        music.volume = 0.3; // Zciszona muzyka główna (30%)
+        censorAudio.volume = 1.0; // Dźwięk niewolno na 100%
 
         function toggleMusic() {
-            if (music.paused) { music.play(); audioBtn.innerText = '🔊'; audioAllowed = true;}
-            else { music.pause(); audioBtn.innerText = '🔇'; }
+            if (music.paused) { 
+                if(!isCensoring) music.play(); 
+                audioBtn.innerText = '🔊'; audioAllowed = true;
+            } else { 
+                music.pause(); audioBtn.innerText = '🔇'; 
+            }
         }
 
         document.body.addEventListener('click', () => {
-            if(!audioAllowed && music.paused) { music.play().catch(e => {}); audioBtn.innerText = '🔊'; audioAllowed = true;}
+            if(!audioAllowed && music.paused && !isCensoring) { music.play().catch(e => {}); audioBtn.innerText = '🔊'; audioAllowed = true;}
         }, {once: true});
 
+        function triggerNiewolno() {
+            if(isCensoring) {
+                censorAudio.currentTime = 0; // Nie stakuj, zacznij od nowa
+                return;
+            }
+            
+            isCensoring = true;
+            const wasPlaying = !music.paused;
+            music.pause(); // Wycisz muzykę z cyrku
+            
+            censorAudio.play().catch(e => console.log(e));
+            document.body.classList.add('effect-censor-alert'); // Czerwone rogi ekranu
+            
+            censorAudio.onended = () => {
+                isCensoring = false;
+                document.body.classList.remove('effect-censor-alert');
+                if (wasPlaying && audioAllowed) music.play(); // Wznów muzykę z cyrku
+            };
+        }
+
+        // --- MQTT ---
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v7"; 
+        const topic = "cyfrowycyrk/globalchat/final_v10"; 
         let user = ""; 
         let isAdmin = false; 
         let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
 
-        // --- SŁOWNIK PRZEKLEŃSTW ---
-        const badWords = ["kurw", "jeb", "spierd", "chuj", "pierdol", "dziwk", "suka", "fuck", "shit", "bitch", "debil"];
+        const badWords = [
+            "kurw", "kurv", "jeb", "chuj", "huj", "pierdol", "pierdal", "piedol", "piedal", 
+            "spierd", "wypierd", "wypied", "zajeb", "zjeb", "dziwk", "suka", "szmat", "cwel", 
+            "pedał", "pedal", "pizd", "fiut", "rucha", "fuck", "shit", "bitch", "debil", 
+            "idiot", "kurna", "psiawoker"
+        ];
 
         function updateStatus(online) {
-            const dot = document.getElementById('sDot');
-            const txt = document.getElementById('sText');
+            const dot = document.getElementById('sDot'); const txt = document.getElementById('sText');
             if(online) { dot.classList.add('online'); txt.innerText = "Sieć: OK"; }
             else { dot.classList.remove('online'); txt.innerText = "Szukanie..."; }
         }
@@ -220,9 +247,7 @@
         function initMQTT() {
             const clientId = "Cyrk_" + Math.random().toString(16).slice(2, 12);
             mqtt = new Paho.MQTT.Client("broker.emqx.io", 8084, clientId);
-            
             mqtt.onConnectionLost = () => { updateStatus(false); setTimeout(initMQTT, 3000); };
-            
             mqtt.onMessageArrived = (m) => {
                 try {
                     const d = JSON.parse(m.payloadString);
@@ -231,7 +256,6 @@
                     else if(d.type === "cmd") runEff(d.cmd);
                 } catch(e) {}
             };
-            
             mqtt.connect({
                 useSSL: true, timeout: 5,
                 onSuccess: () => {
@@ -242,49 +266,25 @@
             });
         }
 
-        function sendData(obj) { 
-            if(mqtt && mqtt.isConnected()) {
-                const msg = new Paho.MQTT.Message(JSON.stringify(obj));
-                msg.destinationName = topic; mqtt.send(msg); 
-            }
-        }
+        function sendData(obj) { if(mqtt && mqtt.isConnected()) { const msg = new Paho.MQTT.Message(JSON.stringify(obj)); msg.destinationName = topic; mqtt.send(msg); } }
 
-        function checkIfCaine() {
-            const v = document.getElementById('nickInput').value.trim().toLowerCase();
-            if(v === 'caine') { document.getElementById('startBtn').classList.add('hidden'); document.getElementById('admin-login').classList.remove('hidden'); } 
-            else { document.getElementById('startBtn').classList.remove('hidden'); document.getElementById('admin-login').classList.add('hidden'); }
-        }
+        function checkIfCaine() { const v = document.getElementById('nickInput').value.trim().toLowerCase(); if(v === 'caine') { document.getElementById('startBtn').classList.add('hidden'); document.getElementById('admin-login').classList.remove('hidden'); } else { document.getElementById('startBtn').classList.remove('hidden'); document.getElementById('admin-login').classList.add('hidden'); } }
 
-        function loginAdmin() { 
-            if(document.getElementById('pinInput').value === "2222") start(true); 
-            else { alert("ODMOWA DOSTĘPU."); document.getElementById('pinInput').value = "";} 
-        }
+        function loginAdmin() { if(document.getElementById('pinInput').value === "2222") start(true); else { alert("ODMOWA DOSTĘPU."); document.getElementById('pinInput').value = "";} }
 
         function start(adminState) {
-            isAdmin = adminState; 
-            const rawNick = document.getElementById('nickInput').value.trim();
-            user = (isAdmin ? "CAINE" : (rawNick || "Zguba")).toUpperCase();
-            
+            isAdmin = adminState; user = (isAdmin ? "CAINE" : (document.getElementById('nickInput').value.trim() || "Zguba")).toUpperCase();
             document.getElementById('step-1').classList.add('hidden'); document.getElementById('step-2').classList.remove('hidden');
             initMQTT(); populateCmdWindow();
-            
             let p = 0; const fill = document.getElementById('progressFill');
-            const interval = setInterval(() => {
-                p += 5; fill.style.width = p + "%";
-                if(p >= 100) {
-                    clearInterval(interval);
-                    document.getElementById('step-2').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden');
-                    if(isAdmin) { document.getElementById('caineTerminal').classList.remove('hidden'); }
-                }
-            }, 60);
+            const interval = setInterval(() => { p += 5; fill.style.width = p + "%"; if(p >= 100) { clearInterval(interval); document.getElementById('step-2').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); if(isAdmin) { document.getElementById('caineTerminal').classList.remove('hidden'); } } }, 60);
         }
 
-        // --- FILTR CENZURY W LOCIE ---
         function censorText(text) {
-            let safe = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); // XSS ochrona
+            let safe = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             badWords.forEach(word => {
-                const regex = new RegExp(word + "[a-ząćęłńóśźż]*", "gi");
-                // Podmiana na wbudowany obrazek
+                const spamPattern = word.split('').join('+') + "+[a-ząćęłńóśźż]*";
+                const regex = new RegExp(spamPattern, "gi");
                 safe = safe.replace(regex, `<img src="./images/censure.jpg" class="inline-censor">`);
             });
             return safe;
@@ -292,140 +292,113 @@
 
         function showMsg(nick, text, color, isCaine) {
             const box = document.getElementById('chatBox');
-            const processedText = censorText(text); // Filtruj przekleństwa!
+            const processedText = censorText(text); 
+            
             const className = isCaine ? "msg caine" : "msg";
             const nickStyle = isCaine ? "" : `style="color:${color};"`;
-            
             box.innerHTML += `<div class="${className}"><span class="nick" ${nickStyle}>${nick}:</span> <span class="text">${processedText}</span></div>`;
             requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
+
+            // Jeśli system wykrył wulgaryzm, odpal alarm
+            if(processedText.includes('class="inline-censor"')) {
+                triggerNiewolno();
+                // Dodatkowa reprymenda z systemu
+                setTimeout(() => {
+                    showSys("⚠️ SYSTEM OCHRONY CYRKU: Wykryto nieautoryzowane słownictwo!");
+                }, 500);
+            }
         }
 
-        function showSys(text) { 
-            const box = document.getElementById('chatBox'); 
-            box.innerHTML += `<div class="msg sys">${text}</div>`; 
-            requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
-        }
+        function showSys(text) { const box = document.getElementById('chatBox'); box.innerHTML += `<div class="msg sys">${text}</div>`; requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; }); }
 
-        function handleChat() {
-            const input = document.getElementById('chatInput'); const text = input.value.trim();
-            if(!text) return;
-            if(isAdmin && text.startsWith('/')) { procCmd(text); input.value=""; return; }
-            sendData({type:"chat", nick:user, text:text, color:userColor, admin:isAdmin}); 
-            input.value = "";
-        }
+        function handleChat() { const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return; if(isAdmin && text.startsWith('/')) { procCmd(text); input.value=""; return; } sendData({type:"chat", nick:user, text:text, color:userColor, admin:isAdmin}); input.value = ""; }
 
-        function exeTop() { 
-            const input = document.getElementById('cmdInputTop'); let text = input.value.trim();
-            if(!text) return;
-            if(!text.startsWith('/')) text = '/' + text;
-            procCmd(text); input.value = ""; 
-        }
+        function exeTop() { const input = document.getElementById('cmdInputTop'); let text = input.value.trim(); if(!text) return; if(!text.startsWith('/')) text = '/' + text; procCmd(text); input.value = ""; }
 
         // --- BAZA KOMEND ---
-        const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "kickall", "squish", "stretch", "dance", "zoom", "grayscale"];
+        const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "squish", "stretch", "dance", "zoom", "grayscale", "confetti", "jail", "gravity"];
         
         const loreCommands = [
             { c: "/ragatha", d: "Ragatha próbuje utrzymać wszystkich w ryzach." },
-            { c: "/jax", d: "Jax właśnie rzucił w kogoś kulą do kręgli." },
+            { c: "/jax", d: "Jax uśmiecha się podejrzanie..." },
             { c: "/gangle", d: "Maska komediowa Gangle znowu pękła." },
-            { c: "/zooble", d: "Zooble rozpadła się na kawałki." },
-            { c: "/kinger", d: "Kinger buduje fort z poduszek i panikuje." },
-            { c: "/kaufmo", d: "Kaufmo uległ abstrakcji w piwnicy." },
-            { c: "/moon", d: "Księżyc ma ochotę na romans." },
-            { c: "/sun", d: "Słońce krzyczy wniebogłosy." },
-            { c: "/exit", d: "BŁĄD: DRZWI WYJŚCIOWE NIE ISTNIEJĄ." },
-            { c: "/ping", d: "PONG! Mainframe działa na 100%." },
-            { c: "/firewall", d: "Zapory ogniowe Cyrku zostały wzmocnione." },
-            { c: "/whoami", d: "Jesteś cyfrową halucynacją." }
+            { c: "/kinger", d: "Kinger buduje fort z poduszek." },
+            { c: "/exit", d: "BŁĄD: DRZWI WYJŚCIOWE NIE ISTNIEJĄ." }
         ];
 
         function populateCmdWindow() {
             const list = document.getElementById('cmdList');
             let html = `<div><span class="cmd-real">/cmd</span> <span class="cmd-desc">Pokazuje tę listę.</span></div>`;
             html += `<div><span class="cmd-real">/clear</span> <span class="cmd-desc">Czyści czat (lokalnie).</span></div>`;
-            
-            effectList.forEach(e => {
-                html += `<div><span class="cmd-real">/${e}</span> <span class="cmd-desc">Globalny efekt wizualny na ekranach.</span></div>`;
-            });
-            loreCommands.forEach(l => {
-                html += `<div><span class="cmd-real">${l.c}</span> <span class="cmd-desc">Wiadomość systemowa z TADC.</span></div>`;
-            });
-            
-            for(let i=1; i<=50; i++) { html += `<div><span style="color:#444">/MOD_${Math.random().toString(16).slice(2,6).toUpperCase()}</span> <span class="cmd-desc">[ZABLOKOWANE]</span></div>`; }
+            effectList.forEach(e => html += `<div><span class="cmd-real">/${e}</span> <span class="cmd-desc">Globalny efekt wizualny.</span></div>`);
+            loreCommands.forEach(l => html += `<div><span class="cmd-real">${l.c}</span> <span class="cmd-desc">Komunikat systemowy.</span></div>`);
+            for(let i=1; i<=10; i++) html += `<div><span style="color:#444">/MOD_${Math.random().toString(16).slice(2,6).toUpperCase()}</span> <span class="cmd-desc">[ZABLOKOWANE]</span></div>`;
             list.innerHTML = html;
         }
 
-        function toggleCmd() {
-            const win = document.getElementById('cmdWindow');
-            win.classList.contains('hidden') ? win.classList.remove('hidden') : win.classList.add('hidden');
-        }
+        function toggleCmd() { const win = document.getElementById('cmdWindow'); win.classList.contains('hidden') ? win.classList.remove('hidden') : win.classList.add('hidden'); }
 
         function procCmd(cmd) {
             cmd = cmd.toLowerCase();
             if(cmd === '/cmd' || cmd === '/help') { toggleCmd(); return; }
             if(cmd === '/clear') { document.getElementById('chatBox').innerHTML = ""; return; }
-            
             const foundEffect = effectList.find(e => cmd.includes(e));
-            if(foundEffect) { 
-                sendData({type:"cmd", cmd:foundEffect}); 
-                sendData({type:"sys", text: `> CAINE AKTYWOWAŁ MODUŁ: [ ${foundEffect.toUpperCase()} ]`}); 
-                return;
-            }
-
+            if(foundEffect) { sendData({type:"cmd", cmd:foundEffect}); sendData({type:"sys", text: `> CAINE AKTYWOWAŁ MODUŁ: [ ${foundEffect.toUpperCase()} ]`}); return;}
             const foundLore = loreCommands.find(l => l.c === cmd);
-            if(foundLore) {
-                sendData({type:"sys", text: `> SYSTEM: ${foundLore.d}`});
-                return;
-            }
-
-            showSys("> Błąd: Moduł nie istnieje. Wpisz /cmd aby zobaczyć listę.");
+            if(foundLore) { sendData({type:"sys", text: `> SYSTEM: ${foundLore.d}`}); return; }
+            showSys("> Błąd: Moduł nie istnieje. Wpisz /cmd.");
         }
 
-        function createGloinkRain() {
+        function createFallingEntities(type) {
             const container = document.body;
-            for(let i = 0; i < 30; i++) {
-                const num = Math.floor(Math.random() * 3) + 1;
-                const gloink = document.createElement('img');
-                gloink.src = `./images/gloink${num}.jpg`;
-                gloink.classList.add('falling-gloink');
-                gloink.style.left = Math.random() * 100 + 'vw';
-                gloink.style.animationDuration = (Math.random() * 2 + 2) + 's';
-                gloink.style.animationDelay = (Math.random() * 1.5) + 's';
-                container.appendChild(gloink);
-                setTimeout(() => gloink.remove(), 4000); 
+            const count = type === "gloink" ? 25 : 70;
+            for(let i = 0; i < count; i++) {
+                const entity = document.createElement(type === "gloink" ? 'img' : 'div');
+                if(type === "gloink") {
+                    const num = Math.floor(Math.random() * 3) + 1;
+                    entity.src = `./images/gloink${num}.jpg`;
+                    entity.classList.add('falling-gloink');
+                    const size = Math.random() * 40 + 40;
+                    entity.style.width = size + 'px'; entity.style.height = size + 'px';
+                } else {
+                    entity.classList.add('falling-confetti');
+                    entity.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
+                }
+                entity.style.left = Math.random() * 100 + 'vw';
+                entity.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                entity.style.animationDelay = (Math.random() * 1.5) + 's';
+                container.appendChild(entity);
+                setTimeout(() => entity.remove(), 4000); 
             }
         }
 
-        // --- SYSTEM WYKONYWANIA EFEKTÓW GLOBALNYCH ---
         function runEff(cmd) {
-            const body = document.body;
-            const holo = document.getElementById('hologramImg');
-            const censor = document.getElementById('censorBar');
-            const kick = document.getElementById('kickScreen');
+            const b = document.body; const h = document.getElementById('hologramImg');
+            const c = document.getElementById('censorBar'); const chatCont = document.getElementById('chatContainer');
+            const jail = document.getElementById('jailScreen');
             
-            if(cmd === "bubble") { holo.src = './images/bubble.jpg'; holo.classList.add('active'); setTimeout(() => holo.classList.remove('active'), 3000); }
-            else if(cmd === "pomni") { holo.src = './images/pomni.jpg'; holo.classList.add('active'); setTimeout(() => holo.classList.remove('active'), 3000); }
-            else if(cmd === "gloink") { createGloinkRain(); }
+            if(cmd === "bubble") { h.src = './images/bubble.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); }
+            else if(cmd === "pomni") { h.src = './images/pomni.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); }
+            else if(cmd === "gloink") { createFallingEntities("gloink"); }
+            else if(cmd === "confetti") { createFallingEntities("confetti"); } 
             
-            else if(cmd === "censor") { censor.classList.add('active'); setTimeout(() => censor.classList.remove('active'), 2500); }
-            else if(cmd === "kickall") { kick.classList.add('active'); setTimeout(() => kick.classList.remove('active'), 3500); }
+            else if(cmd === "jail") { jail.classList.add('active'); setTimeout(() => jail.classList.remove('active'), 6000); }
+            else if(cmd === "gravity") { chatCont.classList.add('effect-gravity'); setTimeout(() => chatCont.classList.remove('effect-gravity'), 5000); }
             
-            // Stare efekty
-            else if(cmd === "glitch") { body.classList.add('effect-glitch'); setTimeout(() => body.classList.remove('effect-glitch'), 2000); }
-            else if(cmd === "shake") { body.classList.add('effect-shake'); setTimeout(() => body.classList.remove('effect-shake'), 3000); }
-            else if(cmd === "redalert") { body.classList.add('effect-redalert'); setTimeout(() => body.classList.remove('effect-redalert'), 4000); }
-            else if(cmd === "nuke") { body.classList.add('effect-nuke'); setTimeout(() => body.classList.remove('effect-nuke'), 1000); }
-            else if(cmd === "void") { body.classList.add('effect-void'); setTimeout(() => body.classList.remove('effect-void'), 4000); }
-            else if(cmd === "abstract") { body.classList.add('effect-abstract'); setTimeout(() => body.classList.remove('effect-abstract'), 5000); }
-            else if(cmd === "flip") { body.classList.add('effect-flip'); setTimeout(() => body.classList.remove('effect-flip'), 5000); }
-            else if(cmd === "blur") { body.classList.add('effect-blur'); setTimeout(() => body.classList.remove('effect-blur'), 4000); }
-            
-            // NOWE EFEKTY (20 KOMEND)
-            else if(cmd === "squish") { body.classList.add('effect-squish'); setTimeout(() => body.classList.remove('effect-squish'), 4000); }
-            else if(cmd === "stretch") { body.classList.add('effect-stretch'); setTimeout(() => body.classList.remove('effect-stretch'), 4000); }
-            else if(cmd === "dance") { body.classList.add('effect-dance'); setTimeout(() => body.classList.remove('effect-dance'), 5000); }
-            else if(cmd === "zoom") { body.classList.add('effect-zoom'); setTimeout(() => body.classList.remove('effect-zoom'), 3000); }
-            else if(cmd === "grayscale") { body.classList.add('effect-grayscale'); setTimeout(() => body.classList.remove('effect-grayscale'), 5000); }
+            else if(cmd === "censor") { c.classList.add('active'); setTimeout(() => c.classList.remove('active'), 2500); }
+            else if(cmd === "glitch") { b.classList.add('effect-glitch'); setTimeout(() => b.classList.remove('effect-glitch'), 2000); }
+            else if(cmd === "shake") { b.classList.add('effect-shake'); setTimeout(() => b.classList.remove('effect-shake'), 3000); }
+            else if(cmd === "redalert") { b.classList.add('effect-redalert'); setTimeout(() => b.classList.remove('effect-redalert'), 4000); }
+            else if(cmd === "nuke") { b.classList.add('effect-nuke'); setTimeout(() => b.classList.remove('effect-nuke'), 1000); }
+            else if(cmd === "void") { b.classList.add('effect-void'); setTimeout(() => b.classList.remove('effect-void'), 4000); }
+            else if(cmd === "abstract") { b.classList.add('effect-abstract'); setTimeout(() => b.classList.remove('effect-abstract'), 5000); }
+            else if(cmd === "flip") { b.classList.add('effect-flip'); setTimeout(() => b.classList.remove('effect-flip'), 5000); }
+            else if(cmd === "blur") { b.classList.add('effect-blur'); setTimeout(() => b.classList.remove('effect-blur'), 4000); }
+            else if(cmd === "squish") { b.classList.add('effect-squish'); setTimeout(() => b.classList.remove('effect-squish'), 4000); }
+            else if(cmd === "stretch") { b.classList.add('effect-stretch'); setTimeout(() => b.classList.remove('effect-stretch'), 4000); }
+            else if(cmd === "dance") { b.classList.add('effect-dance'); setTimeout(() => b.classList.remove('effect-dance'), 5000); }
+            else if(cmd === "zoom") { b.classList.add('effect-zoom'); setTimeout(() => b.classList.remove('effect-zoom'), 3000); }
+            else if(cmd === "grayscale") { b.classList.add('effect-grayscale'); setTimeout(() => b.classList.remove('effect-grayscale'), 5000); }
         }
         
         document.getElementById('chatInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') handleChat(); });
