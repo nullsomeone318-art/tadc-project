@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Global Mainframe OS v23</title>
+    <title>TADC - Global Mainframe OS v24</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -29,7 +29,6 @@
         }
         h1 { color: #f9e11e; text-shadow: 2px 2px #ff0044; text-transform: uppercase; font-size: 24px; margin-top: 0; letter-spacing: 2px;}
         
-        /* LOGOWANIE - POLA */
         input { padding: 12px; margin: 8px 0; background: #000; border: 2px solid #00f2ff; color: #00f2ff; width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; font-family: 'Courier New', monospace; outline: none; transition: 0.2s;}
         input:focus { border-color: #f9e11e; box-shadow: 0 0 10px #f9e11e; }
         #avatarInput { border-color: #ff0044; font-size: 11px;}
@@ -63,27 +62,18 @@
         #advThemeInput { width: 90%; padding: 10px; margin-bottom: 15px; border: 1px solid #f9e11e; background: #111; color: #fff; font-weight: bold;}
         #advBtn { background: #f9e11e; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px;}
 
-        /* CSS DLA AVATARÓW W CZACIE */
         .chat-box { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scrollbar-width: thin; scrollbar-color: #00f2ff #111; padding-right: 5px;}
-        
         .msg-wrapper { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 5px; animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
         .avatar-img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #00f2ff; object-fit: cover; flex-shrink: 0; background-color: #111; transition: 0.2s;}
         .avatar-img:hover { transform: scale(1.2) rotate(5deg); animation: crtFlicker 0.2s infinite; }
-        
         @keyframes popIn { from { opacity: 0; transform: translateY(15px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes caineShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(1px); } 75% { transform: translateX(-1px); } }
-
         .msg { font-size: 14px; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.6); padding: 7px 12px; border-radius: 8px; border-left: 3px solid #00f2ff; width: fit-content; max-width: 90%; word-break: break-word; overflow-wrap: break-word; line-height: 1.4;}
-        
-        /* CAINE STYL */
         .msg-wrapper.caine-wrap .avatar-img { border-color: #ff0044; box-shadow: 0 0 10px #ff0044; animation: caineShake 0.1s infinite;}
         .msg-wrapper.caine-wrap .msg { border-left: 3px solid #ff0044; background: rgba(255,0,68,0.15); font-weight: bold; }
-        
-        /* SYSTEM STYL */
         .msg-wrapper.sys-wrap { justify-content: center; }
         .msg-wrapper.sys-wrap .msg { border-left: 3px solid #f9e11e; color: #f9e11e; font-style: italic; background: rgba(249,225,30,0.15); width: 100%; max-width: 100%; text-align: left; animation: textBlink 1.5s infinite; border-right: 3px solid #f9e11e;}
         .msg-wrapper.sys-wrap .avatar-img { display: none; }
-
         .inline-censor { height: 2.2em; vertical-align: middle; border-radius: 4px; border: 1px solid #ff0044; margin: 0 4px; transform: rotate(-3deg); animation: crtFlicker 0.2s infinite, miniShake 0.1s infinite; }
 
         .chat-container { flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 15px; padding-bottom: 80px; transition: transform 2s ease-in-out; }
@@ -105,6 +95,9 @@
         @keyframes entityFall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
         .falling-gloink { position: fixed; top: -10vh; width: 60px; height: 60px; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 5px #ff0044); animation: entityFall 3s linear forwards; }
         .falling-confetti { position: fixed; top: -10vh; width: 10px; height: 10px; border-radius: 50%; z-index: 1001; pointer-events: none; animation: entityFall 2s linear forwards; }
+        
+        /* 💥 NOWOŚĆ: CSS DLA SPADAJĄCYCH KOTÓW 💥 */
+        .falling-cat { position: fixed; top: -20vh; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 8px #00f2ff); animation: entityFall 4s linear forwards; object-fit: cover; border-radius: 8px; }
 
         #censorBar { position: fixed; top: 50%; left: 0; width: 100%; height: 120px; background: repeating-linear-gradient(45deg, #000, #000 20px, #fff 20px, #fff 40px); transform: translateY(-50%) scaleY(0); z-index: 3000; display: flex; justify-content: center; align-items: center; transition: 0.1s; pointer-events: none;}
         #censorBar.active { transform: translateY(-50%) scaleY(1); pointer-events: auto;}
@@ -114,7 +107,6 @@
         #jailScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent, transparent 40px, #111 40px, #111 60px), repeating-linear-gradient(0deg, transparent, transparent 150px, #111 150px, #111 170px); z-index: 2500; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: inset 0 0 100px #000;}
         #jailScreen.active { opacity: 0.8; pointer-events: auto; }
 
-        /* 🔥 SILNIK GRY 3D W CANVAS 🔥 */
         #gameContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5555; display: none; background: #020000; cursor: crosshair;}
         #gameContainer.active { display: block; }
         #gameUI { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 20px; font-weight: bold; z-index: 5556; text-shadow: 2px 2px #000; pointer-events: none;}
@@ -187,9 +179,7 @@
         <h1>CYFROWY CYRK</h1>
         <input type="text" id="nickInput" placeholder="Twoje Imię..." oninput="checkIfCaine()">
         <input type="text" id="avatarInput" placeholder="URL Zdjęcia (Opcjonalne)...">
-        
         <button id="startBtn" onclick="start(false)">ZALOGUJ</button>
-        
         <div id="admin-login" class="hidden">
             <p style="color: #ff0044; font-weight: bold; font-size: 12px; margin-top: 15px; animation: textBlink 1s infinite;">[ SYSTEM ROOT ]</p>
             <input type="password" id="pinInput" placeholder="PIN: ****">
@@ -205,7 +195,7 @@
 
     <div id="dashboard" class="hidden">
         <div id="caineTerminal" class="hidden">
-            <input type="text" id="cmdInputTop" placeholder="np. /room Jax, /jail, /przygoda...">
+            <input type="text" id="cmdInputTop" placeholder="np. /room Jax, /jail, /cats...">
             <button onclick="exeTop()">WYKONAJ</button>
         </div>
 
@@ -237,7 +227,6 @@
     </div>
 
     <script>
-        // --- WCZYTYWANIE DANYCH Z PAMIĘCI PRZEGLĄDARKI ---
         window.onload = () => {
             if(localStorage.getItem('tadc_nick')) document.getElementById('nickInput').value = localStorage.getItem('tadc_nick');
             if(localStorage.getItem('tadc_avatar')) document.getElementById('avatarInput').value = localStorage.getItem('tadc_avatar');
@@ -248,7 +237,6 @@
         const censorAudio = document.getElementById('censorAudio');
         const audioBtn = document.getElementById('audioBtn');
         let audioAllowed = false; let isCensoring = false;
-
         music.volume = 0.3; censorAudio.volume = 1.0; 
 
         function toggleMusic() {
@@ -268,10 +256,10 @@
             censorAudio.onended = () => { isCensoring = false; document.body.classList.remove('effect-censor-alert'); if (wasPlaying && audioAllowed) music.play(); };
         }
 
-        let mqtt; const topic = "cyfrowycyrk/globalchat/final_v23"; 
+        let mqtt; 
+        const topic = "cyfrowycyrk/globalchat/final_v24"; // 🔥 AKTUALIZACJA TEMATU v24 🔥
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
-        let userAvatar = ""; // GLOBALNA ZMIENNA AVATARA
-        let activeUsers = {}; 
+        let userAvatar = ""; let activeUsers = {}; 
 
         const badWords = [ "kurw", "kurv", "jeb", "chuj", "huj", "pierdol", "pierdal", "piedol", "piedal", "spierd", "wypierd", "wypied", "zajeb", "zjeb", "dziwk", "suka", "szmat", "cwel", "pedał", "pedal", "pizd", "fiut", "rucha", "fuck", "shit", "bitch", "debil", "idiot", "kurna", "psiawoker" ];
 
@@ -292,21 +280,13 @@
                     else if(d.type === "cmd") { 
                         if(!d.target || d.target === "" || d.target === "ALL" || d.target === user) { runEff(d.cmd); } 
                     }
-                    else if(d.type === "ping") { 
-                        // Aktualizacja radaru z avatarem
-                        activeUsers[d.nick] = { time: Date.now(), isAdmin: d.admin, avatar: d.avatar }; 
-                    }
+                    else if(d.type === "ping") { activeUsers[d.nick] = { time: Date.now(), isAdmin: d.admin, avatar: d.avatar }; }
                 } catch(e) {}
             };
             mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
                 updateStatus(true); mqtt.subscribe(topic); 
-                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM 👑" : `[${user}] dołączył do cyrku.`}); 
-                
-                // Miku Jumpscare System Message
-                if(userAvatar.includes('miku.jpg')) {
-                    setTimeout(() => { sendData({type:"sys", text: "🎵 UWAGA: WYKRYTO ZAKŁÓCENIA VOCALOIDOWE (HATSUNE MIKU)! 🎵"}); }, 1500);
-                }
-
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v24 👑" : `[${user}] dołączył do cyrku.`}); 
+                if(userAvatar.includes('miku.jpg')) { setTimeout(() => { sendData({type:"sys", text: "🎵 UWAGA: WYKRYTO ZAKŁÓCENIA VOCALOIDOWE (MIKU)! 🎵"}); }, 1500); }
                 setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
                 activeUsers[user] = { time: Date.now(), isAdmin: isAdmin, avatar: userAvatar }; 
             }, onFailure: () => { updateStatus(false); } });
@@ -314,7 +294,6 @@
 
         setInterval(() => { const now = Date.now(); for(let nick in activeUsers) { if(now - activeUsers[nick].time > 3000) { delete activeUsers[nick]; } } updateActiveUsersUI(); }, 100);
         
-        // --- ZAAWANSOWANA LISTA UŻYTKOWNIKÓW Z AVATARAMI ---
         function updateActiveUsersUI() { 
             const uList = document.getElementById('usersList'); const uBtn = document.getElementById('usersBtn'); 
             let html = ""; let count = 0; 
@@ -323,12 +302,7 @@
                 let icon = activeUsers[nick].isAdmin ? "👑" : "👤"; 
                 let color = activeUsers[nick].isAdmin ? "#ff0044" : "#00f2ff"; 
                 let av = activeUsers[nick].avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${nick}`;
-                
-                html += `<div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px dashed #333;">
-                            <img src="${av}" style="width:28px; height:28px; border-radius:50%; border:2px solid ${color}; object-fit:cover; background:#111;">
-                            <span style="color:${color}; font-weight:bold; flex-grow:1; font-size:14px;">${icon} ${nick}</span>
-                            <span style="color:#00ff00; font-size:10px;">● Online</span>
-                         </div>`; 
+                html += `<div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px dashed #333;"><img src="${av}" style="width:28px; height:28px; border-radius:50%; border:2px solid ${color}; object-fit:cover; background:#111;"><span style="color:${color}; font-weight:bold; flex-grow:1; font-size:14px;">${icon} ${nick}</span><span style="color:#00ff00; font-size:10px;">● Online</span></div>`; 
             } 
             if(uList.innerHTML !== html) uList.innerHTML = html; 
             uBtn.innerText = `👥 Aktywni: ${count}`; 
@@ -342,23 +316,14 @@
             isAdmin = adminState; 
             let rawNick = document.getElementById('nickInput').value.trim();
             let rawAv = document.getElementById('avatarInput').value.trim();
-            
-            // Zapis w pamięci
-            localStorage.setItem('tadc_nick', rawNick);
-            localStorage.setItem('tadc_avatar', rawAv);
-
+            localStorage.setItem('tadc_nick', rawNick); localStorage.setItem('tadc_avatar', rawAv);
             user = (isAdmin ? "CAINE" : (rawNick || "Zguba")).toUpperCase(); 
 
-            // 🔥 SYSTEM PROFILOWYCH I EASTER EGG MIKU 🔥
-            if(user.toLowerCase().includes('miku')) {
-                userAvatar = "./images/miku.jpg"; // Wymuszamy zdjęcie Miku!
-            } else if (isAdmin) {
-                userAvatar = "https://api.dicebear.com/7.x/shapes/svg?seed=Caine&backgroundColor=ff0044"; // Czerwony geometryczny awatar dla Caine'a
-            } else if (rawAv) {
-                userAvatar = rawAv; // Awatar wpisany przez gracza
-            } else {
-                userAvatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${user}`; // Unikalny Robot dla gracza bez zdjęcia!
-            }
+            // SYSTEM PROFILOWYCH & MIKU EASTER EGG
+            if(user.toLowerCase().includes('miku')) { userAvatar = "./images/miku.jpg"; } 
+            else if (isAdmin) { userAvatar = "https://api.dicebear.com/7.x/shapes/svg?seed=Caine&backgroundColor=ff0044"; } 
+            else if (rawAv) { userAvatar = rawAv; } 
+            else { userAvatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${user}`; }
 
             document.getElementById('step-1').classList.add('hidden'); document.getElementById('step-2').classList.remove('hidden'); 
             initMQTT(); populateCmdWindow(); 
@@ -368,26 +333,13 @@
         
         function censorText(text) { let safe = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); badWords.forEach(word => { const spamPattern = word.split('').join('+') + "+[a-ząćęłńóśźż]*"; const regex = new RegExp(spamPattern, "gi"); safe = safe.replace(regex, `<img src="./images/censure.jpg" class="inline-censor">`); }); return safe; }
         
-        // --- RENDEROWANIE CZATU Z AVATARAMI ---
         function showMsg(nick, text, color, isCaine, avatar) { 
-            const box = document.getElementById('chatBox'); 
-            const processedText = censorText(text); 
-            
-            // Fallback awatara
+            const box = document.getElementById('chatBox'); const processedText = censorText(text); 
             const safeAvatar = avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${nick}`;
             const wrapClass = isCaine ? "msg-wrapper caine-wrap" : "msg-wrapper";
             const nickStyle = isCaine ? "" : `style="color:${color};"`; 
-            
-            // Składanie HTML
-            let html = `
-                <div class="${wrapClass}">
-                    <img src="${safeAvatar}" class="avatar-img" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=${nick}'">
-                    <div class="msg"><span class="nick" ${nickStyle}>${nick}:</span> <span class="text">${processedText}</span></div>
-                </div>`;
-            
-            box.innerHTML += html; 
-            requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; }); 
-            
+            let html = `<div class="${wrapClass}"><img src="${safeAvatar}" class="avatar-img" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=${nick}'"><div class="msg"><span class="nick" ${nickStyle}>${nick}:</span> <span class="text">${processedText}</span></div></div>`;
+            box.innerHTML += html; requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; }); 
             if(processedText.includes('class="inline-censor"')) { triggerNiewolno(); } 
         }
         
@@ -395,12 +347,12 @@
         
         function handleChat() { 
             const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return; 
-            if(text.startsWith('/')) { procCmd(text); input.value=""; return; } // Zarówno admin i gracz mogą używać komend na czacie
             sendData({type:"chat", nick:user, text:text, color:userColor, admin:isAdmin, avatar:userAvatar}); input.value = ""; 
         }
         function exeTop() { const input = document.getElementById('cmdInputTop'); let text = input.value.trim(); if(!text) return; if(!text.startsWith('/')) text = '/' + text; procCmd(text); input.value = ""; }
 
-        const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "squish", "stretch", "dance", "zoom", "grayscale", "confetti", "jail", "unjail", "gravity", "vr", "room", "unroom"];
+        // 🔥 AKTUALIZACJA LISTY KOMEND v24 🔥
+        const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "squish", "stretch", "dance", "zoom", "grayscale", "confetti", "jail", "unjail", "gravity", "vr", "room", "unroom", "cats"];
         function populateCmdWindow() { const list = document.getElementById('cmdList'); let html = ""; effectList.forEach(e => html += `<div><span class="cmd-real">/${e} [nick]</span></div>`); list.innerHTML = html; }
         function toggleCmd() { document.getElementById('cmdWindow').classList.toggle('hidden'); }
         function toggleUsers() { document.getElementById('usersWindow').classList.toggle('hidden'); }
@@ -408,33 +360,71 @@
         
         function procCmd(rawCmd) { 
             let parts = rawCmd.trim().split(" "); let cmd = parts[0].toLowerCase(); let target = parts.length > 1 ? parts.slice(1).join(" ").toUpperCase() : "ALL"; 
-            
             if(cmd === '/cmd') { toggleCmd(); return; } 
             if(cmd === '/clear') { document.getElementById('chatBox').innerHTML = ""; return; } 
-            
-            // NOWOŚĆ: Komenda na zmianę zdjęcia w locie!
-            if(cmd === '/avatar') {
-                if(parts.length > 1) {
-                    let newAv = parts[1];
-                    userAvatar = newAv;
-                    localStorage.setItem('tadc_avatar', newAv);
-                    showSys(`> System: Twoje profilowe zostało zaktualizowane.`);
-                    activeUsers[user].avatar = userAvatar; // Odśwież natychmiast u siebie
-                    updateActiveUsersUI();
-                } else {
-                    showSys(`> Użycie: /avatar [url_obrazka]`);
-                }
-                return;
-            }
-
-            if(!isAdmin) { showSys("> Błąd: Moduły wymagają uprawnień Caine'a."); return; }
-
+            if(cmd === '/avatar') { if(parts.length > 1) { userAvatar = parts[1]; localStorage.setItem('tadc_avatar', userAvatar); showSys(`> System: Twoje profilowe zostało zaktualizowane.`); activeUsers[user].avatar = userAvatar; updateActiveUsersUI(); } else { showSys(`> Użycie: /avatar [url]`); } return; }
+            if(!isAdmin) { showSys("> Błąd: Moduły wymagają uprawnień Root."); return; }
             let effectName = cmd.replace('/', ''); 
             if(effectList.includes(effectName)) { sendData({type:"cmd", cmd:effectName, target:target}); let txt = target==="ALL"?"GLOBALNIE":`NA GRACZU: ${target}`; sendData({type:"sys", text: `> CAINE UŻYŁ MODUŁU: [${effectName.toUpperCase()}] ${txt}`}); return; } 
             showSys("> Błąd: Moduł nie istnieje."); 
         }
 
-        function createFallingEntities(type) { const container = document.body; const count = 25; for(let i = 0; i < count; i++) { const entity = document.createElement(type === "gloink" ? 'img' : 'div'); if(type === "gloink") { entity.src = `./images/gloink1.jpg`; entity.classList.add('falling-gloink'); } else { entity.classList.add('falling-confetti'); entity.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`; } entity.style.left = Math.random() * 100 + 'vw'; container.appendChild(entity); setTimeout(() => entity.remove(), 4000); } }
+        // --- ZMODYFIKOWANY SYSTEM SPADAJĄCYCH OBIEKTÓW v24 ---
+        function createFallingEntities(type) { 
+            const container = document.body; 
+            let count = 25; 
+
+            // 🔥 KONFETI v24: WIĘCEJ I DŁUŻEJ 🔥
+            if(type === "confetti") {
+                count = 300; // Gigantyczna ilość!
+                for(let i = 0; i < count; i++) {
+                    const entity = document.createElement('div');
+                    entity.classList.add('falling-confetti');
+                    entity.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
+                    entity.style.left = Math.random() * 100 + 'vw';
+                    // Wydłużony czas spadania (4-7 sekund)
+                    entity.style.animationDuration = (Math.random() * 3 + 4) + 's'; 
+                    entity.style.animationDelay = (Math.random() * 2) + 's';
+                    container.appendChild(entity);
+                    setTimeout(() => entity.remove(), 7000); // Usuń po najdłuższym spadaniu
+                }
+                return; // Koniec dla konfeti
+            }
+
+            // 🐈 NOWOŚĆ v24: DESZCZ KOTÓW 🐈
+            if(type === "cats") {
+                const catImages = ['./images/kot1.jpg', './images/kot2.jpg', './images/kot3.jpg'];
+                count = 50; // Masowy opad kotów
+                for(let i = 0; i < count; i++) {
+                    const entity = document.createElement('img');
+                    const imgIndex = Math.floor(Math.random() * catImages.length);
+                    entity.src = catImages[imgIndex];
+                    entity.classList.add('falling-cat');
+                    // Losowe rozmiary
+                    const size = Math.random() * 60 + 50; // 50px do 110px
+                    entity.style.width = size + 'px';
+                    entity.style.height = size + 'px';
+                    
+                    entity.style.left = Math.random() * 100 + 'vw';
+                    entity.style.animationDuration = (Math.random() * 2 + 3) + 's'; // 3-5 sekund
+                    entity.style.animationDelay = (Math.random() * 2) + 's';
+                    container.appendChild(entity);
+                    setTimeout(() => entity.remove(), 6000); // Usuń po opadzie
+                }
+                sendData({type:"sys", text: `🎵 MIAU! Caine aktywował DESZCZ KOTÓW! 🎵`});
+                return; // Koniec dla kotów
+            }
+
+            // Domyślne Gloinki (zostawiamy bez zmian)
+            for(let i = 0; i < count; i++) {
+                const entity = document.createElement(type === "gloink" ? 'img' : 'div');
+                if(type === "gloink") { entity.src = `./images/gloink1.jpg`; entity.classList.add('falling-gloink'); } 
+                else { entity.classList.add('falling-confetti'); entity.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`; }
+                entity.style.left = Math.random() * 100 + 'vw';
+                container.appendChild(entity);
+                setTimeout(() => entity.remove(), 4000);
+            }
+        }
 
         // --- SILNIK GRY 3D FPS (PIWNICA) ---
         let scene, camera, renderer, gameActive = false, score = 0;
@@ -466,7 +456,7 @@
             const eGeo = new THREE.BoxGeometry(2, 2, 2); const eMat = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true }); enemyMesh = new THREE.Mesh(eGeo, eMat); enemyMesh.position.set(20, 1, 20); scene.add(enemyMesh);
         }
 
-        function gameOverJS() { document.body.classList.add('effect-redalert'); setTimeout(() => { document.body.classList.remove('effect-redalert'); }, 500); sendData({type:"sys", text: `🔴 BŁĄD: [${user}] został złapany przez Abstrakcję w Piwnicy! Restart...`}); resetGameAndSpawnGlitches(); }
+        function gameOverJS() { document.body.classList.add('effect-redalert'); setTimeout(() => { document.body.classList.remove('effect-redalert'); }, 500); sendData({type:"sys", text: `🔴 BŁĄD: [${user}] został złapany przez Abstrakcję! Restart...`}); resetGameAndSpawnGlitches(); }
 
         function animate3D() {
             requestAnimationFrame(animate3D); if(!gameActive) return;
@@ -478,8 +468,14 @@
         }
 
         function runEff(cmd) {
-            const b = document.body; const h = document.getElementById('hologramImg'); const c = document.getElementById('censorBar'); const chatCont = document.getElementById('chatContainer'); const jail = document.getElementById('jailScreen'); const gameCont = document.getElementById('gameContainer');
-            if(cmd === "bubble") { h.src = './images/bubble.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); } else if(cmd === "pomni") { h.src = './images/pomni.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); } else if(cmd === "gloink") { createFallingEntities("gloink"); } else if(cmd === "confetti") { createFallingEntities("confetti"); } else if(cmd === "jail") { jail.classList.add('active'); } else if(cmd === "unjail") { jail.classList.remove('active'); } else if(cmd === "room") { init3DGame(); resetGameAndSpawnGlitches(); gameCont.classList.add('active'); gameActive = true; } else if(cmd === "unroom") { gameCont.classList.remove('active'); gameActive = false; if(document.pointerLockElement) document.exitPointerLock(); } else if(cmd === "gravity") { chatCont.classList.add('effect-gravity'); setTimeout(() => chatCont.classList.remove('effect-gravity'), 5000); } else if(cmd === "censor") { c.classList.add('active'); setTimeout(() => c.classList.remove('active'), 2500); } else if(cmd === "glitch") { b.classList.add('effect-glitch'); setTimeout(() => b.classList.remove('effect-glitch'), 2000); } else if(cmd === "shake") { b.classList.add('effect-shake'); setTimeout(() => b.classList.remove('effect-shake'), 3000); } else if(cmd === "redalert") { b.classList.add('effect-redalert'); setTimeout(() => b.classList.remove('effect-redalert'), 4000); } else if(cmd === "nuke") { b.classList.add('effect-nuke'); setTimeout(() => b.classList.remove('effect-nuke'), 1000); } else if(cmd === "void") { b.classList.add('effect-void'); setTimeout(() => b.classList.remove('effect-void'), 4000); } else if(cmd === "abstract") { b.classList.add('effect-abstract'); setTimeout(() => b.classList.remove('effect-abstract'), 5000); } else if(cmd === "flip") { b.classList.add('effect-flip'); setTimeout(() => b.classList.remove('effect-flip'), 5000); } else if(cmd === "blur") { b.classList.add('effect-blur'); setTimeout(() => b.classList.remove('effect-blur'), 4000); } else if(cmd === "squish") { b.classList.add('effect-squish'); setTimeout(() => b.classList.remove('effect-squish'), 4000); } else if(cmd === "stretch") { b.classList.add('effect-stretch'); setTimeout(() => b.classList.remove('effect-stretch'), 4000); } else if(cmd === "dance") { b.classList.add('effect-dance'); setTimeout(() => b.classList.remove('effect-dance'), 5000); } else if(cmd === "zoom") { b.classList.add('effect-zoom'); setTimeout(() => b.classList.remove('effect-zoom'), 3000); } else if(cmd === "grayscale") { b.classList.add('effect-grayscale'); setTimeout(() => b.classList.remove('effect-grayscale'), 5000); } else if(cmd === "vr") { b.classList.add('effect-3d-active'); setTimeout(() => b.classList.remove('effect-3d-active'), 10000); }
+            const b = document.body; const h = document.getElementById('hologramImg'); const c = document.getElementById('censorBar'); const jail = document.getElementById('jailScreen'); const gameCont = document.getElementById('gameContainer');
+            if(cmd === "bubble") { h.src = './images/bubble.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); } else if(cmd === "pomni") { h.src = './images/pomni.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); } else if(cmd === "gloink") { createFallingEntities("gloink"); } 
+            
+            // 🔥 AKTUALIZACJA: KONFETI I KOTY 🔥
+            else if(cmd === "confetti") { createFallingEntities("confetti"); } 
+            else if(cmd === "cats") { createFallingEntities("cats"); } 
+            
+            else if(cmd === "jail") { jail.classList.add('active'); } else if(cmd === "unjail") { jail.classList.remove('active'); } else if(cmd === "room") { init3DGame(); resetGameAndSpawnGlitches(); gameCont.classList.add('active'); gameActive = true; } else if(cmd === "unroom") { gameCont.classList.remove('active'); gameActive = false; if(document.pointerLockElement) document.exitPointerLock(); } else if(cmd === "gravity") { document.getElementById('chatContainer').classList.add('effect-gravity'); setTimeout(() => document.getElementById('chatContainer').classList.remove('effect-gravity'), 5000); } else if(cmd === "censor") { c.classList.add('active'); setTimeout(() => c.classList.remove('active'), 2500); } else if(cmd === "glitch") { b.classList.add('effect-glitch'); setTimeout(() => b.classList.remove('effect-glitch'), 2000); } else if(cmd === "shake") { b.classList.add('effect-shake'); setTimeout(() => b.classList.remove('effect-shake'), 3000); } else if(cmd === "redalert") { b.classList.add('effect-redalert'); setTimeout(() => b.classList.remove('effect-redalert'), 4000); } else if(cmd === "nuke") { b.classList.add('effect-nuke'); setTimeout(() => b.classList.remove('effect-nuke'), 1000); } else if(cmd === "void") { b.classList.add('effect-void'); setTimeout(() => b.classList.remove('effect-void'), 4000); } else if(cmd === "abstract") { b.classList.add('effect-abstract'); setTimeout(() => b.classList.remove('effect-abstract'), 5000); } else if(cmd === "flip") { b.classList.add('effect-flip'); setTimeout(() => b.classList.remove('effect-flip'), 5000); } else if(cmd === "blur") { b.classList.add('effect-blur'); setTimeout(() => b.classList.remove('effect-blur'), 4000); } else if(cmd === "squish") { b.classList.add('effect-squish'); setTimeout(() => b.classList.remove('effect-squish'), 4000); } else if(cmd === "stretch") { b.classList.add('effect-stretch'); setTimeout(() => b.classList.remove('effect-stretch'), 4000); } else if(cmd === "dance") { b.classList.add('effect-dance'); setTimeout(() => b.classList.remove('effect-dance'), 5000); } else if(cmd === "zoom") { b.classList.add('effect-zoom'); setTimeout(() => b.classList.remove('effect-zoom'), 3000); } else if(cmd === "grayscale") { b.classList.add('effect-grayscale'); setTimeout(() => b.classList.remove('effect-grayscale'), 5000); } else if(cmd === "vr") { b.classList.add('effect-3d-active'); setTimeout(() => b.classList.remove('effect-3d-active'), 10000); }
         }
         
         document.getElementById('chatInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') handleChat(); });
