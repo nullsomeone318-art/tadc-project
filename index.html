@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Global Mainframe OS v24</title>
+    <title>TADC - Global Mainframe OS v25</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -95,8 +95,6 @@
         @keyframes entityFall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
         .falling-gloink { position: fixed; top: -10vh; width: 60px; height: 60px; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 5px #ff0044); animation: entityFall 3s linear forwards; }
         .falling-confetti { position: fixed; top: -10vh; width: 10px; height: 10px; border-radius: 50%; z-index: 1001; pointer-events: none; animation: entityFall 2s linear forwards; }
-        
-        /* 💥 NOWOŚĆ: CSS DLA SPADAJĄCYCH KOTÓW 💥 */
         .falling-cat { position: fixed; top: -20vh; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 8px #00f2ff); animation: entityFall 4s linear forwards; object-fit: cover; border-radius: 8px; }
 
         #censorBar { position: fixed; top: 50%; left: 0; width: 100%; height: 120px; background: repeating-linear-gradient(45deg, #000, #000 20px, #fff 20px, #fff 40px); transform: translateY(-50%) scaleY(0); z-index: 3000; display: flex; justify-content: center; align-items: center; transition: 0.1s; pointer-events: none;}
@@ -107,6 +105,7 @@
         #jailScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent, transparent 40px, #111 40px, #111 60px), repeating-linear-gradient(0deg, transparent, transparent 150px, #111 150px, #111 170px); z-index: 2500; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: inset 0 0 100px #000;}
         #jailScreen.active { opacity: 0.8; pointer-events: auto; }
 
+        /* 🔥 SILNIK GRY 3D W CANVAS 🔥 */
         #gameContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5555; display: none; background: #020000; cursor: crosshair;}
         #gameContainer.active { display: block; }
         #gameUI { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 20px; font-weight: bold; z-index: 5556; text-shadow: 2px 2px #000; pointer-events: none;}
@@ -174,6 +173,7 @@
     
     <audio id="bgMusic" loop><source src="./music/maintheme.mp3" type="audio/mpeg"></audio>
     <audio id="censorAudio"><source src="./music/niewolno.mp3" type="audio/mpeg"></audio>
+    <audio id="joinAudio"><source src="./music/join.mp3" type="audio/mpeg"></audio>
 
     <div id="step-1" class="box">
         <h1>CYFROWY CYRK</h1>
@@ -257,7 +257,7 @@
         }
 
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v24"; // 🔥 AKTUALIZACJA TEMATU v24 🔥
+        const topic = "cyfrowycyrk/globalchat/final_v25"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let userAvatar = ""; let activeUsers = {}; 
 
@@ -285,7 +285,7 @@
             };
             mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
                 updateStatus(true); mqtt.subscribe(topic); 
-                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v24 👑" : `[${user}] dołączył do cyrku.`}); 
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v25 👑" : `[${user}] dołączył do cyrku.`}); 
                 if(userAvatar.includes('miku.jpg')) { setTimeout(() => { sendData({type:"sys", text: "🎵 UWAGA: WYKRYTO ZAKŁÓCENIA VOCALOIDOWE (MIKU)! 🎵"}); }, 1500); }
                 setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
                 activeUsers[user] = { time: Date.now(), isAdmin: isAdmin, avatar: userAvatar }; 
@@ -319,7 +319,6 @@
             localStorage.setItem('tadc_nick', rawNick); localStorage.setItem('tadc_avatar', rawAv);
             user = (isAdmin ? "CAINE" : (rawNick || "Zguba")).toUpperCase(); 
 
-            // SYSTEM PROFILOWYCH & MIKU EASTER EGG
             if(user.toLowerCase().includes('miku')) { userAvatar = "./images/miku.jpg"; } 
             else if (isAdmin) { userAvatar = "https://api.dicebear.com/7.x/shapes/svg?seed=Caine&backgroundColor=ff0044"; } 
             else if (rawAv) { userAvatar = rawAv; } 
@@ -343,15 +342,29 @@
             if(processedText.includes('class="inline-censor"')) { triggerNiewolno(); } 
         }
         
-        function showSys(text) { const box = document.getElementById('chatBox'); box.innerHTML += `<div class="msg-wrapper sys-wrap"><div class="msg sys">${text}</div></div>`; requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; }); }
+        // 🔥 WERSJA Z OBSŁUGĄ DŹWIĘKU WEJŚCIA 🔥
+        function showSys(text) { 
+            const box = document.getElementById('chatBox'); 
+            box.innerHTML += `<div class="msg-wrapper sys-wrap"><div class="msg sys">${text}</div></div>`; 
+            requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; }); 
+
+            // Jeśli system raportuje dołączenie nowego gracza - odpalamy join.mp3
+            if (text.includes("dołączył do cyrku") || text.includes("PRZEJĄŁ SYSTEM")) {
+                const jAudio = document.getElementById('joinAudio');
+                if(jAudio) {
+                    jAudio.currentTime = 0;
+                    jAudio.play().catch(e => console.log("Oczekiwanie na interakcję z przeglądarką."));
+                }
+            }
+        }
         
         function handleChat() { 
             const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return; 
+            if(text.startsWith('/')) { procCmd(text); input.value=""; return; }
             sendData({type:"chat", nick:user, text:text, color:userColor, admin:isAdmin, avatar:userAvatar}); input.value = ""; 
         }
         function exeTop() { const input = document.getElementById('cmdInputTop'); let text = input.value.trim(); if(!text) return; if(!text.startsWith('/')) text = '/' + text; procCmd(text); input.value = ""; }
 
-        // 🔥 AKTUALIZACJA LISTY KOMEND v24 🔥
         const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "squish", "stretch", "dance", "zoom", "grayscale", "confetti", "jail", "unjail", "gravity", "vr", "room", "unroom", "cats"];
         function populateCmdWindow() { const list = document.getElementById('cmdList'); let html = ""; effectList.forEach(e => html += `<div><span class="cmd-real">/${e} [nick]</span></div>`); list.innerHTML = html; }
         function toggleCmd() { document.getElementById('cmdWindow').classList.toggle('hidden'); }
@@ -369,53 +382,43 @@
             showSys("> Błąd: Moduł nie istnieje."); 
         }
 
-        // --- ZMODYFIKOWANY SYSTEM SPADAJĄCYCH OBIEKTÓW v24 ---
         function createFallingEntities(type) { 
             const container = document.body; 
             let count = 25; 
-
-            // 🔥 KONFETI v24: WIĘCEJ I DŁUŻEJ 🔥
             if(type === "confetti") {
-                count = 300; // Gigantyczna ilość!
+                count = 300; 
                 for(let i = 0; i < count; i++) {
                     const entity = document.createElement('div');
                     entity.classList.add('falling-confetti');
                     entity.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
                     entity.style.left = Math.random() * 100 + 'vw';
-                    // Wydłużony czas spadania (4-7 sekund)
                     entity.style.animationDuration = (Math.random() * 3 + 4) + 's'; 
                     entity.style.animationDelay = (Math.random() * 2) + 's';
                     container.appendChild(entity);
-                    setTimeout(() => entity.remove(), 7000); // Usuń po najdłuższym spadaniu
+                    setTimeout(() => entity.remove(), 7000); 
                 }
-                return; // Koniec dla konfeti
+                return; 
             }
-
-            // 🐈 NOWOŚĆ v24: DESZCZ KOTÓW 🐈
             if(type === "cats") {
                 const catImages = ['./images/kot1.jpg', './images/kot2.jpg', './images/kot3.jpg'];
-                count = 50; // Masowy opad kotów
+                count = 50; 
                 for(let i = 0; i < count; i++) {
                     const entity = document.createElement('img');
                     const imgIndex = Math.floor(Math.random() * catImages.length);
                     entity.src = catImages[imgIndex];
                     entity.classList.add('falling-cat');
-                    // Losowe rozmiary
-                    const size = Math.random() * 60 + 50; // 50px do 110px
+                    const size = Math.random() * 60 + 50; 
                     entity.style.width = size + 'px';
                     entity.style.height = size + 'px';
-                    
                     entity.style.left = Math.random() * 100 + 'vw';
-                    entity.style.animationDuration = (Math.random() * 2 + 3) + 's'; // 3-5 sekund
+                    entity.style.animationDuration = (Math.random() * 2 + 3) + 's'; 
                     entity.style.animationDelay = (Math.random() * 2) + 's';
                     container.appendChild(entity);
-                    setTimeout(() => entity.remove(), 6000); // Usuń po opadzie
+                    setTimeout(() => entity.remove(), 6000); 
                 }
                 sendData({type:"sys", text: `🎵 MIAU! Caine aktywował DESZCZ KOTÓW! 🎵`});
-                return; // Koniec dla kotów
+                return; 
             }
-
-            // Domyślne Gloinki (zostawiamy bez zmian)
             for(let i = 0; i < count; i++) {
                 const entity = document.createElement(type === "gloink" ? 'img' : 'div');
                 if(type === "gloink") { entity.src = `./images/gloink1.jpg`; entity.classList.add('falling-gloink'); } 
@@ -426,7 +429,6 @@
             }
         }
 
-        // --- SILNIK GRY 3D FPS (PIWNICA) ---
         let scene, camera, renderer, gameActive = false, score = 0;
         let collectables = []; let enemyMesh;
         let p = { x: 0, z: 0, moveF: false, moveB: false, moveL: false, moveR: false };
@@ -470,11 +472,8 @@
         function runEff(cmd) {
             const b = document.body; const h = document.getElementById('hologramImg'); const c = document.getElementById('censorBar'); const jail = document.getElementById('jailScreen'); const gameCont = document.getElementById('gameContainer');
             if(cmd === "bubble") { h.src = './images/bubble.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); } else if(cmd === "pomni") { h.src = './images/pomni.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); } else if(cmd === "gloink") { createFallingEntities("gloink"); } 
-            
-            // 🔥 AKTUALIZACJA: KONFETI I KOTY 🔥
             else if(cmd === "confetti") { createFallingEntities("confetti"); } 
             else if(cmd === "cats") { createFallingEntities("cats"); } 
-            
             else if(cmd === "jail") { jail.classList.add('active'); } else if(cmd === "unjail") { jail.classList.remove('active'); } else if(cmd === "room") { init3DGame(); resetGameAndSpawnGlitches(); gameCont.classList.add('active'); gameActive = true; } else if(cmd === "unroom") { gameCont.classList.remove('active'); gameActive = false; if(document.pointerLockElement) document.exitPointerLock(); } else if(cmd === "gravity") { document.getElementById('chatContainer').classList.add('effect-gravity'); setTimeout(() => document.getElementById('chatContainer').classList.remove('effect-gravity'), 5000); } else if(cmd === "censor") { c.classList.add('active'); setTimeout(() => c.classList.remove('active'), 2500); } else if(cmd === "glitch") { b.classList.add('effect-glitch'); setTimeout(() => b.classList.remove('effect-glitch'), 2000); } else if(cmd === "shake") { b.classList.add('effect-shake'); setTimeout(() => b.classList.remove('effect-shake'), 3000); } else if(cmd === "redalert") { b.classList.add('effect-redalert'); setTimeout(() => b.classList.remove('effect-redalert'), 4000); } else if(cmd === "nuke") { b.classList.add('effect-nuke'); setTimeout(() => b.classList.remove('effect-nuke'), 1000); } else if(cmd === "void") { b.classList.add('effect-void'); setTimeout(() => b.classList.remove('effect-void'), 4000); } else if(cmd === "abstract") { b.classList.add('effect-abstract'); setTimeout(() => b.classList.remove('effect-abstract'), 5000); } else if(cmd === "flip") { b.classList.add('effect-flip'); setTimeout(() => b.classList.remove('effect-flip'), 5000); } else if(cmd === "blur") { b.classList.add('effect-blur'); setTimeout(() => b.classList.remove('effect-blur'), 4000); } else if(cmd === "squish") { b.classList.add('effect-squish'); setTimeout(() => b.classList.remove('effect-squish'), 4000); } else if(cmd === "stretch") { b.classList.add('effect-stretch'); setTimeout(() => b.classList.remove('effect-stretch'), 4000); } else if(cmd === "dance") { b.classList.add('effect-dance'); setTimeout(() => b.classList.remove('effect-dance'), 5000); } else if(cmd === "zoom") { b.classList.add('effect-zoom'); setTimeout(() => b.classList.remove('effect-zoom'), 3000); } else if(cmd === "grayscale") { b.classList.add('effect-grayscale'); setTimeout(() => b.classList.remove('effect-grayscale'), 5000); } else if(cmd === "vr") { b.classList.add('effect-3d-active'); setTimeout(() => b.classList.remove('effect-3d-active'), 10000); }
         }
         
