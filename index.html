@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Global Mainframe OS v15</title>
+    <title>TADC - Global Mainframe OS v16</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
         @keyframes crtFlicker { 0% { opacity: 0.98; } 50% { opacity: 0.94; } 100% { opacity: 1; } }
@@ -37,7 +37,6 @@
         .progress-fill { height: 100%; width: 0%; background: repeating-linear-gradient(45deg, #00f2ff, #00f2ff 10px, #0099ff 10px, #0099ff 20px); transition: width 0.2s; }
 
         #dashboard { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 60; display: flex; flex-direction: column; transition: 0.5s;}
-        
         #caineTerminal { background: rgba(255, 0, 68, 0.95); padding: 10px; display: flex; gap: 5px; justify-content: center; border-bottom: 2px solid #fff; flex-shrink: 0; animation: breatheGlow 3s infinite ease-in-out; z-index: 10;}
         #caineTerminal input { margin: 0; background: #000; border: 1px solid #fff; color: #fff; width: 70%; padding: 8px;}
         #caineTerminal button { width: 30%; background: #000; padding: 8px; border: 1px solid #fff; color: #fff;}
@@ -61,13 +60,12 @@
         #advBtn { background: #f9e11e; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px;}
 
         .chat-box { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scrollbar-width: thin; scrollbar-color: #00f2ff #111; padding-right: 5px;}
-        
         @keyframes popIn { from { opacity: 0; transform: translateY(15px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes caineShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(1px); } 75% { transform: translateX(-1px); } }
 
         .msg { font-size: 14px; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.6); padding: 7px 12px; border-radius: 8px; border-left: 3px solid #00f2ff; width: fit-content; max-width: 90%; word-break: break-word; overflow-wrap: break-word; animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; line-height: 1.4;}
         .msg.caine { border-left: 3px solid #ff0044; background: rgba(255,0,68,0.15); font-weight: bold; animation: popIn 0.3s forwards, caineShake 0.1s infinite; }
-        .msg.sys { border-left: 3px solid #f9e11e; color: #f9e11e; font-style: italic; background: rgba(249,225,30,0.15); width: 100%; max-width: 100%; text-align: center; animation: popIn 0.3s forwards, textBlink 1.5s infinite; border-right: 3px solid #f9e11e;}
+        .msg.sys { border-left: 3px solid #f9e11e; color: #f9e11e; font-style: italic; background: rgba(249,225,30,0.15); width: 100%; max-width: 100%; text-align: left; animation: popIn 0.3s forwards, textBlink 1.5s infinite; border-right: 3px solid #f9e11e;}
 
         .inline-censor { height: 2.2em; vertical-align: middle; border-radius: 4px; border: 1px solid #ff0044; margin: 0 4px; transform: rotate(-3deg); animation: crtFlicker 0.2s infinite, miniShake 0.1s infinite; }
 
@@ -100,7 +98,6 @@
         #jailScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent, transparent 40px, #111 40px, #111 60px), repeating-linear-gradient(0deg, transparent, transparent 150px, #111 150px, #111 170px); z-index: 2500; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: inset 0 0 100px #000;}
         #jailScreen.active { opacity: 0.8; pointer-events: auto; }
 
-        /* INNE EFEKTY CSS GLOBALNE */
         .effect-glitch { animation: shake 0.1s infinite; filter: hue-rotate(90deg) invert(1); }
         @keyframes shake { 0% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 100% { transform: translate(5px, -5px); } }
         .effect-redalert { box-shadow: inset 0 0 150px rgba(255,0,0,0.8); }
@@ -170,11 +167,11 @@
         </div>
 
         <div id="adventureModal" class="popup-window hidden">
-            <div class="cmd-header"><span>🤖 MISTRZ GRY AI</span><button onclick="toggleAdventure()">[X]</button></div>
+            <div class="cmd-header"><span>🤖 KAMPANIA 10 RUND</span><button onclick="toggleAdventure()">[X]</button></div>
             <div class="cmd-list">
-                <p style="color:#00f2ff; margin-top:0;">Wpisz motyw przewodni przygody:</p>
-                <input type="text" id="advThemeInput" placeholder="np. Zgubieni w Biurach...">
-                <button id="advBtn" onclick="fireAdventure()">WYŚLIJ GRACZOM</button>
+                <p style="color:#00f2ff; margin-top:0;">Wpisz motyw 10-etapowej przygody:</p>
+                <input type="text" id="advThemeInput" placeholder="np. Zgubieni w Kodzie...">
+                <button id="advBtn" onclick="fireAdventure()">ROZPOCZNIJ KAMPANIĘ</button>
             </div>
         </div>
 
@@ -213,90 +210,48 @@
 
         function triggerNiewolno() {
             if(isCensoring) { censorAudio.currentTime = 0; return; }
-            isCensoring = true;
-            const wasPlaying = !music.paused;
-            music.pause(); 
+            isCensoring = true; const wasPlaying = !music.paused; music.pause(); 
             censorAudio.play().catch(e => console.log(e));
             document.body.classList.add('effect-censor-alert'); 
-            censorAudio.onended = () => {
-                isCensoring = false; document.body.classList.remove('effect-censor-alert');
-                if (wasPlaying && audioAllowed) music.play(); 
-            };
+            censorAudio.onended = () => { isCensoring = false; document.body.classList.remove('effect-censor-alert'); if (wasPlaying && audioAllowed) music.play(); };
         }
 
-        // --- MQTT & SYSTEM 0.1s ---
+        // --- MQTT ---
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v15"; 
+        const topic = "cyfrowycyrk/globalchat/final_v16"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let activeUsers = {}; 
 
-        // STAN PRZYGODY LORE I WOREK LOSUJĄCY
+        // STAN KAMPANII 10 ETAPÓW
         let activeAdventure = false;
+        let advStep = 0;
+        let advTheme = "";
         let currentAdvResults = {};
         let advPool = [];
 
-        // 6 POTĘŻNYCH SZABLONÓW PRZYGÓD
+        // 10 UNIKALNYCH SZABLONÓW
         const loreTemplates = [
-            {
-                text: "🎪 CYFROWA PRZYGODA: \"{THEME}\" 🎪\n\nKorytarze Namiotu wydają się dziś węższe. {GROUP_TEXT} Nagle podłoga pod waszymi stopami zaczyna przypominać glitczującą się szachownicę. Z oddali słychać obłąkańczy śmiech... to Zabstraktyzowany Kaufmo!\nCo robicie?!\n\nA) Rzucacie w Kaufmo przypadkowym Gloinkiem.\nB) Próbujecie zhakować panel podłogowy.\nC) Udajecie Abstrakcję, wymachując rękami.\nD) Skaczecie prosto w Pustkę (The Void).",
-                res: {
-                    "A": "Gloink zostaje wchłonięty, a potwór patrzy na Was z wyrzutem. Uciekacie, ale gubicie wirtualne buty!",
-                    "B": "Podłoga pęka i wpadacie prosto do basenu z cyfrowymi piłeczkami. Caine jest zły, że zrobiliście bałagan.",
-                    "C": "Potwór patrzy na Was, puka się w głowę i odchodzi. Wasz plan był tak głupi, że aż zadziałał!",
-                    "D": "Spadacie i spadacie... Caine musi użyć komendy /noclip, by Was wyciągnąć. -10 pkt godności."
-                }
-            },
-            {
-                text: "🚪 KOSZMAR WYJŚCIA: \"{THEME}\" 🚪\n\nPrzechadzacie się po Cyrku, gdy nagle widzicie... Czerwone drzwi z napisem 'WYJŚCIE'. Otwieracie je i wpadacie do nieskończonych biur. {GROUP_TEXT} Pomni siedzi w kącie panikując. Nagle słychać kroki cyfrowego potwora!\nJak reagujecie?!\n\nA) Łapiecie Pomni i biegniecie na oślep.\nB) Rozbijacie jarzeniówki, żeby stworzyć ciemność.\nC) Próbujecie przekupić potwora wirtualną kanapką.\nD) Zamykacie oczy i krzyczycie 'TO TYLKO VR!'.",
-                res: {
-                    "A": "Wpadacie na płaską teksturę ściany. Potwór dogania Was... ale to tylko Jax w strasznym kostiumie!",
-                    "B": "W ciemności wpadacie na Kingera, który zbudował tu tajny fort. Przynajmniej żyjecie!",
-                    "C": "Potwór zjada kanapkę. Okazuje się, że to Caine testował nowy silnik NPC.",
-                    "D": "Twój krzyk aktywuje Bubble'a, który pożera potwora, po czym pęka. Triumf!"
-                }
-            },
-            {
-                text: "🐛 INWAZJA: \"{THEME}\" 🐛\n\nKatastrofa w Namiocie! Królowa Gloinków obudziła się! {GROUP_TEXT} Jax ukradł klucze do pokoi i zamknął się w wieży. Zooble znowu została rozebrana na części i jej noga kica gdzieś w oddali. Caine'a nie ma!\nJak uratujecie sytuację?!\n\nA) Używacie Gangle jako liny, by wejść na wieżę.\nB) Rzucacie się w tłum Gloinków ratować ramię Zooble.\nC) Wyzywacie Królową Gloinków na Dance Battle.\nD) Chowacie się u Kingera i czekacie.",
-                res: {
-                    "A": "Gangle płacze, bo pękła jej maska, ale dajecie radę! Jax oddaje klucze. Jesteście bohaterami!",
-                    "B": "Gloinki oblepiają Was całkowicie! Stajecie się wielką kulą toczącą się po Cyrku.",
-                    "C": "Zaczynacie tańczyć Breakdance! Królowa jest w szoku i ogłasza Was nowymi lordami owadów!",
-                    "D": "Wasz pokój zostaje zasypany Gloinkami. Będziecie w nich spać przez najbliższe 3 wirtualne tygodnie."
-                }
-            },
-            {
-                text: "🌊 USTERKA NA JEZIORZE: \"{THEME}\" 🌊\n\nCaine wysłał Was nad Cyfrowe Jezioro na 'relaks'. {GROUP_TEXT} Woda nagle zmienia kolor na neonowo-zielony, a tekstury zaczynają się rozmazywać. Z głębin wyłania się gigantyczne ramię z kodem binarnym!\nSzybko, co robicie?!\n\nA) Próbujecie wypić jezioro, żeby zniszczyć potwora.\nB) Wołacie Bubble'a na pomoc.\nC) Rzucacie Jaxem w macki potwora.\nD) Uciekacie na wirtualnej motorówce.",
-                res: {
-                    "A": "Twój awatar dostaje błędu przepełnienia bufora. Zaczynasz świecić w ciemności!",
-                    "B": "Bubble pojawia się, mówi 'Smacznego!' i zlizuje kod z macki. Potwór znika.",
-                    "C": "Jax w locie rzuca ripostą, a macka odrzuca go z powrotem na brzeg. Przynajmniej było zabawnie.",
-                    "D": "Motorówka wbija się w niewidzialną ścianę mapy. Utknęliście w teksturze góry."
-                }
-            },
-            {
-                text: "🎡 KOSZMARNY KARNAWAŁ: \"{THEME}\" 🎡\n\nCyrkowe Wesołe Miasteczko zwariowało. {GROUP_TEXT} Karuzele kręcą się z prędkością światła, a z głośników leci dziwna, odwrócona muzyka. Zauważacie, że z Namiotu Luster wyszedł ktoś, kto wygląda DOKŁADNIE tak samo jak wy, ale ma czerwone oczy!\nJak postąpicie?!\n\nA) Wyzywacie klony na pojedynek na spojrzenia.\nB) Hakujecie system zasilania karuzeli.\nC) Udajecie manekiny, żeby ich zmylić.\nD) Pytacie klonów, czy mają pożyczyć 5 wirtualnych dolców.",
-                res: {
-                    "A": "Klony mrugają pierwsze! Z żalu rozpadają się na piksele. Wygraliście psychologiczną wojnę.",
-                    "B": "Zamiast wyłączyć karuzelę, włączacie tryb 'Turbo'. Wszyscy wymiotują cyfrowym konfetti.",
-                    "C": "Klony podchodzą, malują wam wąsy cyfrowym markerem i odchodzą. Sukces, ale z hańbą.",
-                    "D": "Klony patrzą z obrzydzeniem, mówią, że jesteście spłukani nawet w VR i wracają do lustra."
-                }
-            },
-            {
-                text: "🌑 PIWNICA: \"{THEME}\" 🌑\n\nZeszliście za głęboko. {GROUP_TEXT} W Piwnicy leżą dziesiątki wyciszonych dusz. Nagle gasną jedyne jarzeniówki. W absolutnej ciemności słyszycie cichy szept: 'Caine kłamał...'.\nCo robicie w mroku?!\n\nA) Zapalacie wirtualną latarkę z ekwipunku.\nB) Płaczecie i wzywacie Ragathę.\nC) Próbujecie wejść w interakcję z wyciszonymi ciałami.\nD) Krzyczycie: 'Caine, wiemy, co ukrywasz!'.",
-                res: {
-                    "A": "Światło ukazuje Jaxa ze straszną maską. 'Ale daliście się nabrać!' - śmieje się i ucieka.",
-                    "B": "Ragatha nie przychodzi, ale Kinger rzuca wam z góry linę zrobioną z prześcieradeł. Uratowani!",
-                    "C": "Wyciszone ciało nagle otwiera jedno oko i daje wam 'kciuk w górę'. Przerażające, ale miłe.",
-                    "D": "Ekran zamraża się, pojawia się wielki czerwony błąd i po chwili respawnujecie się w swoich pokojach. Caine usłyszał."
-                }
-            }
+            { text: "Korytarze Namiotu wydają się dziś węższe. {GROUP_TEXT} Nagle szachownica podłogowa zaczyna się zapadać! Z oddali słychać śmiech Abstrakcji.\nA) Rzucacie Gloinkiem w przepaść.\nB) Hakujecie system podłogi.\nC) Udajecie manekiny.\nD) Skaczecie prosto w Pustkę.",
+              res: { "A": "Gloink znika, podłoga się stabilizuje. -1 do populacji Gloinków.", "B": "Basen z piłeczkami ratuje wam życie!", "C": "Abstrakcja mija was obojętnie.", "D": "Caine wyciąga was za fraki. Auć!" } },
+            { text: "Przed wami czerwone drzwi z napisem 'WYJŚCIE'. Otwieracie je... Nieskończone biura! {GROUP_TEXT} Z mroku wyłania się kasetowy potwór.\nA) Biegniecie na oślep.\nB) Rozbijacie światła.\nC) Dajecie potworowi wirtualną kanapkę.\nD) Krzyczycie 'TO TYLKO VR!'.",
+              res: { "A": "Wpadacie na Jaxa w kostiumie potwora. Bardzo śmieszne, Jax.", "B": "Ciemność. Trafiacie na fort Kingera.", "C": "Potwór zjada kanapkę. Odszedł najedzony.", "D": "Bubble pożera potwora!" } },
+            { text: "Królowa Gloinków atakuje! {GROUP_TEXT} Jax zamknął się w wieży z kluczami. Zooble znowu w kawałkach.\nA) Wspinacie się używając Gangle jako liny.\nB) Wskakujecie w rój Gloinków.\nC) Wyzywacie Królową na taniec.\nD) Chowacie się w beczce.",
+              res: { "A": "Gangle płacze, ale Jax oddaje klucze.", "B": "Stajecie się wielką kulą Gloinków!", "C": "Breakdance ratuje sytuację. Szacun.", "D": "Beczka toczy się prosto do jeziora!" } },
+            { text: "Nad Cyfrowym Jeziorem woda staje się neonowa. {GROUP_TEXT} Z głębin wyłania się ramię z kodu!\nA) Pijecie wodę.\nB) Wzywacie Bubble'a.\nC) Rzucacie w mackę kamieniem.\nD) Uciekacie motorówką.",
+              res: { "A": "Świecicie w ciemności. Efekt uboczny.", "B": "Bubble zlizuje kod. Pycha!", "C": "Macka odrzuca kamień. Trafia w Kingera.", "D": "Motorówka wbija się w teksturę ściany." } },
+            { text: "Wesołe Miasteczko zwariowało. {GROUP_TEXT} Z Domu Luster wychodzą wasze klony o czerwonych oczach!\nA) Wyzywacie klony na pojedynek na spojrzenia.\nB) Hakujecie karuzelę.\nC) Malujecie im wąsy.\nD) Pytacie o pożyczkę.",
+              res: { "A": "Klony mrugają i rozpadają się.", "B": "Karuzela przyspiesza. Wszyscy wymiotują konfetti.", "C": "Klony płaczą i uciekają.", "D": "Klony mówią, że są spłukane i znikają." } },
+            { text: "Trafiacie do Pustki... Ciemność absolutna. {GROUP_TEXT} Słychać szept Caine'a.\nA) Odpalacie latarkę.\nB) Zamykacie oczy.\nC) Śpiewacie piosenkę cyrkową.\nD) Szukacie wyłącznika.",
+              res: { "A": "Światło ukazuje 1000 Gloinków.", "B": "Ciemność to tylko brak światła. Strach mija.", "C": "Szept dołącza do śpiewu. Upiorny chór.", "D": "Klik! Caine wyłączył Wam zasilanie mózgów na 2 sekundy." } },
+            { text: "Kuchnia Bubble'a. Wszędzie latają noże i ananasy z kodem. {GROUP_TEXT} Bubble chce byście zjedli Anielskie Ciasto!\nA) Zjadacie.\nB) Wyrzucacie przez okno.\nC) Oddajecie Pomni.\nD) Robicie z niego tarczę.",
+              res: { "A": "Smakuje jak piksele i łzy. Fuj.", "B": "Kinger dostaje ciastem w twarz.", "C": "Pomni wpada w jeszcze większy obłęd.", "D": "Nóż odbija się od ciasta. Jesteście uratowani!" } },
+            { text: "Wirtualny Sklepik. Sprzedawca to dziwny NPC. {GROUP_TEXT} Oferuje wam 'Klucz do Wolności'.\nA) Kradniecie go.\nB) Płacicie cyfrowymi monetami.\nC) Niszczycie sklepik.\nD) Ignorujecie go.",
+              res: { "A": "Klucz okazuje się być gumową kurą. Znowu Jax...", "B": "NPC dziękuje i znika. Klucz jest z czekolady.", "C": "Caine nakłada na was karę finansową.", "D": "Dobry wybór. To był wirus." } },
+            { text: "Korytarz Komedii. Gangle zgubiła swoją maskę radości i teraz namiot zalewa rzeka jej łez! {GROUP_TEXT}\nA) Próbujecie przepłynąć wpław.\nB) Pijecie łzy.\nC) Rysujecie jej nową maskę w Paint.\nD) Uciekacie na sufit.",
+              res: { "A": "Utonęliście w wirtualnym smutku.", "B": "System zgłasza: ZA DUŻO SOLI.", "C": "Maska z Painta przykleja się do Gangle. Przestaje płakać!", "D": "Grawitacja zawiodła. Zostajecie na suficie." } },
+            { text: "Krawędź Mapy. Stoicie przed gigantycznym murem tekstur. {GROUP_TEXT} Nagle mur zaczyna na Was spadać!\nA) Pchacie mur z powrotem.\nB) Kopiecie podkop.\nC) Wołacie Caine'a.\nD) Robicie sobie pamiątkowe selfie.",
+              res: { "A": "Mur jest hologramem. Przechodzicie na wylot.", "B": "Kopiecie tak głęboko, że wpadacie do Pustki.", "C": "Caine resetuje świat. Zapominacie, kim jesteście.", "D": "Selfie z murem zdążyło się zrenderować. Epicko!" } }
         ];
-
-        function fillAdvPool() {
-            advPool = [0, 1, 2, 3, 4, 5];
-            advPool.sort(() => Math.random() - 0.5); // Tasowanie przygód
-        }
 
         const badWords = [ "kurw", "kurv", "jeb", "chuj", "huj", "pierdol", "pierdal", "piedol", "piedal", "spierd", "wypierd", "wypied", "zajeb", "zjeb", "dziwk", "suka", "szmat", "cwel", "pedał", "pedal", "pizd", "fiut", "rucha", "fuck", "shit", "bitch", "debil", "idiot", "kurna", "psiawoker" ];
 
@@ -315,21 +270,31 @@
                     if(d.type === "chat") {
                         showMsg(d.nick, d.text, d.color, d.admin);
                         
-                        // NASŁUCHIWANIE ODPOWIEDZI NA PRZYGODĘ
+                        // NASŁUCHIWANIE ODPOWIEDZI NA PRZYGODĘ LORE
                         if(isAdmin && activeAdventure) {
                             let ans = d.text.trim().toUpperCase();
                             if(['A','B','C','D'].includes(ans)) {
+                                activeAdventure = false; // Pauza nasłuchu by nie zduplikować
                                 sendData({type: "sys", text: `> WYNIK DLA [${d.nick}] -> Wybrano ${ans}:\n${currentAdvResults[ans]}`});
-                                activeAdventure = false; 
+                                
+                                advStep++;
+                                if (advStep <= 10) {
+                                    // Dodatkowy auto-efekt przy co drugim etapie dla klimatu
+                                    if(advStep % 2 === 0) sendData({type:"cmd", cmd:"shake"});
+                                    
+                                    setTimeout(() => { nextEncounter(); }, 5000); // 5 sekund na oddech i czytanie
+                                } else {
+                                    setTimeout(() => { 
+                                        sendData({type: "sys", text: `🎪 KONIEC KAMPANII: "${advTheme}" 🎪\nPrzetrwaliście wszystkie 10 etapów szaleństwa! Caine gratuluje (albo i nie). Wracajcie do pokoi!`});
+                                        sendData({type:"cmd", cmd:"confetti"});
+                                    }, 4000);
+                                }
                             }
                         }
-
                     }
                     else if(d.type === "sys") showSys(d.text);
                     else if(d.type === "cmd") runEff(d.cmd);
-                    else if(d.type === "ping") {
-                        activeUsers[d.nick] = { time: Date.now(), isAdmin: d.admin };
-                    }
+                    else if(d.type === "ping") { activeUsers[d.nick] = { time: Date.now(), isAdmin: d.admin }; }
                 } catch(e) {}
             };
             mqtt.connect({
@@ -344,15 +309,10 @@
             });
         }
 
-        // RADAR 0.1s
         setInterval(() => {
             const now = Date.now();
             let changed = false;
-            for(let nick in activeUsers) {
-                if(now - activeUsers[nick].time > 3000) { 
-                    delete activeUsers[nick]; changed = true;
-                }
-            }
+            for(let nick in activeUsers) { if(now - activeUsers[nick].time > 3000) { delete activeUsers[nick]; changed = true; } }
             updateActiveUsersUI();
         }, 100);
 
@@ -360,9 +320,7 @@
             const uList = document.getElementById('usersList'); const uBtn = document.getElementById('usersBtn');
             let html = ""; let count = 0;
             for(let nick in activeUsers) {
-                count++;
-                let icon = activeUsers[nick].isAdmin ? "👑" : "👤";
-                let color = activeUsers[nick].isAdmin ? "#ff0044" : "#00f2ff";
+                count++; let icon = activeUsers[nick].isAdmin ? "👑" : "👤"; let color = activeUsers[nick].isAdmin ? "#ff0044" : "#00f2ff";
                 html += `<div><span style="color:${color}; font-weight:bold;">${icon} ${nick}</span> <span style="float:right; color:#00ff00;">● Online</span></div>`;
             }
             if(uList.innerHTML !== html) uList.innerHTML = html; 
@@ -370,14 +328,12 @@
         }
 
         function sendData(obj) { if(mqtt && mqtt.isConnected()) { const msg = new Paho.MQTT.Message(JSON.stringify(obj)); msg.destinationName = topic; mqtt.send(msg); } }
-
         function checkIfCaine() { const v = document.getElementById('nickInput').value.trim().toLowerCase(); if(v === 'caine') { document.getElementById('startBtn').classList.add('hidden'); document.getElementById('admin-login').classList.remove('hidden'); } else { document.getElementById('startBtn').classList.remove('hidden'); document.getElementById('admin-login').classList.add('hidden'); } }
         function loginAdmin() { if(document.getElementById('pinInput').value === "2222") start(true); else { alert("ODMOWA DOSTĘPU."); document.getElementById('pinInput').value = "";} }
 
         function start(adminState) {
             isAdmin = adminState; user = (isAdmin ? "CAINE" : (document.getElementById('nickInput').value.trim() || "Zguba")).toUpperCase();
             document.getElementById('step-1').classList.add('hidden'); document.getElementById('step-2').classList.remove('hidden');
-            fillAdvPool(); // Przygotuj przygody
             initMQTT(); populateCmdWindow();
             let p = 0; const fill = document.getElementById('progressFill');
             const interval = setInterval(() => { p += 5; fill.style.width = p + "%"; if(p >= 100) { clearInterval(interval); document.getElementById('step-2').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); document.getElementById('usersBtn').classList.remove('hidden'); if(isAdmin) { document.getElementById('caineTerminal').classList.remove('hidden'); } } }, 60);
@@ -417,7 +373,7 @@
 
         function populateCmdWindow() {
             const list = document.getElementById('cmdList');
-            let html = `<div><span class="cmd-real">/przygoda</span> <span class="cmd-desc">Otwiera Generator Przygód LORE AI.</span></div>`;
+            let html = `<div><span class="cmd-real">/przygoda</span> <span class="cmd-desc">Otwiera Generator Kampanii AI.</span></div>`;
             html += `<div><span class="cmd-real">/cmd</span> <span class="cmd-desc">Pokazuje tę listę.</span></div>`;
             html += `<div><span class="cmd-real">/clear</span> <span class="cmd-desc">Czyści czat (lokalnie).</span></div>`;
             effectList.forEach(e => html += `<div><span class="cmd-real">/${e}</span> <span class="cmd-desc">Globalny efekt wizualny.</span></div>`);
@@ -429,29 +385,34 @@
         function toggleUsers() { document.getElementById('usersWindow').classList.toggle('hidden'); }
         function toggleAdventure() { document.getElementById('adventureModal').classList.toggle('hidden'); }
 
-        // GENERATOR PRZYGÓD TADC (Z ADAPTACJĄ DUSZ)
+        // --- SILNIK KAMPANII 10 RUND ---
+        function fillAdvPool() {
+            advPool = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+            advPool.sort(() => Math.random() - 0.5); // Mocne tasowanie 10 przygód
+        }
+
         function fireAdventure() {
-            const theme = document.getElementById('advThemeInput').value.trim() || "Zgubieni w Kodzie";
+            advTheme = document.getElementById('advThemeInput').value.trim() || "Zgubieni w Kodzie";
             toggleAdventure(); 
-            
-            // Ile osób gra? Zabezpieczenie minimum 1.
+            advStep = 1;
+            fillAdvPool(); 
+            sendData({type:"sys", text: `> ROZPOCZYNAMY KAMPANIĘ 10 ETAPÓW:\n"${advTheme.toUpperCase()}"\nTrzymajcie się mocno...`});
+            setTimeout(() => { nextEncounter(); }, 2000);
+        }
+
+        function nextEncounter() {
             const pCount = Math.max(1, Object.keys(activeUsers).length);
-            const groupText = pCount === 1 ? "Jesteś tu zupełnie SAM, bez nadziei na ratunek." : `Jest was tu dokładnie ${pCount} przerażonych dusz, tłoczących się w strachu.`;
+            const groupText = pCount === 1 ? "Jesteś tu zupełnie SAM." : `Jest was tu dokładnie ${pCount} przerażonych dusz.`;
             
-            // Losuj z puli bez powtórzeń
-            if(advPool.length === 0) fillAdvPool(); // Jeśli pusto, napełnij i przetasuj
-            
-            const templateIndex = advPool.pop(); // Wyciągnij ostatnią liczbę z potasowanej tablicy
+            if(advPool.length === 0) fillAdvPool(); 
+            const templateIndex = advPool.pop(); 
             const template = loreTemplates[templateIndex];
             
-            // Zastąp zmienne w tekście
-            const finalAdvText = template.text
-                .replace("{THEME}", theme.toUpperCase())
-                .replace("{GROUP_TEXT}", groupText) + "\n\n[Wpisz A, B, C lub D na czacie!]";
-            
+            const finalAdvText = `[KROK ${advStep}/10] 🌟\n\n` + template.text.replace("{GROUP_TEXT}", groupText) + "\n\n[Wpisz A, B, C lub D!]";
             currentAdvResults = template.res;
-            activeAdventure = true; 
+            
             sendData({type:"sys", text: finalAdvText});
+            activeAdventure = true; 
         }
 
         function procCmd(cmd) {
