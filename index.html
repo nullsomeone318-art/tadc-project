@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TADC - Global Mainframe OS v21</title>
+    <title>TADC - Global Mainframe OS v23</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -28,9 +28,14 @@
             animation: breatheGlow 3s infinite ease-in-out; transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
         }
         h1 { color: #f9e11e; text-shadow: 2px 2px #ff0044; text-transform: uppercase; font-size: 24px; margin-top: 0; letter-spacing: 2px;}
-        input { padding: 12px; margin: 10px 0; background: #000; border: 2px solid #00f2ff; color: #00f2ff; width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; font-family: 'Courier New', monospace; outline: none; transition: 0.2s;}
+        
+        /* LOGOWANIE - POLA */
+        input { padding: 12px; margin: 8px 0; background: #000; border: 2px solid #00f2ff; color: #00f2ff; width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; font-family: 'Courier New', monospace; outline: none; transition: 0.2s;}
         input:focus { border-color: #f9e11e; box-shadow: 0 0 10px #f9e11e; }
-        button { padding: 12px; background: linear-gradient(45deg, #ff0044, #cc0036); color: #fff; border: none; font-weight: bold; width: 100%; cursor: pointer; border-bottom: 4px solid #66001b; font-family: 'Courier New', monospace; text-transform: uppercase; transition: 0.2s;}
+        #avatarInput { border-color: #ff0044; font-size: 11px;}
+        #avatarInput:focus { border-color: #ff9999; box-shadow: 0 0 10px #ff0044; }
+
+        button { padding: 12px; margin-top: 5px; background: linear-gradient(45deg, #ff0044, #cc0036); color: #fff; border: none; font-weight: bold; width: 100%; cursor: pointer; border-bottom: 4px solid #66001b; font-family: 'Courier New', monospace; text-transform: uppercase; transition: 0.2s;}
         button:hover { background: #f9e11e; color: #000; border-bottom: 4px solid #b3a00b; transform: translateY(-2px);}
 
         .progress-bar-container { width: 100%; height: 20px; border: 2px solid #00f2ff; margin-top: 20px; background: #111; overflow: hidden; border-radius: 5px;}
@@ -58,13 +63,26 @@
         #advThemeInput { width: 90%; padding: 10px; margin-bottom: 15px; border: 1px solid #f9e11e; background: #111; color: #fff; font-weight: bold;}
         #advBtn { background: #f9e11e; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px;}
 
+        /* CSS DLA AVATARÓW W CZACIE */
         .chat-box { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scrollbar-width: thin; scrollbar-color: #00f2ff #111; padding-right: 5px;}
+        
+        .msg-wrapper { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 5px; animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
+        .avatar-img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #00f2ff; object-fit: cover; flex-shrink: 0; background-color: #111; transition: 0.2s;}
+        .avatar-img:hover { transform: scale(1.2) rotate(5deg); animation: crtFlicker 0.2s infinite; }
+        
         @keyframes popIn { from { opacity: 0; transform: translateY(15px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes caineShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(1px); } 75% { transform: translateX(-1px); } }
 
-        .msg { font-size: 14px; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.6); padding: 7px 12px; border-radius: 8px; border-left: 3px solid #00f2ff; width: fit-content; max-width: 90%; word-break: break-word; overflow-wrap: break-word; animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; line-height: 1.4;}
-        .msg.caine { border-left: 3px solid #ff0044; background: rgba(255,0,68,0.15); font-weight: bold; animation: popIn 0.3s forwards, caineShake 0.1s infinite; }
-        .msg.sys { border-left: 3px solid #f9e11e; color: #f9e11e; font-style: italic; background: rgba(249,225,30,0.15); width: 100%; max-width: 100%; text-align: left; animation: popIn 0.3s forwards, textBlink 1.5s infinite; border-right: 3px solid #f9e11e;}
+        .msg { font-size: 14px; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.6); padding: 7px 12px; border-radius: 8px; border-left: 3px solid #00f2ff; width: fit-content; max-width: 90%; word-break: break-word; overflow-wrap: break-word; line-height: 1.4;}
+        
+        /* CAINE STYL */
+        .msg-wrapper.caine-wrap .avatar-img { border-color: #ff0044; box-shadow: 0 0 10px #ff0044; animation: caineShake 0.1s infinite;}
+        .msg-wrapper.caine-wrap .msg { border-left: 3px solid #ff0044; background: rgba(255,0,68,0.15); font-weight: bold; }
+        
+        /* SYSTEM STYL */
+        .msg-wrapper.sys-wrap { justify-content: center; }
+        .msg-wrapper.sys-wrap .msg { border-left: 3px solid #f9e11e; color: #f9e11e; font-style: italic; background: rgba(249,225,30,0.15); width: 100%; max-width: 100%; text-align: left; animation: textBlink 1.5s infinite; border-right: 3px solid #f9e11e;}
+        .msg-wrapper.sys-wrap .avatar-img { display: none; }
 
         .inline-censor { height: 2.2em; vertical-align: middle; border-radius: 4px; border: 1px solid #ff0044; margin: 0 4px; transform: rotate(-3deg); animation: crtFlicker 0.2s infinite, miniShake 0.1s infinite; }
 
@@ -84,7 +102,6 @@
 
         .hologram-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 350px; z-index: 1000; border: none; border-radius: 0; box-shadow: 0 0 60px 10px rgba(255, 0, 68, 0.7); transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); pointer-events: none; opacity: 0; }
         .hologram-popup.active { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-
         @keyframes entityFall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
         .falling-gloink { position: fixed; top: -10vh; width: 60px; height: 60px; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 5px #ff0044); animation: entityFall 3s linear forwards; }
         .falling-confetti { position: fixed; top: -10vh; width: 10px; height: 10px; border-radius: 50%; z-index: 1001; pointer-events: none; animation: entityFall 2s linear forwards; }
@@ -98,10 +115,11 @@
         #jailScreen.active { opacity: 0.8; pointer-events: auto; }
 
         /* 🔥 SILNIK GRY 3D W CANVAS 🔥 */
-        #gameContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5555; display: none; background: #000; }
+        #gameContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5555; display: none; background: #020000; cursor: crosshair;}
         #gameContainer.active { display: block; }
         #gameUI { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 20px; font-weight: bold; z-index: 5556; text-shadow: 2px 2px #000; pointer-events: none;}
-        #gameWarning { position: absolute; top: 80px; left: 20px; color: #ff0000; font-size: 16px; font-weight: bold; z-index: 5556; text-shadow: 1px 1px #000; animation: textBlink 0.5s infinite;}
+        #gameWarning { position: absolute; top: 100px; left: 20px; color: #ff0000; font-size: 16px; font-weight: bold; z-index: 5556; text-shadow: 1px 1px #000; animation: textBlink 0.5s infinite;}
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; background: #ff0044; border-radius: 50%; transform: translate(-50%, -50%); z-index: 5556; pointer-events: none; opacity: 0.5;}
         #gameControls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 5557;}
         .g-btn { background: rgba(0,242,255,0.3); border: 2px solid #00f2ff; color: #fff; width: 60px; height: 60px; font-size: 24px; font-weight: bold; border-radius: 10px; user-select: none; }
         .g-btn:active { background: rgba(0,242,255,0.8); }
@@ -137,17 +155,18 @@
     <div class="scanlines"></div>
     
     <div id="gameContainer">
+        <div id="crosshair"></div>
         <div id="gameUI">
-            <span style="color:#00f2ff;">CEL:</span> ZBIERZ WSZYSTKIE 20 GLITCHY!<br>
+            <span style="color:#00f2ff;">LOKACJA: MROCZNA PIWNICA</span><br>
             <span id="gameScore" style="color:#f9e11e;">ZEBRANO: 0 / 20</span><br>
-            <span style="font-size: 12px; color:#aaa;">STEROWANIE: W, S (Przód/Tył) | A, D (Obrót)</span>
+            <span style="font-size: 12px; color:#aaa;">Naciśnij 'I' aby zablokować mysz!<br>WASD - Poruszanie</span>
         </div>
         <div id="gameWarning">⚠️ UWAGA: UCIEKAJ PRZED CZERWONYM SZEŚCIANEM!</div>
         <div id="gameControls">
-            <button class="g-btn" onmousedown="p.rotL=true" onmouseup="p.rotL=false" ontouchstart="p.rotL=true" ontouchend="p.rotL=false">↶</button>
+            <button class="g-btn" onmousedown="p.moveL=true" onmouseup="p.moveL=false" ontouchstart="p.moveL=true" ontouchend="p.moveL=false">A</button>
             <button class="g-btn" onmousedown="p.moveF=true" onmouseup="p.moveF=false" ontouchstart="p.moveF=true" ontouchend="p.moveF=false">W</button>
             <button class="g-btn" onmousedown="p.moveB=true" onmouseup="p.moveB=false" ontouchstart="p.moveB=true" ontouchend="p.moveB=false">S</button>
-            <button class="g-btn" onmousedown="p.rotR=true" onmouseup="p.rotR=false" ontouchstart="p.rotR=true" ontouchend="p.rotR=false">↷</button>
+            <button class="g-btn" onmousedown="p.moveR=true" onmouseup="p.moveR=false" ontouchstart="p.moveR=true" ontouchend="p.moveR=false">D</button>
         </div>
     </div>
     
@@ -167,7 +186,10 @@
     <div id="step-1" class="box">
         <h1>CYFROWY CYRK</h1>
         <input type="text" id="nickInput" placeholder="Twoje Imię..." oninput="checkIfCaine()">
+        <input type="text" id="avatarInput" placeholder="URL Zdjęcia (Opcjonalne)...">
+        
         <button id="startBtn" onclick="start(false)">ZALOGUJ</button>
+        
         <div id="admin-login" class="hidden">
             <p style="color: #ff0044; font-weight: bold; font-size: 12px; margin-top: 15px; animation: textBlink 1s infinite;">[ SYSTEM ROOT ]</p>
             <input type="password" id="pinInput" placeholder="PIN: ****">
@@ -215,6 +237,13 @@
     </div>
 
     <script>
+        // --- WCZYTYWANIE DANYCH Z PAMIĘCI PRZEGLĄDARKI ---
+        window.onload = () => {
+            if(localStorage.getItem('tadc_nick')) document.getElementById('nickInput').value = localStorage.getItem('tadc_nick');
+            if(localStorage.getItem('tadc_avatar')) document.getElementById('avatarInput').value = localStorage.getItem('tadc_avatar');
+            checkIfCaine();
+        };
+
         const music = document.getElementById('bgMusic');
         const censorAudio = document.getElementById('censorAudio');
         const audioBtn = document.getElementById('audioBtn');
@@ -239,8 +268,9 @@
             censorAudio.onended = () => { isCensoring = false; document.body.classList.remove('effect-censor-alert'); if (wasPlaying && audioAllowed) music.play(); };
         }
 
-        let mqtt; const topic = "cyfrowycyrk/globalchat/final_v21"; 
+        let mqtt; const topic = "cyfrowycyrk/globalchat/final_v23"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
+        let userAvatar = ""; // GLOBALNA ZMIENNA AVATARA
         let activeUsers = {}; 
 
         const badWords = [ "kurw", "kurv", "jeb", "chuj", "huj", "pierdol", "pierdal", "piedol", "piedal", "spierd", "wypierd", "wypied", "zajeb", "zjeb", "dziwk", "suka", "szmat", "cwel", "pedał", "pedal", "pizd", "fiut", "rucha", "fuck", "shit", "bitch", "debil", "idiot", "kurna", "psiawoker" ];
@@ -257,28 +287,117 @@
             mqtt.onMessageArrived = (m) => {
                 try {
                     const d = JSON.parse(m.payloadString);
-                    if(d.type === "chat") { showMsg(d.nick, d.text, d.color, d.admin); }
+                    if(d.type === "chat") { showMsg(d.nick, d.text, d.color, d.admin, d.avatar); }
                     else if(d.type === "sys") showSys(d.text);
                     else if(d.type === "cmd") { 
                         if(!d.target || d.target === "" || d.target === "ALL" || d.target === user) { runEff(d.cmd); } 
                     }
-                    else if(d.type === "ping") { activeUsers[d.nick] = { time: Date.now(), isAdmin: d.admin }; }
+                    else if(d.type === "ping") { 
+                        // Aktualizacja radaru z avatarem
+                        activeUsers[d.nick] = { time: Date.now(), isAdmin: d.admin, avatar: d.avatar }; 
+                    }
                 } catch(e) {}
             };
-            mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { updateStatus(true); mqtt.subscribe(topic); sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM 👑" : `[${user}] dołączył.`}); setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin}); }, 1000); activeUsers[user] = { time: Date.now(), isAdmin: isAdmin }; }, onFailure: () => { updateStatus(false); } });
+            mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
+                updateStatus(true); mqtt.subscribe(topic); 
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM 👑" : `[${user}] dołączył do cyrku.`}); 
+                
+                // Miku Jumpscare System Message
+                if(userAvatar.includes('miku.jpg')) {
+                    setTimeout(() => { sendData({type:"sys", text: "🎵 UWAGA: WYKRYTO ZAKŁÓCENIA VOCALOIDOWE (HATSUNE MIKU)! 🎵"}); }, 1500);
+                }
+
+                setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
+                activeUsers[user] = { time: Date.now(), isAdmin: isAdmin, avatar: userAvatar }; 
+            }, onFailure: () => { updateStatus(false); } });
         }
 
         setInterval(() => { const now = Date.now(); for(let nick in activeUsers) { if(now - activeUsers[nick].time > 3000) { delete activeUsers[nick]; } } updateActiveUsersUI(); }, 100);
-        function updateActiveUsersUI() { const uList = document.getElementById('usersList'); const uBtn = document.getElementById('usersBtn'); let html = ""; let count = 0; for(let nick in activeUsers) { count++; let icon = activeUsers[nick].isAdmin ? "👑" : "👤"; let color = activeUsers[nick].isAdmin ? "#ff0044" : "#00f2ff"; html += `<div><span style="color:${color}; font-weight:bold;">${icon} ${nick}</span></div>`; } uList.innerHTML = html; uBtn.innerText = `👥 Aktywni: ${count}`; }
+        
+        // --- ZAAWANSOWANA LISTA UŻYTKOWNIKÓW Z AVATARAMI ---
+        function updateActiveUsersUI() { 
+            const uList = document.getElementById('usersList'); const uBtn = document.getElementById('usersBtn'); 
+            let html = ""; let count = 0; 
+            for(let nick in activeUsers) { 
+                count++; 
+                let icon = activeUsers[nick].isAdmin ? "👑" : "👤"; 
+                let color = activeUsers[nick].isAdmin ? "#ff0044" : "#00f2ff"; 
+                let av = activeUsers[nick].avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${nick}`;
+                
+                html += `<div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px dashed #333;">
+                            <img src="${av}" style="width:28px; height:28px; border-radius:50%; border:2px solid ${color}; object-fit:cover; background:#111;">
+                            <span style="color:${color}; font-weight:bold; flex-grow:1; font-size:14px;">${icon} ${nick}</span>
+                            <span style="color:#00ff00; font-size:10px;">● Online</span>
+                         </div>`; 
+            } 
+            if(uList.innerHTML !== html) uList.innerHTML = html; 
+            uBtn.innerText = `👥 Aktywni: ${count}`; 
+        }
+
         function sendData(obj) { if(mqtt && mqtt.isConnected()) { const msg = new Paho.MQTT.Message(JSON.stringify(obj)); msg.destinationName = topic; mqtt.send(msg); } }
-        function checkIfCaine() { const v = document.getElementById('nickInput').value.trim().toLowerCase(); if(v === 'caine') { document.getElementById('startBtn').classList.add('hidden'); document.getElementById('admin-login').classList.remove('hidden'); } else { document.getElementById('startBtn').classList.remove('hidden'); document.getElementById('admin-login').classList.add('hidden'); } }
+        function checkIfCaine() { const v = document.getElementById('nickInput').value.trim().toLowerCase(); if(v === 'caine') { document.getElementById('startBtn').classList.add('hidden'); document.getElementById('admin-login').classList.remove('hidden'); document.getElementById('avatarInput').classList.add('hidden');} else { document.getElementById('startBtn').classList.remove('hidden'); document.getElementById('admin-login').classList.add('hidden'); document.getElementById('avatarInput').classList.remove('hidden');} }
         function loginAdmin() { if(document.getElementById('pinInput').value === "2222") start(true); else { alert("ODMOWA."); document.getElementById('pinInput').value = "";} }
-        function start(adminState) { isAdmin = adminState; user = (isAdmin ? "CAINE" : (document.getElementById('nickInput').value.trim() || "Zguba")).toUpperCase(); document.getElementById('step-1').classList.add('hidden'); document.getElementById('step-2').classList.remove('hidden'); initMQTT(); populateCmdWindow(); let pr = 0; const fill = document.getElementById('progressFill'); const interval = setInterval(() => { pr += 5; fill.style.width = pr + "%"; if(pr >= 100) { clearInterval(interval); document.getElementById('step-2').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); document.getElementById('usersBtn').classList.remove('hidden'); if(isAdmin) { document.getElementById('caineTerminal').classList.remove('hidden'); } } }, 60); }
+        
+        function start(adminState) { 
+            isAdmin = adminState; 
+            let rawNick = document.getElementById('nickInput').value.trim();
+            let rawAv = document.getElementById('avatarInput').value.trim();
+            
+            // Zapis w pamięci
+            localStorage.setItem('tadc_nick', rawNick);
+            localStorage.setItem('tadc_avatar', rawAv);
+
+            user = (isAdmin ? "CAINE" : (rawNick || "Zguba")).toUpperCase(); 
+
+            // 🔥 SYSTEM PROFILOWYCH I EASTER EGG MIKU 🔥
+            if(user.toLowerCase().includes('miku')) {
+                userAvatar = "./images/miku.jpg"; // Wymuszamy zdjęcie Miku!
+            } else if (isAdmin) {
+                userAvatar = "https://api.dicebear.com/7.x/shapes/svg?seed=Caine&backgroundColor=ff0044"; // Czerwony geometryczny awatar dla Caine'a
+            } else if (rawAv) {
+                userAvatar = rawAv; // Awatar wpisany przez gracza
+            } else {
+                userAvatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${user}`; // Unikalny Robot dla gracza bez zdjęcia!
+            }
+
+            document.getElementById('step-1').classList.add('hidden'); document.getElementById('step-2').classList.remove('hidden'); 
+            initMQTT(); populateCmdWindow(); 
+            let pr = 0; const fill = document.getElementById('progressFill'); 
+            const interval = setInterval(() => { pr += 5; fill.style.width = pr + "%"; if(pr >= 100) { clearInterval(interval); document.getElementById('step-2').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); document.getElementById('usersBtn').classList.remove('hidden'); if(isAdmin) { document.getElementById('caineTerminal').classList.remove('hidden'); } } }, 60); 
+        }
         
         function censorText(text) { let safe = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); badWords.forEach(word => { const spamPattern = word.split('').join('+') + "+[a-ząćęłńóśźż]*"; const regex = new RegExp(spamPattern, "gi"); safe = safe.replace(regex, `<img src="./images/censure.jpg" class="inline-censor">`); }); return safe; }
-        function showMsg(nick, text, color, isCaine) { const box = document.getElementById('chatBox'); const processedText = censorText(text); const className = isCaine ? "msg caine" : "msg"; const nickStyle = isCaine ? "" : `style="color:${color};"`; box.innerHTML += `<div class="${className}"><span class="nick" ${nickStyle}>${nick}:</span> <span class="text">${processedText}</span></div>`; box.scrollTop = box.scrollHeight; if(processedText.includes('class="inline-censor"')) { triggerNiewolno(); } }
-        function showSys(text) { const box = document.getElementById('chatBox'); box.innerHTML += `<div class="msg sys">${text}</div>`; box.scrollTop = box.scrollHeight; }
-        function handleChat() { const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return; sendData({type:"chat", nick:user, text:text, color:userColor, admin:isAdmin}); input.value = ""; }
+        
+        // --- RENDEROWANIE CZATU Z AVATARAMI ---
+        function showMsg(nick, text, color, isCaine, avatar) { 
+            const box = document.getElementById('chatBox'); 
+            const processedText = censorText(text); 
+            
+            // Fallback awatara
+            const safeAvatar = avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${nick}`;
+            const wrapClass = isCaine ? "msg-wrapper caine-wrap" : "msg-wrapper";
+            const nickStyle = isCaine ? "" : `style="color:${color};"`; 
+            
+            // Składanie HTML
+            let html = `
+                <div class="${wrapClass}">
+                    <img src="${safeAvatar}" class="avatar-img" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=${nick}'">
+                    <div class="msg"><span class="nick" ${nickStyle}>${nick}:</span> <span class="text">${processedText}</span></div>
+                </div>`;
+            
+            box.innerHTML += html; 
+            requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; }); 
+            
+            if(processedText.includes('class="inline-censor"')) { triggerNiewolno(); } 
+        }
+        
+        function showSys(text) { const box = document.getElementById('chatBox'); box.innerHTML += `<div class="msg-wrapper sys-wrap"><div class="msg sys">${text}</div></div>`; requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; }); }
+        
+        function handleChat() { 
+            const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return; 
+            if(text.startsWith('/')) { procCmd(text); input.value=""; return; } // Zarówno admin i gracz mogą używać komend na czacie
+            sendData({type:"chat", nick:user, text:text, color:userColor, admin:isAdmin, avatar:userAvatar}); input.value = ""; 
+        }
         function exeTop() { const input = document.getElementById('cmdInputTop'); let text = input.value.trim(); if(!text) return; if(!text.startsWith('/')) text = '/' + text; procCmd(text); input.value = ""; }
 
         const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "squish", "stretch", "dance", "zoom", "grayscale", "confetti", "jail", "unjail", "gravity", "vr", "room", "unroom"];
@@ -287,185 +406,80 @@
         function toggleUsers() { document.getElementById('usersWindow').classList.toggle('hidden'); }
         function toggleAdventure() { document.getElementById('adventureModal').classList.toggle('hidden'); }
         
-        function procCmd(rawCmd) { let parts = rawCmd.trim().split(" "); let cmd = parts[0].toLowerCase(); let target = parts.length > 1 ? parts.slice(1).join(" ").toUpperCase() : "ALL"; if(cmd === '/cmd') { toggleCmd(); return; } if(cmd === '/clear') { document.getElementById('chatBox').innerHTML = ""; return; } let effectName = cmd.replace('/', ''); if(effectList.includes(effectName)) { sendData({type:"cmd", cmd:effectName, target:target}); let txt = target==="ALL"?"GLOBALNIE":`NA GRACZU: ${target}`; sendData({type:"sys", text: `> CAINE UŻYŁ MODUŁU: [${effectName.toUpperCase()}] ${txt}`}); return; } showSys("> Błąd: Moduł nie istnieje."); }
+        function procCmd(rawCmd) { 
+            let parts = rawCmd.trim().split(" "); let cmd = parts[0].toLowerCase(); let target = parts.length > 1 ? parts.slice(1).join(" ").toUpperCase() : "ALL"; 
+            
+            if(cmd === '/cmd') { toggleCmd(); return; } 
+            if(cmd === '/clear') { document.getElementById('chatBox').innerHTML = ""; return; } 
+            
+            // NOWOŚĆ: Komenda na zmianę zdjęcia w locie!
+            if(cmd === '/avatar') {
+                if(parts.length > 1) {
+                    let newAv = parts[1];
+                    userAvatar = newAv;
+                    localStorage.setItem('tadc_avatar', newAv);
+                    showSys(`> System: Twoje profilowe zostało zaktualizowane.`);
+                    activeUsers[user].avatar = userAvatar; // Odśwież natychmiast u siebie
+                    updateActiveUsersUI();
+                } else {
+                    showSys(`> Użycie: /avatar [url_obrazka]`);
+                }
+                return;
+            }
+
+            if(!isAdmin) { showSys("> Błąd: Moduły wymagają uprawnień Caine'a."); return; }
+
+            let effectName = cmd.replace('/', ''); 
+            if(effectList.includes(effectName)) { sendData({type:"cmd", cmd:effectName, target:target}); let txt = target==="ALL"?"GLOBALNIE":`NA GRACZU: ${target}`; sendData({type:"sys", text: `> CAINE UŻYŁ MODUŁU: [${effectName.toUpperCase()}] ${txt}`}); return; } 
+            showSys("> Błąd: Moduł nie istnieje."); 
+        }
+
         function createFallingEntities(type) { const container = document.body; const count = 25; for(let i = 0; i < count; i++) { const entity = document.createElement(type === "gloink" ? 'img' : 'div'); if(type === "gloink") { entity.src = `./images/gloink1.jpg`; entity.classList.add('falling-gloink'); } else { entity.classList.add('falling-confetti'); entity.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`; } entity.style.left = Math.random() * 100 + 'vw'; container.appendChild(entity); setTimeout(() => entity.remove(), 4000); } }
 
-        // --- SILNIK GRY 3D (THREE.JS SURVIVAL HORROR) ---
+        // --- SILNIK GRY 3D FPS (PIWNICA) ---
         let scene, camera, renderer, gameActive = false, score = 0;
-        let collectables = [];
-        let enemyMesh; // Goniąca Abstrakcja!
-        let p = { x: 0, z: 0, rot: 0, moveF: false, moveB: false, rotL: false, rotR: false };
+        let collectables = []; let enemyMesh;
+        let p = { x: 0, z: 0, moveF: false, moveB: false, moveL: false, moveR: false };
+        let yaw = 0, pitch = 0;
 
         function init3DGame() {
             if(scene) return; 
             const container = document.getElementById('gameContainer');
-            
-            scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x050505, 0.05);
+            scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x0a0000, 0.08);
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000); camera.position.y = 1.5;
+            renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight); container.appendChild(renderer.domElement);
+            const grid = new THREE.GridHelper(100, 100, 0x550000, 0x220000); scene.add(grid);
 
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.y = 1.5;
+            document.addEventListener('keydown', e => { if(!gameActive) return; let k = e.key.toLowerCase(); if(k === 'w') p.moveF = true; if(k === 's') p.moveB = true; if(k === 'a') p.moveL = true; if(k === 'd') p.moveR = true; if(k === 'i') { container.requestPointerLock(); } });
+            document.addEventListener('keyup', e => { if(!gameActive) return; let k = e.key.toLowerCase(); if(k === 'w') p.moveF = false; if(k === 's') p.moveB = false; if(k === 'a') p.moveL = false; if(k === 'd') p.moveR = false; });
+            document.addEventListener('mousemove', (e) => { if (document.pointerLockElement === container && gameActive) { yaw -= e.movementX * 0.003; pitch -= e.movementY * 0.003; pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch)); camera.rotation.set(pitch, yaw, 0, 'YXZ'); } });
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            container.appendChild(renderer.domElement);
-
-            const grid = new THREE.GridHelper(100, 100, 0xff0044, 0x00f2ff);
-            scene.add(grid);
-
-            document.addEventListener('keydown', e => {
-                if(e.key === 'w' || e.key === 'W') p.moveF = true;
-                if(e.key === 's' || e.key === 'S') p.moveB = true;
-                if(e.key === 'a' || e.key === 'A') p.rotL = true;
-                if(e.key === 'd' || e.key === 'D') p.rotR = true;
-            });
-            document.addEventListener('keyup', e => {
-                if(e.key === 'w' || e.key === 'W') p.moveF = false;
-                if(e.key === 's' || e.key === 'S') p.moveB = false;
-                if(e.key === 'a' || e.key === 'A') p.rotL = false;
-                if(e.key === 'd' || e.key === 'D') p.rotR = false;
-            });
-
+            let touchX = 0; document.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }); document.addEventListener('touchmove', e => { if(gameActive) { let dx = e.touches[0].clientX - touchX; yaw -= dx * 0.005; camera.rotation.set(pitch, yaw, 0, 'YXZ'); touchX = e.touches[0].clientX; } });
             animate3D();
         }
 
         function resetGameAndSpawnGlitches() {
-            score = 0;
-            document.getElementById('gameScore').innerText = "ZEBRANO: 0 / 20";
-            p.x = 0; p.z = 0; p.rot = 0;
-            
-            // Wyczyść stare obiekty
-            collectables.forEach(c => scene.remove(c));
-            collectables = [];
-            if(enemyMesh) scene.remove(enemyMesh);
-
-            // Spawn Glitche (Punkty)
-            const geo = new THREE.BoxGeometry(1, 1, 1);
-            const mat = new THREE.MeshBasicMaterial({ color: 0xf9e11e, wireframe: true });
-            for(let i = 0; i < 20; i++) {
-                let mesh = new THREE.Mesh(geo, mat);
-                mesh.position.set((Math.random() - 0.5) * 50, 1, (Math.random() - 0.5) * 50);
-                scene.add(mesh);
-                collectables.push(mesh);
-            }
-
-            // Spawn Wroga (Czerwona Abstrakcja)
-            const eGeo = new THREE.BoxGeometry(2, 2, 2);
-            const eMat = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
-            enemyMesh = new THREE.Mesh(eGeo, eMat);
-            // Respawnuje się daleko od gracza (na krawędzi mapy)
-            enemyMesh.position.set(20, 1, 20);
-            scene.add(enemyMesh);
+            score = 0; document.getElementById('gameScore').innerText = "ZEBRANO: 0 / 20"; p.x = 0; p.z = 0; yaw = 0; pitch = 0; camera.rotation.set(0,0,0);
+            collectables.forEach(c => scene.remove(c)); collectables = []; if(enemyMesh) scene.remove(enemyMesh);
+            const geo = new THREE.BoxGeometry(1, 1, 1); const mat = new THREE.MeshBasicMaterial({ color: 0xf9e11e, wireframe: true });
+            for(let i = 0; i < 20; i++) { let mesh = new THREE.Mesh(geo, mat); mesh.position.set((Math.random() - 0.5) * 50, 1, (Math.random() - 0.5) * 50); scene.add(mesh); collectables.push(mesh); }
+            const eGeo = new THREE.BoxGeometry(2, 2, 2); const eMat = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true }); enemyMesh = new THREE.Mesh(eGeo, eMat); enemyMesh.position.set(20, 1, 20); scene.add(enemyMesh);
         }
 
-        function gameOverJS() {
-            gameActive = false;
-            document.getElementById('gameContainer').classList.remove('active');
-            runEff('kickall'); // Odpalenie czerwonego ekranu Błędu
-            sendData({type:"sys", text: `🔴 PORAŻKA: [${user}] został dopadnięty i pożarty przez Abstrakcję w Izolatce 3D!`});
-        }
+        function gameOverJS() { document.body.classList.add('effect-redalert'); setTimeout(() => { document.body.classList.remove('effect-redalert'); }, 500); sendData({type:"sys", text: `🔴 BŁĄD: [${user}] został złapany przez Abstrakcję w Piwnicy! Restart...`}); resetGameAndSpawnGlitches(); }
 
         function animate3D() {
-            requestAnimationFrame(animate3D);
-            if(!gameActive) return;
-
-            // --- RUCH GRACZA ---
-            if(p.rotL) p.rot += 0.06;
-            if(p.rotR) p.rot -= 0.06;
-
-            const speed = 0.35;
-            if(p.moveF) { p.x -= Math.sin(p.rot) * speed; p.z -= Math.cos(p.rot) * speed; }
-            if(p.moveB) { p.x += Math.sin(p.rot) * speed; p.z += Math.cos(p.rot) * speed; }
-
-            camera.position.x = p.x;
-            camera.position.z = p.z;
-            camera.rotation.y = p.rot;
-
-            // --- ZBIERANIE PUNKTÓW ---
-            for(let i = collectables.length - 1; i >= 0; i--) {
-                let c = collectables[i];
-                c.rotation.x += 0.01; c.rotation.y += 0.02;
-                
-                if(camera.position.distanceTo(c.position) < 1.5) {
-                    scene.remove(c);
-                    collectables.splice(i, 1);
-                    score++;
-                    document.getElementById('gameScore').innerText = "ZEBRANO: " + score + " / 20";
-                    
-                    if(score >= 20) {
-                        gameActive = false;
-                        document.getElementById('gameContainer').classList.remove('active');
-                        sendData({type:"sys", text: `🟢 SUKCES: [${user}] pokonał grę 3D i uciekł z izolatki!`});
-                    }
-                }
-            }
-
-            // --- AI WROGA (ŚLEDZENIE GRACZA) ---
-            if(enemyMesh) {
-                let dx = camera.position.x - enemyMesh.position.x;
-                let dz = camera.position.z - enemyMesh.position.z;
-                let angle = Math.atan2(dx, dz);
-                
-                // Prędkość wroga (trochę wolniejszy od gracza, ale nieubłagany)
-                enemyMesh.position.x += Math.sin(angle) * 0.15;
-                enemyMesh.position.z += Math.cos(angle) * 0.15;
-                
-                enemyMesh.rotation.x += 0.05; 
-                enemyMesh.rotation.y += 0.05;
-
-                // KOLIZJA Z WROGIEM = JUMPSCARE
-                if(camera.position.distanceTo(enemyMesh.position) < 2.0) {
-                    gameOverJS();
-                }
-            }
-
+            requestAnimationFrame(animate3D); if(!gameActive) return;
+            const speed = 0.2; if(p.moveF) { p.x -= Math.sin(yaw) * speed; p.z -= Math.cos(yaw) * speed; } if(p.moveB) { p.x += Math.sin(yaw) * speed; p.z += Math.cos(yaw) * speed; } if(p.moveL) { p.x -= Math.cos(yaw) * speed; p.z += Math.sin(yaw) * speed; } if(p.moveR) { p.x += Math.cos(yaw) * speed; p.z -= Math.sin(yaw) * speed; }
+            camera.position.x = p.x; camera.position.z = p.z;
+            for(let i = collectables.length - 1; i >= 0; i--) { let c = collectables[i]; c.rotation.x += 0.01; c.rotation.y += 0.02; if(camera.position.distanceTo(c.position) < 1.5) { scene.remove(c); collectables.splice(i, 1); score++; document.getElementById('gameScore').innerText = "ZEBRANO: " + score + " / 20"; if(score >= 20) { gameActive = false; document.getElementById('gameContainer').classList.remove('active'); sendData({type:"sys", text: `🟢 SUKCES: [${user}] uciekł z Piwnicy 3D!`}); document.exitPointerLock(); } } }
+            if(enemyMesh) { let dx = camera.position.x - enemyMesh.position.x; let dz = camera.position.z - enemyMesh.position.z; let angle = Math.atan2(dx, dz); enemyMesh.position.x += Math.sin(angle) * 0.16; enemyMesh.position.z += Math.cos(angle) * 0.16; enemyMesh.rotation.x += 0.05; enemyMesh.rotation.y += 0.05; if(camera.position.distanceTo(enemyMesh.position) < 2.0) { gameOverJS(); } }
             renderer.render(scene, camera);
         }
 
-        // --- GLÓWNY SYSTEM EFEKTÓW ---
         function runEff(cmd) {
-            const b = document.body; const h = document.getElementById('hologramImg');
-            const c = document.getElementById('censorBar'); const chatCont = document.getElementById('chatContainer');
-            const jail = document.getElementById('jailScreen'); const gameCont = document.getElementById('gameContainer');
-            
-            if(cmd === "bubble") { h.src = './images/bubble.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); }
-            else if(cmd === "pomni") { h.src = './images/pomni.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); }
-            else if(cmd === "gloink") { createFallingEntities("gloink"); }
-            else if(cmd === "confetti") { createFallingEntities("confetti"); } 
-            else if(cmd === "jail") { jail.classList.add('active'); } 
-            else if(cmd === "unjail") { jail.classList.remove('active'); } 
-            
-            // 🔥 START GRY SURVIVAL 3D 🔥
-            else if(cmd === "room") { 
-                init3DGame();
-                resetGameAndSpawnGlitches(); 
-                gameCont.classList.add('active'); 
-                gameActive = true;
-            } 
-            else if(cmd === "unroom") { 
-                gameCont.classList.remove('active'); 
-                gameActive = false;
-            } 
-            
-            else if(cmd === "gravity") { chatCont.classList.add('effect-gravity'); setTimeout(() => chatCont.classList.remove('effect-gravity'), 5000); }
-            else if(cmd === "censor") { c.classList.add('active'); setTimeout(() => c.classList.remove('active'), 2500); }
-            else if(cmd === "glitch") { b.classList.add('effect-glitch'); setTimeout(() => b.classList.remove('effect-glitch'), 2000); }
-            else if(cmd === "shake") { b.classList.add('effect-shake'); setTimeout(() => b.classList.remove('effect-shake'), 3000); }
-            else if(cmd === "redalert") { b.classList.add('effect-redalert'); setTimeout(() => b.classList.remove('effect-redalert'), 4000); }
-            else if(cmd === "nuke") { b.classList.add('effect-nuke'); setTimeout(() => b.classList.remove('effect-nuke'), 1000); }
-            else if(cmd === "void") { b.classList.add('effect-void'); setTimeout(() => b.classList.remove('effect-void'), 4000); }
-            else if(cmd === "abstract") { b.classList.add('effect-abstract'); setTimeout(() => b.classList.remove('effect-abstract'), 5000); }
-            else if(cmd === "flip") { b.classList.add('effect-flip'); setTimeout(() => b.classList.remove('effect-flip'), 5000); }
-            else if(cmd === "blur") { b.classList.add('effect-blur'); setTimeout(() => b.classList.remove('effect-blur'), 4000); }
-            else if(cmd === "squish") { b.classList.add('effect-squish'); setTimeout(() => b.classList.remove('effect-squish'), 4000); }
-            else if(cmd === "stretch") { b.classList.add('effect-stretch'); setTimeout(() => b.classList.remove('effect-stretch'), 4000); }
-            else if(cmd === "dance") { b.classList.add('effect-dance'); setTimeout(() => b.classList.remove('effect-dance'), 5000); }
-            else if(cmd === "zoom") { b.classList.add('effect-zoom'); setTimeout(() => b.classList.remove('effect-zoom'), 3000); }
-            else if(cmd === "grayscale") { b.classList.add('effect-grayscale'); setTimeout(() => b.classList.remove('effect-grayscale'), 5000); }
-            else if(cmd === "vr") { b.classList.add('effect-3d-active'); setTimeout(() => b.classList.remove('effect-3d-active'), 10000); }
-            
-            // Komenda używana wewnętrznie przez grę po przegranej:
-            else if(cmd === "kickall") { const k = document.getElementById('kickScreen'); if(k) { k.classList.add('active'); setTimeout(() => k.classList.remove('active'), 3500); } }
+            const b = document.body; const h = document.getElementById('hologramImg'); const c = document.getElementById('censorBar'); const chatCont = document.getElementById('chatContainer'); const jail = document.getElementById('jailScreen'); const gameCont = document.getElementById('gameContainer');
+            if(cmd === "bubble") { h.src = './images/bubble.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); } else if(cmd === "pomni") { h.src = './images/pomni.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); } else if(cmd === "gloink") { createFallingEntities("gloink"); } else if(cmd === "confetti") { createFallingEntities("confetti"); } else if(cmd === "jail") { jail.classList.add('active'); } else if(cmd === "unjail") { jail.classList.remove('active'); } else if(cmd === "room") { init3DGame(); resetGameAndSpawnGlitches(); gameCont.classList.add('active'); gameActive = true; } else if(cmd === "unroom") { gameCont.classList.remove('active'); gameActive = false; if(document.pointerLockElement) document.exitPointerLock(); } else if(cmd === "gravity") { chatCont.classList.add('effect-gravity'); setTimeout(() => chatCont.classList.remove('effect-gravity'), 5000); } else if(cmd === "censor") { c.classList.add('active'); setTimeout(() => c.classList.remove('active'), 2500); } else if(cmd === "glitch") { b.classList.add('effect-glitch'); setTimeout(() => b.classList.remove('effect-glitch'), 2000); } else if(cmd === "shake") { b.classList.add('effect-shake'); setTimeout(() => b.classList.remove('effect-shake'), 3000); } else if(cmd === "redalert") { b.classList.add('effect-redalert'); setTimeout(() => b.classList.remove('effect-redalert'), 4000); } else if(cmd === "nuke") { b.classList.add('effect-nuke'); setTimeout(() => b.classList.remove('effect-nuke'), 1000); } else if(cmd === "void") { b.classList.add('effect-void'); setTimeout(() => b.classList.remove('effect-void'), 4000); } else if(cmd === "abstract") { b.classList.add('effect-abstract'); setTimeout(() => b.classList.remove('effect-abstract'), 5000); } else if(cmd === "flip") { b.classList.add('effect-flip'); setTimeout(() => b.classList.remove('effect-flip'), 5000); } else if(cmd === "blur") { b.classList.add('effect-blur'); setTimeout(() => b.classList.remove('effect-blur'), 4000); } else if(cmd === "squish") { b.classList.add('effect-squish'); setTimeout(() => b.classList.remove('effect-squish'), 4000); } else if(cmd === "stretch") { b.classList.add('effect-stretch'); setTimeout(() => b.classList.remove('effect-stretch'), 4000); } else if(cmd === "dance") { b.classList.add('effect-dance'); setTimeout(() => b.classList.remove('effect-dance'), 5000); } else if(cmd === "zoom") { b.classList.add('effect-zoom'); setTimeout(() => b.classList.remove('effect-zoom'), 3000); } else if(cmd === "grayscale") { b.classList.add('effect-grayscale'); setTimeout(() => b.classList.remove('effect-grayscale'), 5000); } else if(cmd === "vr") { b.classList.add('effect-3d-active'); setTimeout(() => b.classList.remove('effect-3d-active'), 10000); }
         }
         
         document.getElementById('chatInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') handleChat(); });
