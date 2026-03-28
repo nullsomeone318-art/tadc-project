@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TADC - Global Mainframe OS v48</title>
+    <title>TADC - Global Mainframe OS v49</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -223,7 +223,7 @@
 
     <div id="dashboard" class="hidden">
         <div id="caineTerminal" class="hidden">
-            <input type="text" id="cmdInputTop" placeholder="np. /map office, /cats...">
+            <input type="text" id="cmdInputTop" placeholder="np. /map pomni, /cats...">
             <button onclick="exeTop()">WYKONAJ</button>
         </div>
 
@@ -302,12 +302,12 @@
         });
 
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v48"; 
+        const topic = "cyfrowycyrk/globalchat/final_v49"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let userAvatar = ""; let activeUsers = {}; 
         
-        // 🔥 NOWA DOMYŚLNA MAPA 🔥
-        let currentMapName = "office/office.glb"; 
+        // 🔥 NOWA DOMYŚLNA MAPA: OFFICE (wskazuje na scene.gltf) 🔥
+        let currentMapName = "office/scene.gltf"; 
         let isOfflineMode = false;
         
         const badWords = [ "kurw", "kurv", "jeb", "chuj", "huj", "pierdol", "pierdal", "piedol", "piedal", "spierd", "wypierd", "wypied", "zajeb", "zjeb", "dziwk", "suka", "szmat", "cwel", "pedał", "pedal", "pizd", "fiut", "rucha", "fuck", "shit", "bitch", "debil", "idiot", "kurna", "psiawoker" ];
@@ -345,7 +345,7 @@
             };
             mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
                 updateStatus(true); mqtt.subscribe(topic); 
-                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v48 👑" : `[${user}] dołączył do cyrku.`}); 
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v49 👑" : `[${user}] dołączył do cyrku.`}); 
                 setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
                 setInterval(() => { if(gameActive && !isOfflineMode) { let heldId = heldCube ? heldCube.userData.id : -1; sendData({type: "pos", nick: user, x: p.x, y: p.y, z: p.z, rot: yaw, color: userColor, hold: heldId}); } }, 100);
                 activeUsers[user] = { time: Date.now(), isAdmin: isAdmin, avatar: userAvatar }; 
@@ -472,9 +472,9 @@
                 if(!rawMapName) rawMapName = "office";
                 let finalMapName = rawMapName;
                 
-                // 🔥 OBSŁUGA NOWEJ MAPY "OFFICE" 🔥
+                // 🔥 POPRAWKA ŚCIEŻKI DLA OFFICE 🔥
                 if(rawMapName === "pomni") { finalMapName = "pomni_room/pomni.gltf"; } 
-                else if (rawMapName === "office") { finalMapName = "office/office.glb"; }
+                else if (rawMapName === "office") { finalMapName = "office/scene.gltf"; }
                 else if(!finalMapName.endsWith('.glb') && !finalMapName.endsWith('.gltf')) { finalMapName += ".glb"; }
                 
                 sendData({type:"cmd", cmd:"changemap", target: finalMapName});
@@ -729,7 +729,7 @@
                 }, 
                 undefined, 
                 function(error) {
-                    if(!isFallback && currentMapName === "office/office.glb") { load3DModel(true); return; }
+                    if(!isFallback && currentMapName === "office/scene.gltf") { load3DModel(true); return; }
                     loadingUI.classList.add('hidden'); errorUI.style.display = "block"; 
                     errorUI.innerHTML = `⚠️ <b>BŁĄD WGRYWANIA!</b> ⚠️<br>Brak pliku: ${pathToLoad}`;
                     isBuildingWorld = false; 
@@ -862,24 +862,4 @@
             else if(cmd === "unjail") { jail.classList.remove('active'); } 
             else if(cmd === "room") { try { gameCont.classList.add('active'); gameActive = true; init3DGame(); resetRoom(); } catch(err) { } } 
             else if(cmd === "unroom") { gameCont.classList.remove('active'); gameActive = false; if(document.pointerLockElement) document.exitPointerLock(); } 
-            else if(cmd === "gravity") { chatCont.classList.add('effect-gravity'); setTimeout(() => chatCont.classList.remove('effect-gravity'), 5000); } 
-            else if(cmd === "censor") { c.classList.add('active'); setTimeout(() => c.classList.remove('active'), 2500); } 
-            else if(cmd === "glitch") { b.classList.add('effect-glitch'); setTimeout(() => b.classList.remove('effect-glitch'), 2000); } 
-            else if(cmd === "shake") { b.classList.add('effect-shake'); setTimeout(() => b.classList.remove('effect-shake'), 3000); } 
-            else if(cmd === "redalert") { b.classList.add('effect-redalert'); setTimeout(() => b.classList.remove('effect-redalert'), 4000); } 
-            else if(cmd === "nuke") { b.classList.add('effect-nuke'); setTimeout(() => b.classList.remove('effect-nuke'), 1000); } 
-            else if(cmd === "void") { b.classList.add('effect-void'); setTimeout(() => b.classList.remove('effect-void'), 4000); } 
-            else if(cmd === "abstract") { b.classList.add('effect-abstract'); setTimeout(() => b.classList.remove('effect-abstract'), 5000); } 
-            else if(cmd === "flip") { b.classList.add('effect-flip'); setTimeout(() => b.classList.remove('effect-flip'), 5000); } 
-            else if(cmd === "blur") { b.classList.add('effect-blur'); setTimeout(() => b.classList.remove('effect-blur'), 4000); } 
-            else if(cmd === "squish") { b.classList.add('effect-squish'); setTimeout(() => b.classList.remove('effect-squish'), 4000); } 
-            else if(cmd === "stretch") { b.classList.add('effect-stretch'); setTimeout(() => b.classList.remove('effect-stretch'), 4000); } 
-            else if(cmd === "dance") { b.classList.add('effect-dance'); setTimeout(() => b.classList.remove('effect-dance'), 5000); } 
-            else if(cmd === "zoom") { b.classList.add('effect-zoom'); setTimeout(() => b.classList.remove('effect-zoom'), 3000); } 
-            else if(cmd === "grayscale") { b.classList.add('effect-grayscale'); setTimeout(() => b.classList.remove('effect-grayscale'), 5000); } 
-            else if(cmd === "vr") { b.classList.add('effect-3d-active'); setTimeout(() => b.classList.remove('effect-3d-active'), 10000); }
-        }
-
-    </script>
-</body>
-</html>
+            else if(cmd === "gravity") { chatCont.classList.add('effect-gravity'); setTimeout(() => chatCont.classList.remove('effect-gravity'), 5000); }
