@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TADC - Global Mainframe OS v44</title>
+    <title>TADC - Global Mainframe OS v46</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -118,10 +118,41 @@
         .users-btn { background: rgba(0,0,0,0.6); padding: 5px 10px; border: 1px solid #00f2ff; border-radius: 5px; cursor: pointer; color: #00f2ff; transition: 0.2s;}
         .audio-btn { position: fixed; top: 10px; right: 10px; font-size: 24px; z-index: 110; cursor: pointer; text-shadow: 0 0 10px #00f2ff; animation: audioPulse 1.5s infinite;}
         
+        /* 🔥 EFEKTY WIZUALNE I POPUPY 🔥 */
+        .hologram-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 350px; z-index: 1000; border: none; border-radius: 0; box-shadow: 0 0 60px 10px rgba(255, 0, 68, 0.7); transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); pointer-events: none; opacity: 0; }
+        .hologram-popup.active { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        @keyframes entityFall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+        .falling-gloink { position: fixed; top: -10vh; width: 60px; height: 60px; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 5px #ff0044); animation: entityFall 3s linear forwards; }
+        .falling-confetti { position: fixed; top: -10vh; width: 10px; height: 10px; border-radius: 50%; z-index: 1001; pointer-events: none; animation: entityFall 2s linear forwards; }
+        .falling-cat { position: fixed; top: -20vh; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 8px #00f2ff); animation: entityFall 4s linear forwards; object-fit: cover; border-radius: 8px; }
+
         #censorBar { position: fixed; top: 50%; left: 0; width: 100%; height: 120px; background: repeating-linear-gradient(45deg, #000, #000 20px, #fff 20px, #fff 40px); transform: translateY(-50%) scaleY(0); z-index: 3000; display: flex; justify-content: center; align-items: center; transition: 0.1s; pointer-events: none;}
         #censorBar.active { transform: translateY(-50%) scaleY(1); pointer-events: auto;}
         #censorBar span { background: #ff0044; color: #fff; padding: 10px 30px; font-size: 40px; font-weight: bold; border: 4px solid #000; text-transform: uppercase; transform: rotate(-5deg); letter-spacing: 5px; animation: textBlink 0.5s infinite;}
         .effect-censor-alert { box-shadow: inset 0 0 100px rgba(255,0,0,0.8); transition: 0.2s; }
+        
+        #jailScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent, transparent 40px, #111 40px, #111 60px), repeating-linear-gradient(0deg, transparent, transparent 150px, #111 150px, #111 170px); z-index: 2500; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: inset 0 0 100px #000;}
+        #jailScreen.active { opacity: 0.8; pointer-events: auto; }
+
+        .effect-glitch { animation: shake 0.1s infinite; filter: hue-rotate(90deg) invert(1); }
+        @keyframes shake { 0% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 100% { transform: translate(5px, -5px); } }
+        .effect-shake { animation: shake 0.2s infinite; }
+        .effect-redalert { box-shadow: inset 0 0 150px rgba(255,0,0,0.8); }
+        .effect-nuke { filter: brightness(10) contrast(5); }
+        .effect-void { background-image: none !important; background-color: #000 !important; filter: brightness(0.5); }
+        .effect-abstract { filter: hue-rotate(180deg) saturate(300%) contrast(200%) blur(3px); }
+        .effect-flip { transform: rotate(180deg); }
+        .effect-blur { filter: blur(15px); }
+        .effect-squish { transform: scaleY(0.2); }
+        .effect-stretch { transform: scaleY(2); }
+        .effect-dance { animation: danceAnim 0.4s infinite; }
+        @keyframes danceAnim { 0% {transform: translateY(0) rotate(0);} 25% {transform: translateY(-15px) rotate(5deg);} 75% {transform: translateY(15px) rotate(-5deg);} 100% {transform: translateY(0) rotate(0);} }
+        .effect-gravity { transform: translateY(-30vh) rotate(5deg); }
+        .effect-zoom { transform: scale(1.5); }
+        .effect-grayscale { filter: grayscale(100%); }
+        body.effect-3d-active { perspective: 1000px; }
+        body.effect-3d-active #dashboard, body.effect-3d-active .box { transform-style: preserve-3d; animation: wobble3d 4s infinite alternate ease-in-out; box-shadow: 20px 20px 60px rgba(0, 242, 255, 0.3), -20px -20px 60px rgba(255, 0, 68, 0.3); }
+        @keyframes wobble3d { 0% { transform: rotateX(15deg) rotateY(-20deg) translateZ(50px) scale(0.85); } 100% { transform: rotateX(-15deg) rotateY(20deg) translateZ(-50px) scale(0.85); } }
     </style>
 </head>
 <body onselectstart="return false;">
@@ -156,6 +187,9 @@
         </div>
     </div>
 
+    <img id="hologramImg" class="hologram-popup" src="" alt="Entity">
+    <div id="jailScreen"></div>
+
     <div class="hud-top">
         <div id="serverStatus"><span id="sDot" class="status-dot"></span><span id="sText">Rozłączono</span></div>
         <div id="usersBtn" class="users-btn hidden" onclick="toggleUsers()">👥 Aktywni: 0</div>
@@ -189,7 +223,7 @@
 
     <div id="dashboard" class="hidden">
         <div id="caineTerminal" class="hidden">
-            <input type="text" id="cmdInputTop" placeholder="np. /map pomni, /room...">
+            <input type="text" id="cmdInputTop" placeholder="np. /map pomni, /cats...">
             <button onclick="exeTop()">WYKONAJ</button>
         </div>
 
@@ -268,7 +302,7 @@
         });
 
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v44"; 
+        const topic = "cyfrowycyrk/globalchat/final_v46"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let userAvatar = ""; let activeUsers = {}; 
         let currentMapName = "office.glb"; 
@@ -309,7 +343,7 @@
             };
             mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
                 updateStatus(true); mqtt.subscribe(topic); 
-                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v44 👑" : `[${user}] dołączył do cyrku.`}); 
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v46 👑" : `[${user}] dołączył do cyrku.`}); 
                 setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
                 setInterval(() => { if(gameActive && !isOfflineMode) { let heldId = heldCube ? heldCube.userData.id : -1; sendData({type: "pos", nick: user, x: p.x, y: p.y, z: p.z, rot: yaw, color: userColor, hold: heldId}); } }, 100);
                 activeUsers[user] = { time: Date.now(), isAdmin: isAdmin, avatar: userAvatar }; 
@@ -415,10 +449,15 @@
         function handleChat() { const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return; if(text.startsWith('/')) { procCmd(text); input.value=""; return; } sendData({type:"chat", nick:user, text:text, color:userColor, admin:isAdmin, avatar:userAvatar}); input.value = ""; }
         function exeTop() { const input = document.getElementById('cmdInputTop'); let text = input.value.trim(); if(!text) return; if(!text.startsWith('/')) text = '/' + text; procCmd(text); input.value = ""; }
 
-        const effectList = ["room", "unroom"];
+        const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "squish", "stretch", "dance", "zoom", "grayscale", "confetti", "jail", "unjail", "gravity", "vr", "room", "unroom", "cats"];
+        
         function populateCmdWindow() { 
-            const list = document.getElementById('cmdList'); let html = `<div><span class="cmd-real" style="color:#00ff00;">/map [nazwa]</span> <span class="cmd-desc">Zmienia mapę. (np. /map pomni)</span></div><div><span class="cmd-real">/room</span> <span class="cmd-desc">Wchodzi do pokoju 3D.</span></div><div><span class="cmd-real">/unroom</span> <span class="cmd-desc">Wychodzi z pokoju 3D.</span></div>`; list.innerHTML = html; 
+            const list = document.getElementById('cmdList'); 
+            let html = `<div><span class="cmd-real" style="color:#00ff00;">/map [nazwa]</span> <span class="cmd-desc">Zmienia mapę. (np. /map pomni)</span></div>`;
+            effectList.forEach(e => html += `<div><span class="cmd-real">/${e} [nick]</span></div>`); 
+            list.innerHTML = html; 
         }
+        
         function toggleCmd() { document.getElementById('cmdWindow').classList.toggle('hidden'); }
         function toggleUsers() { document.getElementById('usersWindow').classList.toggle('hidden'); }
         
@@ -441,6 +480,13 @@
             showSys(`> Błąd: Moduł '${cmd}' nie istnieje.`); 
         }
 
+        function createFallingEntities(type) { 
+            const container = document.body; let count = 25; 
+            if(type === "confetti") { count = 300; for(let i=0; i<count; i++) { const e = document.createElement('div'); e.classList.add('falling-confetti'); e.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`; e.style.left = Math.random() * 100 + 'vw'; e.style.animationDuration = (Math.random() * 3 + 4) + 's'; e.style.animationDelay = (Math.random() * 2) + 's'; container.appendChild(e); setTimeout(() => e.remove(), 7000); } return; }
+            if(type === "cats") { const catImages = ['./images/kot1.jpg', './images/kot2.jpg', './images/kot3.jpg']; count = 50; for(let i=0; i<count; i++) { const e = document.createElement('img'); const imgIndex = Math.floor(Math.random() * catImages.length); e.src = catImages[imgIndex]; e.classList.add('falling-cat'); const size = Math.random() * 60 + 50; e.style.width = size + 'px'; e.style.height = size + 'px'; e.style.left = Math.random() * 100 + 'vw'; e.style.animationDuration = (Math.random() * 2 + 3) + 's'; e.style.animationDelay = (Math.random() * 2) + 's'; container.appendChild(e); setTimeout(() => e.remove(), 6000); } sendData({type:"sys", text: `🎵 MIAU! Caine aktywował DESZCZ KOTÓW! 🎵`}); return; }
+            for(let i=0; i<count; i++) { const e = document.createElement(type === "gloink" ? 'img' : 'div'); if(type === "gloink") { e.src = `./images/gloink1.jpg`; e.classList.add('falling-gloink'); } else { e.classList.add('falling-confetti'); e.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`; } e.style.left = Math.random() * 100 + 'vw'; container.appendChild(e); setTimeout(() => e.remove(), 4000); }
+        }
+
         // 🔥 SILNIK 3D 🔥
         let scene, camera, renderer, gameActive = false;
         let cubes = []; let heldCube = null; let raycaster, mouse;
@@ -449,7 +495,7 @@
         let p = { x: 0, y: 8, z: 0, moveF: false, moveB: false, moveL: false, moveR: false, vy: 0, canJump: false };
         let yaw = 0, pitch = 0;
         let players3D = {}; 
-        let isBuildingWorld = false; // NOWA ZMIENNA BLOKUJĄCA FIZYKĘ
+        let isBuildingWorld = false; 
         
         const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
@@ -561,22 +607,66 @@
             }
         }
 
-        function createPlayerAvatar(color) {
+        // 🔥 FUNKCJA ŁADOWANIA PRYWATNYCH AWATARÓW 🔥
+        function createPlayerAvatar(playerName, color) {
             const group = new THREE.Group();
+            
+            // 1. Domyślny Avatar Robota (Pokazuje się na ułamek sekundy, zanim wgra się pełny model)
+            const fallback = new THREE.Group();
             const mat = new THREE.MeshStandardMaterial({ color: color || 0xffffff, roughness: 0.5, metalness: 0.5 });
             const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), mat); head.position.y = 1.6;
             const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.2, 1.0, 8), mat); body.position.y = 0.6;
-            
             head.castShadow = true; head.receiveShadow = true;
             body.castShadow = true; body.receiveShadow = true;
+            fallback.add(head); fallback.add(body);
+            group.add(fallback);
 
-            group.add(head); group.add(body); return group;
+            // 2. Sprawdzanie nicku i wybór pliku .gltf
+            let modelPath = "";
+            let uName = playerName.toUpperCase();
+            if(uName === "CAINE") { modelPath = "./models/avatars/avatar_caine/scene.gltf"; }
+            else if(uName === "TETO") { modelPath = "./models/avatars/avatar_teto/scene.gltf"; }
+
+            // 3. Ładowanie Customowego Modelu
+            if(modelPath !== "") {
+                const loader = new THREE.GLTFLoader();
+                loader.load(modelPath, function(gltf) {
+                    group.remove(fallback); // Usuń stare pudła!
+                    const avatarMesh = gltf.scene;
+                    
+                    // Skalowanie awatara (wymuszenie wysokości około 1.8-2.0)
+                    const box = new THREE.Box3().setFromObject(avatarMesh);
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    if(maxDim > 0) { const scale = 2.0 / maxDim; avatarMesh.scale.set(scale, scale, scale); }
+                    
+                    // Stopy twardo na ziemi
+                    const boxScaled = new THREE.Box3().setFromObject(avatarMesh);
+                    const centerScaled = boxScaled.getCenter(new THREE.Vector3());
+                    avatarMesh.position.x = -centerScaled.x; 
+                    avatarMesh.position.y = -boxScaled.min.y; 
+                    avatarMesh.position.z = -centerScaled.z;
+                    
+                    // Odpalanie cieni dla modelu awatara
+                    avatarMesh.traverse(function(node) {
+                        if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; }
+                    });
+                    
+                    group.add(avatarMesh);
+                }, undefined, function(err) {
+                    console.log("Nie udało się załadować awatara: " + modelPath);
+                    // Jeśli wystąpi błąd z plikiem, robot (fallback) po prostu zostanie na graczu.
+                });
+            }
+
+            return group;
         }
 
+        // 🔥 ODŚWIEŻONA FUNKCJA UPDATE GRACZA 🔥
         function updateOtherPlayer3D(playerName, x, py, z, playerYaw, pColor, heldCubeId) {
             if(!scene || !gameActive) return;
             if(!players3D[playerName]) {
-                const mesh = createPlayerAvatar(pColor);
+                const mesh = createPlayerAvatar(playerName, pColor); // PRZEKAZUJEMY NICK!
                 scene.add(mesh); players3D[playerName] = { mesh: mesh, heldCubeId: -1 };
             }
             players3D[playerName].mesh.position.set(x, py - 1.5, z); 
@@ -588,7 +678,6 @@
             if(players3D[playerName] && scene) { scene.remove(players3D[playerName].mesh); delete players3D[playerName]; }
         }
 
-        // 🔥 OTO BLOKADA CZASU (isBuildingWorld = true) 🔥
         function load3DModel(isFallback = false) {
             if(!isFallback) {
                 if(loadedModelMesh) { scene.remove(loadedModelMesh); loadedModelMesh = null; }
@@ -626,26 +715,25 @@
                     });
 
                     scene.add(loadedModelMesh);
-                    isBuildingWorld = false; // MODEL GOTOWY - CZAS START!
+                    isBuildingWorld = false; 
                 }, 
                 undefined, 
                 function(error) {
                     if(!isFallback && currentMapName === "pomni_room/pomni.gltf") { load3DModel(true); return; }
                     loadingUI.classList.add('hidden'); errorUI.style.display = "block"; 
                     errorUI.innerHTML = `⚠️ <b>BŁĄD WGRYWANIA!</b> ⚠️<br>Brak pliku: ${pathToLoad}`;
-                    isBuildingWorld = false; // Nawet przy błędzie odblokowujemy, żeby gracz nie wisiał
+                    isBuildingWorld = false; 
                 }
             );
         }
 
         function resetRoom() {
             try {
-                // Punkt początkowy (Wysoko, przed opadnięciem)
                 p.x = 0; p.y = 8; p.z = 0; p.vy = 0; p.canJump = false; yaw = 0; pitch = 0; camera.rotation.set(0,0,0);
                 cubes.forEach(c => scene.remove(c)); cubes = []; heldCube = null;
                 document.getElementById('error3D').style.display = "none";
                 
-                load3DModel(false); // Tu czas się zatrzymuje
+                load3DModel(false); 
 
                 const geo = new THREE.BoxGeometry(1, 1, 1); const mat = new THREE.MeshStandardMaterial({ color: 0x00f2ff, roughness: 0.3 });
                 for(let i=0; i<15; i++) {
@@ -661,11 +749,10 @@
         function animate3D() {
             requestAnimationFrame(animate3D); if(!gameActive) return;
             
-            // 🔥 JEŚLI ŚWIAT SIĘ BUDUJE - ZAMROŻENIE 🔥
             if(isBuildingWorld) {
-                camera.position.set(0, 8, 0); // Gracz zostaje w górze
+                camera.position.set(0, 8, 0); 
                 renderer.render(scene, camera);
-                return; // Nic więcej się nie wykonuje (żadnej grawitacji)
+                return; 
             }
 
             let oldX = p.x; let oldZ = p.z;
@@ -690,7 +777,7 @@
                     p.vy = 0; p.canJump = true; floorHit = true;
                 }
                 
-                if(p.y < -20) { p.y = 10; p.vy = 0; } // Jeśli spadniesz, wracasz pod sufit
+                if(p.y < -20) { p.y = 10; p.vy = 0; } 
 
                 let colRay = new THREE.Raycaster();
                 if(p.x !== oldX) {
@@ -732,7 +819,6 @@
                     c.userData.vy -= 0.03; c.userData.vx *= 0.98; c.userData.vz *= 0.98;
                     c.position.x += c.userData.vx; c.position.y += c.userData.vy; c.position.z += c.userData.vz;
                     
-                    // Kolizje kostek z modelem - Bąbel style!
                     if(loadedModelMesh) {
                         let cRayDown = new THREE.Raycaster(new THREE.Vector3(c.position.x, c.position.y + 0.5, c.position.z), new THREE.Vector3(0, -1, 0));
                         let cHits = cRayDown.intersectObject(loadedModelMesh, true);
@@ -755,14 +841,33 @@
         }
 
         function runEff(cmd) {
-            const gameCont = document.getElementById('gameContainer');
-            if(cmd === "room") { 
-                try { gameCont.classList.add('active'); gameActive = true; init3DGame(); resetRoom(); } catch(err) { }
-            } 
-            else if(cmd === "unroom") { 
-                gameCont.classList.remove('active'); gameActive = false; 
-                if(document.pointerLockElement) document.exitPointerLock(); 
-            } 
+            const b = document.body; const h = document.getElementById('hologramImg'); const c = document.getElementById('censorBar'); const chatCont = document.getElementById('chatContainer'); const jail = document.getElementById('jailScreen'); const gameCont = document.getElementById('gameContainer');
+            
+            if(cmd === "bubble") { h.src = './images/bubble.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); } 
+            else if(cmd === "pomni") { h.src = './images/pomni.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); } 
+            else if(cmd === "gloink") { createFallingEntities("gloink"); } 
+            else if(cmd === "confetti") { createFallingEntities("confetti"); } 
+            else if(cmd === "cats") { createFallingEntities("cats"); } 
+            else if(cmd === "jail") { jail.classList.add('active'); } 
+            else if(cmd === "unjail") { jail.classList.remove('active'); } 
+            else if(cmd === "room") { try { gameCont.classList.add('active'); gameActive = true; init3DGame(); resetRoom(); } catch(err) { } } 
+            else if(cmd === "unroom") { gameCont.classList.remove('active'); gameActive = false; if(document.pointerLockElement) document.exitPointerLock(); } 
+            else if(cmd === "gravity") { chatCont.classList.add('effect-gravity'); setTimeout(() => chatCont.classList.remove('effect-gravity'), 5000); } 
+            else if(cmd === "censor") { c.classList.add('active'); setTimeout(() => c.classList.remove('active'), 2500); } 
+            else if(cmd === "glitch") { b.classList.add('effect-glitch'); setTimeout(() => b.classList.remove('effect-glitch'), 2000); } 
+            else if(cmd === "shake") { b.classList.add('effect-shake'); setTimeout(() => b.classList.remove('effect-shake'), 3000); } 
+            else if(cmd === "redalert") { b.classList.add('effect-redalert'); setTimeout(() => b.classList.remove('effect-redalert'), 4000); } 
+            else if(cmd === "nuke") { b.classList.add('effect-nuke'); setTimeout(() => b.classList.remove('effect-nuke'), 1000); } 
+            else if(cmd === "void") { b.classList.add('effect-void'); setTimeout(() => b.classList.remove('effect-void'), 4000); } 
+            else if(cmd === "abstract") { b.classList.add('effect-abstract'); setTimeout(() => b.classList.remove('effect-abstract'), 5000); } 
+            else if(cmd === "flip") { b.classList.add('effect-flip'); setTimeout(() => b.classList.remove('effect-flip'), 5000); } 
+            else if(cmd === "blur") { b.classList.add('effect-blur'); setTimeout(() => b.classList.remove('effect-blur'), 4000); } 
+            else if(cmd === "squish") { b.classList.add('effect-squish'); setTimeout(() => b.classList.remove('effect-squish'), 4000); } 
+            else if(cmd === "stretch") { b.classList.add('effect-stretch'); setTimeout(() => b.classList.remove('effect-stretch'), 4000); } 
+            else if(cmd === "dance") { b.classList.add('effect-dance'); setTimeout(() => b.classList.remove('effect-dance'), 5000); } 
+            else if(cmd === "zoom") { b.classList.add('effect-zoom'); setTimeout(() => b.classList.remove('effect-zoom'), 3000); } 
+            else if(cmd === "grayscale") { b.classList.add('effect-grayscale'); setTimeout(() => b.classList.remove('effect-grayscale'), 5000); } 
+            else if(cmd === "vr") { b.classList.add('effect-3d-active'); setTimeout(() => b.classList.remove('effect-3d-active'), 10000); }
         }
 
     </script>
