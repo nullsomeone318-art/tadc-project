@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TADC - Global Mainframe OS v38</title>
+    <title>TADC - Global Mainframe OS v39</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -99,7 +99,7 @@
         @keyframes entityFall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
         .falling-gloink { position: fixed; top: -10vh; width: 60px; height: 60px; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 5px #ff0044); animation: entityFall 3s linear forwards; }
         .falling-confetti { position: fixed; top: -10vh; width: 10px; height: 10px; border-radius: 50%; z-index: 1001; pointer-events: none; animation: entityFall 2s linear forwards; }
-        .falling-cat { fixed; top: -20vh; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 8px #00f2ff); animation: entityFall 4s linear forwards; object-fit: cover; border-radius: 8px; }
+        .falling-cat { position: fixed; top: -20vh; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 8px #00f2ff); animation: entityFall 4s linear forwards; object-fit: cover; border-radius: 8px; }
 
         #censorBar { position: fixed; top: 50%; left: 0; width: 100%; height: 120px; background: repeating-linear-gradient(45deg, #000, #000 20px, #fff 20px, #fff 40px); transform: translateY(-50%) scaleY(0); z-index: 3000; display: flex; justify-content: center; align-items: center; transition: 0.1s; pointer-events: none;}
         #censorBar.active { transform: translateY(-50%) scaleY(1); pointer-events: auto;}
@@ -109,13 +109,16 @@
         #jailScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent, transparent 40px, #111 40px, #111 60px), repeating-linear-gradient(0deg, transparent, transparent 150px, #111 150px, #111 170px); z-index: 2500; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: inset 0 0 100px #000;}
         #jailScreen.active { opacity: 0.8; pointer-events: auto; }
 
-        /* 🔥 SILNIK 3D 🔥 */
-        #gameContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5555; display: none; background: #020000; cursor: crosshair;}
+        /* 🔥 SILNIK 3D - BLOKADA ZAZNACZANIA TEKSTU 🔥 */
+        #gameContainer { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5555; display: none; background: #020000; cursor: crosshair;
+            user-select: none; -webkit-user-select: none; /* TO BLOKUJE ZAZNACZANIE TEKSTU I PSUJE BLOKADĘ MYSZY */
+        }
         #gameContainer.active { display: block; }
         
-        #gameUI { position: absolute; top: 15px; left: 15px; color: #fff; font-size: 14px; font-weight: bold; z-index: 5556; text-shadow: 1px 1px #000; pointer-events: none;}
+        #gameUI { position: absolute; top: 15px; left: 15px; color: #fff; font-size: 14px; font-weight: bold; z-index: 5556; text-shadow: 1px 1px #000; pointer-events: none; user-select: none; -webkit-user-select: none;}
         #loading3D { color: #f9e11e; animation: textBlink 1s infinite; font-size: 18px; display: block; margin-top: 5px;}
-        #error3D { color: #fff; font-size: 14px; margin-top:10px; background: rgba(255,0,68,0.9); padding: 12px; border: 2px solid #fff; border-radius: 8px; display: none; max-width: 350px; line-height: 1.4; box-shadow: 0 0 20px #ff0044; text-shadow: none;}
+        #error3D { color: #fff; font-size: 14px; margin-top:10px; background: rgba(255,0,68,0.9); padding: 12px; border: 2px solid #fff; border-radius: 8px; display: none; max-width: 350px; line-height: 1.4; box-shadow: 0 0 20px #ff0044; text-shadow: none; pointer-events: auto;}
         
         #crosshair { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: #00f2ff; border-radius: 50%; transform: translate(-50%, -50%); z-index: 5556; pointer-events: none; opacity: 0.8; box-shadow: 0 0 5px #00f2ff;}
         
@@ -132,7 +135,7 @@
         .act-btn.exit { border-color: #f9e11e; background: rgba(249,225,30,0.4); color: #000; }
         .act-btn.exit:active { background: rgba(249,225,30,0.9); transform: scale(0.95); }
 
-        #touchLookZone { position: absolute; top: 0; right: 0; width: 50vw; height: 100vh; z-index: 5555; touch-action: none; display: none; }
+        #touchLookZone { position: absolute; top: 0; right: 0; width: 50vw; height: 100vh; z-index: 5555; touch-action: none; display: none; user-select: none; -webkit-user-select: none;}
 
         .effect-glitch { animation: shake 0.1s infinite; filter: hue-rotate(90deg) invert(1); }
         @keyframes shake { 0% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 100% { transform: translate(5px, -5px); } }
@@ -147,10 +150,7 @@
         .effect-dance { animation: danceAnim 0.4s infinite; }
         @keyframes danceAnim { 0% {transform: translateY(0) rotate(0);} 25% {transform: translateY(-15px) rotate(5deg);} 75% {transform: translateY(15px) rotate(-5deg);} 100% {transform: translateY(0) rotate(0);} }
         .effect-gravity { transform: translateY(-30vh) rotate(5deg); }
-        body.effect-3d-active { perspective: 1000px; }
-        body.effect-3d-active #dashboard, body.effect-3d-active .box { transform-style: preserve-3d; animation: wobble3d 4s infinite alternate ease-in-out; box-shadow: 20px 20px 60px rgba(0, 242, 255, 0.3), -20px -20px 60px rgba(255, 0, 68, 0.3); }
-        @keyframes wobble3d { 0% { transform: rotateX(15deg) rotateY(-20deg) translateZ(50px) scale(0.85); } 100% { transform: rotateX(-15deg) rotateY(20deg) translateZ(-50px) scale(0.85); } }
-
+        
         .hud-top { position: fixed; top: 10px; left: 10px; font-size: 12px; font-weight: bold; z-index: 110; color: #fff; text-shadow: 1px 1px #000; display: flex; flex-direction: column; gap: 8px; opacity: 0.9;}
         .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: red; margin-right: 5px; box-shadow: 0 0 5px red;}
         .status-dot.online { background: #00ff00; box-shadow: 0 0 5px #00ff00; }
@@ -294,7 +294,7 @@
         }
 
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v38"; 
+        const topic = "cyfrowycyrk/globalchat/final_v39"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let userAvatar = ""; let activeUsers = {}; 
         let currentMapName = "office.glb"; 
@@ -319,7 +319,7 @@
                         if(d.cmd === "changemap") {
                             currentMapName = d.target;
                             document.getElementById('mapNameUI').innerText = currentMapName.toUpperCase();
-                            if(gameActive) load3DModel(false); // ładujemy na nowo
+                            if(gameActive) load3DModel(false); 
                         }
                         else if(!d.target || d.target === "" || d.target === "ALL" || d.target === user) { runEff(d.cmd); } 
                     }
@@ -333,7 +333,7 @@
             };
             mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
                 updateStatus(true); mqtt.subscribe(topic); 
-                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v38 👑" : `[${user}] dołączył do cyrku.`}); 
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v39 👑" : `[${user}] dołączył do cyrku.`}); 
                 setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
                 setInterval(() => { if(gameActive) { let heldId = heldCube ? heldCube.userData.id : -1; sendData({type: "pos", nick: user, x: p.x, z: p.z, rot: yaw, color: userColor, hold: heldId}); } }, 100);
                 activeUsers[user] = { time: Date.now(), isAdmin: isAdmin, avatar: userAvatar }; 
@@ -417,7 +417,7 @@
         
         function populateCmdWindow() { 
             const list = document.getElementById('cmdList'); let html = ""; 
-            html += `<div><span class="cmd-real" style="color:#00ff00;">/map [nazwa]</span> <span class="cmd-desc">Zmienia mapę w /room.</span></div>`;
+            html += `<div><span class="cmd-real" style="color:#00ff00;">/map [nazwa]</span> <span class="cmd-desc">Zmienia mapę. (np. /map pomni)</span></div>`;
             effectList.forEach(e => html += `<div><span class="cmd-real">/${e} [nick]</span></div>`); 
             list.innerHTML = html; 
         }
@@ -437,13 +437,8 @@
                 if(!rawMapName) rawMapName = "office";
                 
                 let finalMapName = rawMapName;
-                
-                if(rawMapName === "pomni") {
-                    finalMapName = "pomni_room/pomni.gltf";
-                } 
-                else if(!finalMapName.endsWith('.glb') && !finalMapName.endsWith('.gltf')) {
-                    finalMapName += ".glb";
-                }
+                if(rawMapName === "pomni") { finalMapName = "pomni_room/pomni.gltf"; } 
+                else if(!finalMapName.endsWith('.glb') && !finalMapName.endsWith('.gltf')) { finalMapName += ".glb"; }
 
                 sendData({type:"cmd", cmd:"changemap", target: finalMapName});
                 sendData({type:"sys", text: `> CAINE ZMIENIA WYMIAR NA: ${finalMapName.toUpperCase()}`});
@@ -462,7 +457,7 @@
             for(let i=0; i<count; i++) { const e = document.createElement(type === "gloink" ? 'img' : 'div'); if(type === "gloink") { e.src = `./images/gloink1.jpg`; e.classList.add('falling-gloink'); } else { e.classList.add('falling-confetti'); e.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`; } e.style.left = Math.random() * 100 + 'vw'; container.appendChild(e); setTimeout(() => e.remove(), 4000); }
         }
 
-        // 🔥 SILNIK 3D (Z TWARDYM DEBUGGEREM ŚCIEŻEK) 🔥
+        // 🔥 SILNIK 3D (BEZPIECZNE ODPALANIE) 🔥
         let scene, camera, renderer, gameActive = false;
         let cubes = []; let heldCube = null; let raycaster, mouse;
         let loadedModelMesh = null; let gridHelper = null; 
@@ -583,7 +578,6 @@
             if(players3D[playerName] && scene) { scene.remove(players3D[playerName].mesh); delete players3D[playerName]; }
         }
 
-        // 🔥 FUNKCJA Z AUTOKOREKTĄ I PRECYZYJNYM KOMUNIKATEM BŁĘDU 🔥
         function load3DModel(isFallback = false) {
             if(!isFallback) {
                 if(loadedModelMesh) { scene.remove(loadedModelMesh); loadedModelMesh = null; }
@@ -594,19 +588,15 @@
             const errorUI = document.getElementById('error3D');
             loadingUI.classList.remove('hidden'); errorUI.style.display = "none";
 
-            // Ustalanie ścieżki (Główna vs Awaryjna)
             let pathToLoad = `./models/${currentMapName}`;
-            if(isFallback) {
-                // Jeśli awaryjnie, spróbuj znaleźć plik pomni.gltf w głównym folderze models
-                pathToLoad = `./models/pomni.gltf`;
-            }
+            if(isFallback) { pathToLoad = `./models/pomni.gltf`; }
 
             const loader = new THREE.GLTFLoader();
             loader.load(
                 pathToLoad, 
                 function(gltf) {
                     loadingUI.classList.add('hidden'); 
-                    errorUI.style.display = "none"; // Sukces!
+                    errorUI.style.display = "none"; 
                     loadedModelMesh = gltf.scene;
                     
                     const box = new THREE.Box3().setFromObject(loadedModelMesh);
@@ -622,14 +612,11 @@
                 }, 
                 undefined, 
                 function(error) {
-                    // Jeśli pierwsza ścieżka zawiedzie, a szukaliśmy pomni, spróbuj awaryjnie
                     if(!isFallback && currentMapName === "pomni_room/pomni.gltf") {
                         console.warn("Nie znaleziono w folderze, próbuje w głównym...");
                         load3DModel(true);
                         return;
                     }
-
-                    // Jeśli nadal błąd, wyświetl dokładnie czego brakowało
                     loadingUI.classList.add('hidden');
                     errorUI.style.display = "block"; 
                     errorUI.innerHTML = `⚠️ <b>BŁĄD WGRYWANIA!</b> ⚠️<br>
@@ -638,27 +625,27 @@
                     Ale go tam nie ma, albo brakuje do niego tekstur!<br>
                     <i>(Upewnij się, że nie odpalasz tego z dysku C:/)</i>`;
                     
-                    // Siatka awaryjna
-                    if(!gridHelper) {
-                        gridHelper = new THREE.GridHelper(100, 100, 0x550000, 0x220000); 
-                        scene.add(gridHelper);
-                    }
+                    if(!gridHelper) { gridHelper = new THREE.GridHelper(100, 100, 0x550000, 0x220000); scene.add(gridHelper); }
                 }
             );
         }
 
         function resetRoom() {
-            p.x = 0; p.y = 1.5; p.z = 0; yaw = 0; pitch = 0; camera.rotation.set(0,0,0);
-            cubes.forEach(c => scene.remove(c)); cubes = []; heldCube = null;
-            document.getElementById('error3D').style.display = "none";
-            
-            load3DModel(false);
+            try {
+                p.x = 0; p.y = 1.5; p.z = 0; yaw = 0; pitch = 0; camera.rotation.set(0,0,0);
+                cubes.forEach(c => scene.remove(c)); cubes = []; heldCube = null;
+                document.getElementById('error3D').style.display = "none";
+                
+                load3DModel(false);
 
-            const geo = new THREE.BoxGeometry(1, 1, 1); const mat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true });
-            for(let i=0; i<15; i++) {
-                let mesh = new THREE.Mesh(geo, mat); mesh.position.set((Math.random() - 0.5) * 20, 2, (Math.random() - 0.5) * 20);
-                mesh.userData = { id: i, vx: 0, vy: 0, vz: 0, rotX: Math.random()*0.1, rotY: Math.random()*0.1, heldByOther: false }; 
-                scene.add(mesh); cubes.push(mesh);
+                const geo = new THREE.BoxGeometry(1, 1, 1); const mat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true });
+                for(let i=0; i<15; i++) {
+                    let mesh = new THREE.Mesh(geo, mat); mesh.position.set((Math.random() - 0.5) * 20, 2, (Math.random() - 0.5) * 20);
+                    mesh.userData = { id: i, vx: 0, vy: 0, vz: 0, rotX: Math.random()*0.1, rotY: Math.random()*0.1, heldByOther: false }; 
+                    scene.add(mesh); cubes.push(mesh);
+                }
+            } catch(e) {
+                console.error("Critical Room Error Ignored:", e);
             }
         }
 
@@ -706,6 +693,11 @@
             renderer.render(scene, camera);
         }
 
+        // 🔥 ODPALANIE KLAWISZEM ENTER (ZMIENIONO NA KEYDOWN) 🔥
+        document.getElementById('chatInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleChat(); });
+        document.getElementById('cmdInputTop').addEventListener('keydown', function (e) { if (e.key === 'Enter') exeTop(); });
+        document.getElementById('nickInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') start(false); });
+        document.getElementById('pinInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') loginAdmin(); });
     </script>
 </body>
 </html>
