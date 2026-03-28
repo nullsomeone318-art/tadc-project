@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TADC - Global Mainframe OS v37</title>
+    <title>TADC - Global Mainframe OS v38</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -99,7 +99,7 @@
         @keyframes entityFall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
         .falling-gloink { position: fixed; top: -10vh; width: 60px; height: 60px; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 5px #ff0044); animation: entityFall 3s linear forwards; }
         .falling-confetti { position: fixed; top: -10vh; width: 10px; height: 10px; border-radius: 50%; z-index: 1001; pointer-events: none; animation: entityFall 2s linear forwards; }
-        .falling-cat { position: fixed; top: -20vh; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 8px #00f2ff); animation: entityFall 4s linear forwards; object-fit: cover; border-radius: 8px; }
+        .falling-cat { fixed; top: -20vh; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 8px #00f2ff); animation: entityFall 4s linear forwards; object-fit: cover; border-radius: 8px; }
 
         #censorBar { position: fixed; top: 50%; left: 0; width: 100%; height: 120px; background: repeating-linear-gradient(45deg, #000, #000 20px, #fff 20px, #fff 40px); transform: translateY(-50%) scaleY(0); z-index: 3000; display: flex; justify-content: center; align-items: center; transition: 0.1s; pointer-events: none;}
         #censorBar.active { transform: translateY(-50%) scaleY(1); pointer-events: auto;}
@@ -114,8 +114,8 @@
         #gameContainer.active { display: block; }
         
         #gameUI { position: absolute; top: 15px; left: 15px; color: #fff; font-size: 14px; font-weight: bold; z-index: 5556; text-shadow: 1px 1px #000; pointer-events: none;}
-        #loading3D { color: #f9e11e; animation: textBlink 1s infinite; font-size: 18px; }
-        #error3D { color: #ff0044; font-size: 14px; margin-top:10px; background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid #ff0044; display: none; max-width: 300px; line-height: 1.3;}
+        #loading3D { color: #f9e11e; animation: textBlink 1s infinite; font-size: 18px; display: block; margin-top: 5px;}
+        #error3D { color: #fff; font-size: 14px; margin-top:10px; background: rgba(255,0,68,0.9); padding: 12px; border: 2px solid #fff; border-radius: 8px; display: none; max-width: 350px; line-height: 1.4; box-shadow: 0 0 20px #ff0044; text-shadow: none;}
         
         #crosshair { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: #00f2ff; border-radius: 50%; transform: translate(-50%, -50%); z-index: 5556; pointer-events: none; opacity: 0.8; box-shadow: 0 0 5px #00f2ff;}
         
@@ -256,7 +256,6 @@
     </div>
 
     <script>
-        // --- LOGIKA FORMULARZY ---
         window.onload = () => {
             if(localStorage.getItem('tadc_nick')) document.getElementById('nickInput').value = localStorage.getItem('tadc_nick');
             if(localStorage.getItem('tadc_avatar')) document.getElementById('avatarInput').value = localStorage.getItem('tadc_avatar');
@@ -295,7 +294,7 @@
         }
 
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v37"; 
+        const topic = "cyfrowycyrk/globalchat/final_v38"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let userAvatar = ""; let activeUsers = {}; 
         let currentMapName = "office.glb"; 
@@ -320,16 +319,12 @@
                         if(d.cmd === "changemap") {
                             currentMapName = d.target;
                             document.getElementById('mapNameUI').innerText = currentMapName.toUpperCase();
-                            if(gameActive) load3DModel(); 
+                            if(gameActive) load3DModel(false); // ładujemy na nowo
                         }
                         else if(!d.target || d.target === "" || d.target === "ALL" || d.target === user) { runEff(d.cmd); } 
                     }
                     else if(d.type === "ping") { activeUsers[d.nick] = { time: Date.now(), isAdmin: d.admin, avatar: d.avatar }; }
-                    // 🔥 MULTIPLAYER POSITIONS 🔥
-                    else if(d.type === "pos" && d.nick !== user && gameActive) {
-                        updateOtherPlayer3D(d.nick, d.x, d.z, d.rot, d.color, d.hold);
-                    }
-                    // 🔥 MULTIPLAYER THROW 🔥
+                    else if(d.type === "pos" && d.nick !== user && gameActive) { updateOtherPlayer3D(d.nick, d.x, d.z, d.rot, d.color, d.hold); }
                     else if(d.type === "throw" && d.nick !== user && gameActive) {
                         let c = cubes.find(cube => cube.userData.id === d.id);
                         if(c) { c.userData.vx = d.vx; c.userData.vy = d.vy; c.userData.vz = d.vz; }
@@ -338,11 +333,9 @@
             };
             mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
                 updateStatus(true); mqtt.subscribe(topic); 
-                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v37 👑" : `[${user}] dołączył do cyrku.`}); 
-                
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v38 👑" : `[${user}] dołączył do cyrku.`}); 
                 setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
                 setInterval(() => { if(gameActive) { let heldId = heldCube ? heldCube.userData.id : -1; sendData({type: "pos", nick: user, x: p.x, z: p.z, rot: yaw, color: userColor, hold: heldId}); } }, 100);
-
                 activeUsers[user] = { time: Date.now(), isAdmin: isAdmin, avatar: userAvatar }; 
             }, onFailure: () => { updateStatus(false); } });
         }
@@ -367,24 +360,16 @@
         function checkIfCaine() { 
             const v = document.getElementById('nickInput').value.trim().toLowerCase(); 
             if(v === 'caine' || v.includes('miku')) { 
-                document.getElementById('startBtn').classList.add('hidden'); 
-                document.getElementById('admin-login').classList.remove('hidden'); 
-                document.getElementById('avatarInput').classList.add('hidden');
+                document.getElementById('startBtn').classList.add('hidden'); document.getElementById('admin-login').classList.remove('hidden'); document.getElementById('avatarInput').classList.add('hidden');
             } else { 
-                document.getElementById('startBtn').classList.remove('hidden'); 
-                document.getElementById('admin-login').classList.add('hidden'); 
-                document.getElementById('avatarInput').classList.remove('hidden'); 
+                document.getElementById('startBtn').classList.remove('hidden'); document.getElementById('admin-login').classList.add('hidden'); document.getElementById('avatarInput').classList.remove('hidden'); 
             } 
         }
 
         function loginAdmin() { 
             const pin = document.getElementById('pinInput').value.toLowerCase().trim();
-            if(pin === "2222" || pin === "miku") { 
-                start(true); 
-            } else { 
-                alert("ODMOWA. NIEPRAWIDŁOWY KOD / HASŁO."); 
-                document.getElementById('pinInput').value = "";
-            } 
+            if(pin === "2222" || pin === "miku") { start(true); } 
+            else { alert("ODMOWA. NIEPRAWIDŁOWY KOD / HASŁO."); document.getElementById('pinInput').value = ""; } 
         }
         
         function start(adminState) { 
@@ -440,7 +425,6 @@
         function toggleUsers() { document.getElementById('usersWindow').classList.toggle('hidden'); }
         function toggleAdventure() { document.getElementById('adventureModal').classList.toggle('hidden'); }
         
-        // 🔥 WPROWADZONO SYSTEM SKRÓTÓW (ALIASY DLA MAP) 🔥
         function procCmd(rawCmd) { 
             let parts = rawCmd.trim().split(" "); let cmd = parts[0].toLowerCase(); let target = parts.length > 1 ? parts.slice(1).join(" ").toUpperCase() : "ALL"; 
             if(cmd === '/cmd') { toggleCmd(); return; } if(cmd === '/clear') { document.getElementById('chatBox').innerHTML = ""; return; } 
@@ -454,12 +438,9 @@
                 
                 let finalMapName = rawMapName;
                 
-                // --- SYSTEM SKRÓTÓW ---
-                // Jeżeli wpiszesz "pomni", skrypt sam wie, że to ta długa ścieżka!
                 if(rawMapName === "pomni") {
                     finalMapName = "pomni_room/pomni.gltf";
                 } 
-                // Jeżeli to nie jest skrót, upewnia się, że jest poprawne rozszerzenie
                 else if(!finalMapName.endsWith('.glb') && !finalMapName.endsWith('.gltf')) {
                     finalMapName += ".glb";
                 }
@@ -481,7 +462,7 @@
             for(let i=0; i<count; i++) { const e = document.createElement(type === "gloink" ? 'img' : 'div'); if(type === "gloink") { e.src = `./images/gloink1.jpg`; e.classList.add('falling-gloink'); } else { e.classList.add('falling-confetti'); e.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`; } e.style.left = Math.random() * 100 + 'vw'; container.appendChild(e); setTimeout(() => e.remove(), 4000); }
         }
 
-        // 🔥 SILNIK 3D (Z SYGNALIZOWANIEM BŁĘDÓW ŁADOWANIA) 🔥
+        // 🔥 SILNIK 3D (Z TWARDYM DEBUGGEREM ŚCIEŻEK) 🔥
         let scene, camera, renderer, gameActive = false;
         let cubes = []; let heldCube = null; let raycaster, mouse;
         let loadedModelMesh = null; let gridHelper = null; 
@@ -602,19 +583,30 @@
             if(players3D[playerName] && scene) { scene.remove(players3D[playerName].mesh); delete players3D[playerName]; }
         }
 
-        function load3DModel() {
-            if(loadedModelMesh) { scene.remove(loadedModelMesh); loadedModelMesh = null; }
-            if(gridHelper) { scene.remove(gridHelper); gridHelper = null; }
+        // 🔥 FUNKCJA Z AUTOKOREKTĄ I PRECYZYJNYM KOMUNIKATEM BŁĘDU 🔥
+        function load3DModel(isFallback = false) {
+            if(!isFallback) {
+                if(loadedModelMesh) { scene.remove(loadedModelMesh); loadedModelMesh = null; }
+                if(gridHelper) { scene.remove(gridHelper); gridHelper = null; }
+            }
             
             const loadingUI = document.getElementById('loading3D');
             const errorUI = document.getElementById('error3D');
             loadingUI.classList.remove('hidden'); errorUI.style.display = "none";
 
+            // Ustalanie ścieżki (Główna vs Awaryjna)
+            let pathToLoad = `./models/${currentMapName}`;
+            if(isFallback) {
+                // Jeśli awaryjnie, spróbuj znaleźć plik pomni.gltf w głównym folderze models
+                pathToLoad = `./models/pomni.gltf`;
+            }
+
             const loader = new THREE.GLTFLoader();
             loader.load(
-                `./models/${currentMapName}`, 
+                pathToLoad, 
                 function(gltf) {
                     loadingUI.classList.add('hidden'); 
+                    errorUI.style.display = "none"; // Sukces!
                     loadedModelMesh = gltf.scene;
                     
                     const box = new THREE.Box3().setFromObject(loadedModelMesh);
@@ -630,10 +622,27 @@
                 }, 
                 undefined, 
                 function(error) {
+                    // Jeśli pierwsza ścieżka zawiedzie, a szukaliśmy pomni, spróbuj awaryjnie
+                    if(!isFallback && currentMapName === "pomni_room/pomni.gltf") {
+                        console.warn("Nie znaleziono w folderze, próbuje w głównym...");
+                        load3DModel(true);
+                        return;
+                    }
+
+                    // Jeśli nadal błąd, wyświetl dokładnie czego brakowało
                     loadingUI.classList.add('hidden');
                     errorUI.style.display = "block"; 
-                    errorUI.innerHTML = `BŁĄD: Nie można załadować <b>${currentMapName}</b>!<br>Upewnij się, że używasz GitHub Pages.`;
-                    gridHelper = new THREE.GridHelper(100, 100, 0x550000, 0x220000); scene.add(gridHelper);
+                    errorUI.innerHTML = `⚠️ <b>BŁĄD WGRYWANIA!</b> ⚠️<br>
+                    Mainframe próbował otworzyć plik dokładnie tu:<br>
+                    <span style="color:#00f2ff; font-family:monospace;">${pathToLoad}</span><br>
+                    Ale go tam nie ma, albo brakuje do niego tekstur!<br>
+                    <i>(Upewnij się, że nie odpalasz tego z dysku C:/)</i>`;
+                    
+                    // Siatka awaryjna
+                    if(!gridHelper) {
+                        gridHelper = new THREE.GridHelper(100, 100, 0x550000, 0x220000); 
+                        scene.add(gridHelper);
+                    }
                 }
             );
         }
@@ -643,7 +652,7 @@
             cubes.forEach(c => scene.remove(c)); cubes = []; heldCube = null;
             document.getElementById('error3D').style.display = "none";
             
-            load3DModel();
+            load3DModel(false);
 
             const geo = new THREE.BoxGeometry(1, 1, 1); const mat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true });
             for(let i=0; i<15; i++) {
