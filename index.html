@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TADC - Global Mainframe OS v39</title>
+    <title>TADC - Global Mainframe OS v40</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -12,6 +12,10 @@
         @keyframes breatheGlow { 0% { box-shadow: 0 0 20px rgba(0, 242, 255, 0.4), inset 0 0 10px rgba(0, 242, 255, 0.2); } 50% { box-shadow: 0 0 40px rgba(0, 242, 255, 0.7), inset 0 0 20px rgba(0, 242, 255, 0.4); } 100% { box-shadow: 0 0 20px rgba(0, 242, 255, 0.4), inset 0 0 10px rgba(0, 242, 255, 0.2); } }
         @keyframes textBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         @keyframes audioPulse { 0% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.6; } }
+
+        /* 🔥 GLOBALNA BLOKADA ZAZNACZANIA TEKSTU 🔥 */
+        * { user-select: none; -webkit-user-select: none; }
+        input { user-select: auto; -webkit-user-select: auto; }
 
         body { 
             background-color: #050505; background-image: url('./images/backgrund.jpg'); 
@@ -60,14 +64,9 @@
         .cmd-real { color: #f9e11e; font-weight: bold; font-size: 14px; }
         .cmd-desc { color: #aaa; font-style: italic; margin-top: 3px;}
 
-        #adventureModal .cmd-list { padding: 20px; text-align: center; }
-        #advThemeInput { width: 90%; padding: 10px; margin-bottom: 15px; border: 1px solid #f9e11e; background: #111; color: #fff; font-weight: bold;}
-        #advBtn { background: #f9e11e; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px;}
-
         .chat-box { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scrollbar-width: thin; scrollbar-color: #00f2ff #111; padding-right: 5px;}
         .msg-wrapper { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 5px; animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
         .avatar-img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #00f2ff; object-fit: cover; flex-shrink: 0; background-color: #111; transition: 0.2s;}
-        .avatar-img:hover { transform: scale(1.2) rotate(5deg); animation: crtFlicker 0.2s infinite; }
         @keyframes popIn { from { opacity: 0; transform: translateY(15px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes caineShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(1px); } 75% { transform: translateX(-1px); } }
         
@@ -77,8 +76,6 @@
         .msg-wrapper.sys-wrap { justify-content: center; }
         .msg-wrapper.sys-wrap .msg { border-left: 3px solid #f9e11e; color: #f9e11e; font-style: italic; background: rgba(249,225,30,0.15); width: 100%; max-width: 100%; text-align: left; animation: textBlink 1.5s infinite; border-right: 3px solid #f9e11e;}
         .msg-wrapper.sys-wrap .avatar-img { display: none; }
-        
-        .inline-censor { height: 2.2em; vertical-align: middle; border-radius: 4px; border: 1px solid #ff0044; margin: 0 4px; transform: rotate(-3deg); animation: crtFlicker 0.2s infinite, miniShake 0.1s infinite; }
 
         .chat-container { flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 15px; padding-bottom: 80px; transition: transform 2s ease-in-out; }
         .chat-controls { position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px; background: rgba(0,0,0,0.9); display: flex; gap: 10px; box-sizing: border-box; border-top: 2px solid #333;}
@@ -94,71 +91,37 @@
             .chat-controls button { border-radius: 8px; padding: 12px 25px; }
         }
 
-        .hologram-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 350px; z-index: 1000; border: none; border-radius: 0; box-shadow: 0 0 60px 10px rgba(255, 0, 68, 0.7); transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); pointer-events: none; opacity: 0; }
-        .hologram-popup.active { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-        @keyframes entityFall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
-        .falling-gloink { position: fixed; top: -10vh; width: 60px; height: 60px; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 5px #ff0044); animation: entityFall 3s linear forwards; }
-        .falling-confetti { position: fixed; top: -10vh; width: 10px; height: 10px; border-radius: 50%; z-index: 1001; pointer-events: none; animation: entityFall 2s linear forwards; }
-        .falling-cat { position: fixed; top: -20vh; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 8px #00f2ff); animation: entityFall 4s linear forwards; object-fit: cover; border-radius: 8px; }
-
-        #censorBar { position: fixed; top: 50%; left: 0; width: 100%; height: 120px; background: repeating-linear-gradient(45deg, #000, #000 20px, #fff 20px, #fff 40px); transform: translateY(-50%) scaleY(0); z-index: 3000; display: flex; justify-content: center; align-items: center; transition: 0.1s; pointer-events: none;}
-        #censorBar.active { transform: translateY(-50%) scaleY(1); pointer-events: auto;}
-        #censorBar span { background: #ff0044; color: #fff; padding: 10px 30px; font-size: 40px; font-weight: bold; border: 4px solid #000; text-transform: uppercase; transform: rotate(-5deg); letter-spacing: 5px; animation: textBlink 0.5s infinite;}
-
-        .effect-censor-alert { box-shadow: inset 0 0 100px rgba(255,0,0,0.8); transition: 0.2s; }
-        #jailScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent, transparent 40px, #111 40px, #111 60px), repeating-linear-gradient(0deg, transparent, transparent 150px, #111 150px, #111 170px); z-index: 2500; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: inset 0 0 100px #000;}
-        #jailScreen.active { opacity: 0.8; pointer-events: auto; }
-
-        /* 🔥 SILNIK 3D - BLOKADA ZAZNACZANIA TEKSTU 🔥 */
+        /* 🔥 SILNIK 3D - ZABEZPIECZONY 🔥 */
         #gameContainer { 
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5555; display: none; background: #020000; cursor: crosshair;
-            user-select: none; -webkit-user-select: none; /* TO BLOKUJE ZAZNACZANIE TEKSTU I PSUJE BLOKADĘ MYSZY */
         }
         #gameContainer.active { display: block; }
         
-        #gameUI { position: absolute; top: 15px; left: 15px; color: #fff; font-size: 14px; font-weight: bold; z-index: 5556; text-shadow: 1px 1px #000; pointer-events: none; user-select: none; -webkit-user-select: none;}
+        #gameUI { position: absolute; top: 15px; left: 15px; color: #fff; font-size: 14px; font-weight: bold; z-index: 5556; text-shadow: 1px 1px #000; pointer-events: none;}
         #loading3D { color: #f9e11e; animation: textBlink 1s infinite; font-size: 18px; display: block; margin-top: 5px;}
-        #error3D { color: #fff; font-size: 14px; margin-top:10px; background: rgba(255,0,68,0.9); padding: 12px; border: 2px solid #fff; border-radius: 8px; display: none; max-width: 350px; line-height: 1.4; box-shadow: 0 0 20px #ff0044; text-shadow: none; pointer-events: auto;}
+        #error3D { color: #fff; font-size: 14px; margin-top:10px; background: rgba(255,0,68,0.9); padding: 12px; border: 2px solid #fff; border-radius: 8px; display: none; max-width: 350px; line-height: 1.4; box-shadow: 0 0 20px #ff0044; pointer-events: auto;}
         
         #crosshair { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: #00f2ff; border-radius: 50%; transform: translate(-50%, -50%); z-index: 5556; pointer-events: none; opacity: 0.8; box-shadow: 0 0 5px #00f2ff;}
         
-        /* MOBILNE STEROWANIE */
         #dpad { position: absolute; bottom: 20px; left: 20px; display: none; align-items: center; gap: 5px; z-index: 5557; }
         .d-col { display: flex; flex-direction: column; gap: 5px; }
-        .g-btn { background: rgba(0,242,255,0.2); border: 2px solid #00f2ff; color: #fff; width: 55px; height: 55px; font-size: 20px; font-weight: bold; border-radius: 12px; user-select: none; -webkit-user-select: none; touch-action: none; display: flex; justify-content: center; align-items: center; }
+        .g-btn { background: rgba(0,242,255,0.2); border: 2px solid #00f2ff; color: #fff; width: 55px; height: 55px; font-size: 20px; font-weight: bold; border-radius: 12px; display: flex; justify-content: center; align-items: center; }
         .g-btn:active { background: rgba(0,242,255,0.7); transform: scale(0.95); }
 
         #actionPad { position: absolute; bottom: 20px; right: 20px; display: none; gap: 10px; z-index: 5557; }
-        .act-btn { width: 60px; height: 60px; border-radius: 50%; font-size: 20px; border: 3px solid; background: rgba(0,0,0,0.5); color: #fff; user-select: none; -webkit-user-select: none; touch-action: none; display: flex; justify-content: center; align-items: center; }
+        .act-btn { width: 60px; height: 60px; border-radius: 50%; font-size: 20px; border: 3px solid; background: rgba(0,0,0,0.5); color: #fff; display: flex; justify-content: center; align-items: center; }
         .act-btn.grab { border-color: #ff0044; background: rgba(255,0,68,0.4); }
-        .act-btn.grab:active { background: rgba(255,0,68,0.9); transform: scale(0.95); }
         .act-btn.exit { border-color: #f9e11e; background: rgba(249,225,30,0.4); color: #000; }
-        .act-btn.exit:active { background: rgba(249,225,30,0.9); transform: scale(0.95); }
 
-        #touchLookZone { position: absolute; top: 0; right: 0; width: 50vw; height: 100vh; z-index: 5555; touch-action: none; display: none; user-select: none; -webkit-user-select: none;}
+        #touchLookZone { position: absolute; top: 0; right: 0; width: 50vw; height: 100vh; z-index: 5555; display: none; }
 
-        .effect-glitch { animation: shake 0.1s infinite; filter: hue-rotate(90deg) invert(1); }
-        @keyframes shake { 0% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 100% { transform: translate(5px, -5px); } }
-        .effect-redalert { box-shadow: inset 0 0 150px rgba(255,0,0,0.8); }
-        .effect-nuke { filter: brightness(10) contrast(5); }
-        .effect-void { background-image: none !important; background-color: #000 !important; filter: brightness(0.5); }
-        .effect-abstract { filter: hue-rotate(180deg) saturate(300%) contrast(200%) blur(3px); }
-        .effect-flip { transform: rotate(180deg); }
-        .effect-blur { filter: blur(15px); }
-        .effect-squish { transform: scaleY(0.2); }
-        .effect-stretch { transform: scaleY(2); }
-        .effect-dance { animation: danceAnim 0.4s infinite; }
-        @keyframes danceAnim { 0% {transform: translateY(0) rotate(0);} 25% {transform: translateY(-15px) rotate(5deg);} 75% {transform: translateY(15px) rotate(-5deg);} 100% {transform: translateY(0) rotate(0);} }
-        .effect-gravity { transform: translateY(-30vh) rotate(5deg); }
-        
         .hud-top { position: fixed; top: 10px; left: 10px; font-size: 12px; font-weight: bold; z-index: 110; color: #fff; text-shadow: 1px 1px #000; display: flex; flex-direction: column; gap: 8px; opacity: 0.9;}
         .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: red; margin-right: 5px; box-shadow: 0 0 5px red;}
         .status-dot.online { background: #00ff00; box-shadow: 0 0 5px #00ff00; }
         .users-btn { background: rgba(0,0,0,0.6); padding: 5px 10px; border: 1px solid #00f2ff; border-radius: 5px; cursor: pointer; color: #00f2ff; transition: 0.2s;}
-        .audio-btn { position: fixed; top: 10px; right: 10px; font-size: 24px; z-index: 110; cursor: pointer; text-shadow: 0 0 10px #00f2ff; animation: audioPulse 1.5s infinite;}
     </style>
 </head>
-<body>
+<body onselectstart="return false;">
     
     <div class="scanlines"></div>
     
@@ -170,7 +133,7 @@
             <span style="color:#00f2ff;">MAPA: <span id="mapNameUI" style="color:#f9e11e;">OFFICE.GLB</span></span><br>
             <span id="loading3D" class="hidden">🔄 POBIERANIE MODELU...</span><br>
             <div id="error3D"></div>
-            <span id="pcInstr" style="font-size: 10px; color:#aaa;">PC: W/A/S/D + Mysz ('I' by zablokować). LPM: Rzut.</span>
+            <span id="pcInstr" style="font-size: 11px; color:#aaa;">PC: W/A/S/D = Chodzenie. <b style="color:#fff;">KLIKNIJ EKRAN, ABY ZABLOKOWAĆ MYSZ!</b> LPM: Rzut. ESC: Wyjście z blokady.</span>
             <span id="mobInstr" style="font-size: 10px; color:#aaa; display:none;">MOBILE: Joystick lewo, przesuwanie po prawej do obrotu.</span>
         </div>
         
@@ -188,20 +151,11 @@
             <button class="act-btn grab" id="btnGrab">✋</button>
         </div>
     </div>
-    
-    <img id="hologramImg" class="hologram-popup" src="" alt="Entity">
-    <div id="censorBar"><span>CENZURA</span></div>
-    <div id="jailScreen"></div>
 
     <div class="hud-top">
         <div id="serverStatus"><span id="sDot" class="status-dot"></span><span id="sText">Rozłączono</span></div>
         <div id="usersBtn" class="users-btn hidden" onclick="toggleUsers()">👥 Aktywni: 0</div>
     </div>
-    <div class="audio-btn" id="audioBtn" onclick="toggleMusic()">🔇</div>
-    
-    <audio id="bgMusic" loop><source src="./music/maintheme.mp3" type="audio/mpeg"></audio>
-    <audio id="censorAudio"><source src="./music/niewolno.mp3" type="audio/mpeg"></audio>
-    <audio id="joinAudio"><source src="./music/join.mp3" type="audio/mpeg"></audio>
 
     <div id="step-1" class="box">
         <h1>CYFROWY CYRK</h1>
@@ -233,14 +187,6 @@
             <div id="cmdList" class="cmd-list"></div>
         </div>
 
-        <div id="adventureModal" class="popup-window hidden">
-            <div class="cmd-header"><span>🤖 KAMPANIA 10 RUND</span><button onclick="toggleAdventure()">[X]</button></div>
-            <div class="cmd-list">
-                <input type="text" id="advThemeInput" placeholder="np. Zgubieni w Kodzie...">
-                <button id="advBtn" onclick="fireAdventure()">ROZPOCZNIJ KAMPANIĘ</button>
-            </div>
-        </div>
-
         <div id="usersWindow" class="popup-window hidden">
             <div class="cmd-header"><span>🟢 ZAREJESTROWANE DUSZE</span><button onclick="toggleUsers()">[X]</button></div>
             <div id="usersList" class="cmd-list"></div>
@@ -262,48 +208,29 @@
             checkIfCaine();
         };
 
-        const music = document.getElementById('bgMusic');
-        const censorAudio = document.getElementById('censorAudio');
-        const joinAudio = document.getElementById('joinAudio');
-        const audioBtn = document.getElementById('audioBtn');
-        let audioAllowed = false; let isCensoring = false;
-        music.volume = 0.3; censorAudio.volume = 1.0; 
-
-        function safePlayAudio(audioElement) {
-            if (!audioAllowed) return;
-            audioElement.currentTime = 0;
-            let playPromise = audioElement.play();
-            if (playPromise !== undefined) { playPromise.catch(error => { console.log("Audio zablokowane:", error); }); }
-        }
-
-        function toggleMusic() {
-            if (music.paused) { if(!isCensoring) safePlayAudio(music); audioBtn.innerText = '🔊'; audioAllowed = true;} 
-            else { music.pause(); audioBtn.innerText = '🔇'; }
-        }
-
-        document.body.addEventListener('click', () => {
-            if(!audioAllowed && music.paused && !isCensoring) { safePlayAudio(music); audioBtn.innerText = '🔊'; audioAllowed = true;}
-        }, {once: true});
-
-        function triggerNiewolno() {
-            if(isCensoring) return;
-            isCensoring = true; const wasPlaying = !music.paused; music.pause(); 
-            safePlayAudio(censorAudio);
-            document.body.classList.add('effect-censor-alert'); 
-            censorAudio.onended = () => { isCensoring = false; document.body.classList.remove('effect-censor-alert'); if (wasPlaying && audioAllowed) safePlayAudio(music); };
-        }
+        // 🔥 GLOBALNY OBSŁUGIWACZ KLAWISZA ENTER (NIEZAWODNY) 🔥
+        window.addEventListener('keydown', function(e) {
+            if(e.key === 'Enter') {
+                if(document.activeElement === document.getElementById('chatInput')) { handleChat(); e.preventDefault(); }
+                else if(document.activeElement === document.getElementById('cmdInputTop')) { exeTop(); e.preventDefault(); }
+                else if(document.activeElement === document.getElementById('nickInput')) { start(false); e.preventDefault(); }
+                else if(document.activeElement === document.getElementById('pinInput')) { loginAdmin(); e.preventDefault(); }
+            }
+        });
 
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v39"; 
+        const topic = "cyfrowycyrk/globalchat/final_v40"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let userAvatar = ""; let activeUsers = {}; 
         let currentMapName = "office.glb"; 
+        let isOfflineMode = false;
 
         const badWords = [ "kurw", "kurv", "jeb", "chuj", "huj", "pierdol", "pierdal", "piedol", "piedal", "spierd", "wypierd", "wypied", "zajeb", "zjeb", "dziwk", "suka", "szmat", "cwel", "pedał", "pedal", "pizd", "fiut", "rucha", "fuck", "shit", "bitch", "debil", "idiot", "kurna", "psiawoker" ];
 
         function updateStatus(online) {
             const dot = document.getElementById('sDot'); const txt = document.getElementById('sText');
-            if(online) { dot.classList.add('online'); txt.innerText = "Sieć: OK"; } else { dot.classList.remove('online'); txt.innerText = "Szukanie..."; }
+            if(online) { dot.classList.add('online'); txt.innerText = "Sieć: OK"; isOfflineMode = false; } 
+            else { dot.classList.remove('online'); txt.innerText = "Brak sieci (Tryb Offline)"; isOfflineMode = true; }
         }
 
         function initMQTT() {
@@ -333,9 +260,9 @@
             };
             mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
                 updateStatus(true); mqtt.subscribe(topic); 
-                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v39 👑" : `[${user}] dołączył do cyrku.`}); 
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v40 👑" : `[${user}] dołączył do cyrku.`}); 
                 setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
-                setInterval(() => { if(gameActive) { let heldId = heldCube ? heldCube.userData.id : -1; sendData({type: "pos", nick: user, x: p.x, z: p.z, rot: yaw, color: userColor, hold: heldId}); } }, 100);
+                setInterval(() => { if(gameActive && !isOfflineMode) { let heldId = heldCube ? heldCube.userData.id : -1; sendData({type: "pos", nick: user, x: p.x, z: p.z, rot: yaw, color: userColor, hold: heldId}); } }, 100);
                 activeUsers[user] = { time: Date.now(), isAdmin: isAdmin, avatar: userAvatar }; 
             }, onFailure: () => { updateStatus(false); } });
         }
@@ -355,7 +282,28 @@
             uBtn.innerText = `👥 Aktywni: ${count}`; 
         }
 
-        function sendData(obj) { if(mqtt && mqtt.isConnected()) { const msg = new Paho.MQTT.Message(JSON.stringify(obj)); msg.destinationName = topic; mqtt.send(msg); } }
+        // 🔥 ULEPSZONE WYSYŁANIE - DZIAŁA NAWET JAK PADNE INTERNET 🔥
+        function sendData(obj) { 
+            if(mqtt && mqtt.isConnected()) { 
+                const msg = new Paho.MQTT.Message(JSON.stringify(obj)); 
+                msg.destinationName = topic; 
+                mqtt.send(msg); 
+            } else {
+                // TRYB OFFLINE - Wykonaj to sam u siebie!
+                if(obj.type === "cmd") {
+                    if(obj.cmd === "changemap") {
+                        currentMapName = obj.target;
+                        document.getElementById('mapNameUI').innerText = currentMapName.toUpperCase();
+                        if(gameActive) load3DModel(false);
+                    } else {
+                        runEff(obj.cmd);
+                    }
+                    showSys(`> [TRYB OFFLINE] Wykonano lokalnie: ${obj.cmd}`);
+                } else if (obj.type === "chat") {
+                    showMsg(obj.nick, obj.text, obj.color, obj.admin, obj.avatar);
+                }
+            }
+        }
         
         function checkIfCaine() { 
             const v = document.getElementById('nickInput').value.trim().toLowerCase(); 
@@ -393,7 +341,7 @@
             const interval = setInterval(() => { pr += 5; fill.style.width = pr + "%"; if(pr >= 100) { clearInterval(interval); document.getElementById('step-2').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); document.getElementById('usersBtn').classList.remove('hidden'); if(isAdmin) { document.getElementById('caineTerminal').classList.remove('hidden'); } } }, 60); 
         }
         
-        function censorText(text) { let safe = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); badWords.forEach(word => { const spamPattern = word.split('').join('+') + "+[a-ząćęłńóśźż]*"; const regex = new RegExp(spamPattern, "gi"); safe = safe.replace(regex, `<img src="./images/censure.jpg" class="inline-censor">`); }); return safe; }
+        function censorText(text) { let safe = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); return safe; }
         
         function showMsg(nick, text, color, isCaine, avatar) { 
             const box = document.getElementById('chatBox'); const processedText = censorText(text); 
@@ -402,35 +350,32 @@
             const nickStyle = isCaine ? "" : `style="color:${color};"`; 
             let html = `<div class="${wrapClass}"><img src="${safeAvatar}" class="avatar-img" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=${nick}'"><div class="msg"><span class="nick" ${nickStyle}>${nick}:</span> <span class="text">${processedText}</span></div></div>`;
             box.innerHTML += html; requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; }); 
-            if(processedText.includes('class="inline-censor"')) { triggerNiewolno(); } 
         }
         
         function showSys(text) { 
             const box = document.getElementById('chatBox'); box.innerHTML += `<div class="msg-wrapper sys-wrap"><div class="msg sys">${text}</div></div>`; requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; }); 
-            if (text.includes("dołączył") || text.includes("PRZEJĄŁ SYSTEM") || text.includes("MIKU")) { if(joinAudio) safePlayAudio(joinAudio); }
         }
         
         function handleChat() { const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return; if(text.startsWith('/')) { procCmd(text); input.value=""; return; } sendData({type:"chat", nick:user, text:text, color:userColor, admin:isAdmin, avatar:userAvatar}); input.value = ""; }
         function exeTop() { const input = document.getElementById('cmdInputTop'); let text = input.value.trim(); if(!text) return; if(!text.startsWith('/')) text = '/' + text; procCmd(text); input.value = ""; }
 
-        const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "squish", "stretch", "dance", "zoom", "grayscale", "confetti", "jail", "unjail", "gravity", "vr", "room", "unroom", "cats"];
+        const effectList = ["room", "unroom"];
         
         function populateCmdWindow() { 
             const list = document.getElementById('cmdList'); let html = ""; 
             html += `<div><span class="cmd-real" style="color:#00ff00;">/map [nazwa]</span> <span class="cmd-desc">Zmienia mapę. (np. /map pomni)</span></div>`;
-            effectList.forEach(e => html += `<div><span class="cmd-real">/${e} [nick]</span></div>`); 
+            html += `<div><span class="cmd-real">/room</span> <span class="cmd-desc">Wchodzi do pokoju 3D.</span></div>`;
+            html += `<div><span class="cmd-real">/unroom</span> <span class="cmd-desc">Wychodzi z pokoju 3D.</span></div>`;
             list.innerHTML = html; 
         }
         function toggleCmd() { document.getElementById('cmdWindow').classList.toggle('hidden'); }
         function toggleUsers() { document.getElementById('usersWindow').classList.toggle('hidden'); }
-        function toggleAdventure() { document.getElementById('adventureModal').classList.toggle('hidden'); }
         
         function procCmd(rawCmd) { 
             let parts = rawCmd.trim().split(" "); let cmd = parts[0].toLowerCase(); let target = parts.length > 1 ? parts.slice(1).join(" ").toUpperCase() : "ALL"; 
             if(cmd === '/cmd') { toggleCmd(); return; } if(cmd === '/clear') { document.getElementById('chatBox').innerHTML = ""; return; } 
-            if(cmd === '/avatar') { if(parts.length > 1) { userAvatar = parts[1]; localStorage.setItem('tadc_avatar', userAvatar); showSys(`> System: Profilowe zaktualizowane.`); activeUsers[user].avatar = userAvatar; updateActiveUsersUI(); } return; }
+            
             if(!isAdmin) { showSys("> Błąd: Wymagane uprawnienia Root."); return; }
-            if(cmd === '/przygoda') { toggleAdventure(); return; }
             
             if(cmd === '/map') {
                 let rawMapName = parts.slice(1).join(" ").toLowerCase();
@@ -440,24 +385,25 @@
                 if(rawMapName === "pomni") { finalMapName = "pomni_room/pomni.gltf"; } 
                 else if(!finalMapName.endsWith('.glb') && !finalMapName.endsWith('.gltf')) { finalMapName += ".glb"; }
 
+                // WYSYŁA ZAWSZE, NAWET JAK JEST OFFLINE
                 sendData({type:"cmd", cmd:"changemap", target: finalMapName});
-                sendData({type:"sys", text: `> CAINE ZMIENIA WYMIAR NA: ${finalMapName.toUpperCase()}`});
+                if(mqtt && mqtt.isConnected()) sendData({type:"sys", text: `> CAINE ZMIENIA WYMIAR NA: ${finalMapName.toUpperCase()}`});
                 return;
             }
 
             let effectName = cmd.replace('/', ''); 
-            if(effectList.includes(effectName)) { sendData({type:"cmd", cmd:effectName, target:target}); let txt = target==="ALL"?"GLOBALNIE":`NA GRACZU: ${target}`; sendData({type:"sys", text: `> CAINE UŻYŁ MODUŁU: [${effectName.toUpperCase()}] ${txt}`}); return; } 
+            if(effectList.includes(effectName)) { 
+                sendData({type:"cmd", cmd:effectName, target:target}); 
+                if(mqtt && mqtt.isConnected()) {
+                    let txt = target==="ALL"?"GLOBALNIE":`NA GRACZU: ${target}`; 
+                    sendData({type:"sys", text: `> CAINE UŻYŁ MODUŁU: [${effectName.toUpperCase()}] ${txt}`}); 
+                }
+                return; 
+            } 
             showSys(`> Błąd: Moduł '${cmd}' nie istnieje.`); 
         }
 
-        function createFallingEntities(type) { 
-            const container = document.body; let count = 25; 
-            if(type === "confetti") { count = 300; for(let i=0; i<count; i++) { const e = document.createElement('div'); e.classList.add('falling-confetti'); e.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`; e.style.left = Math.random() * 100 + 'vw'; e.style.animationDuration = (Math.random() * 3 + 4) + 's'; e.style.animationDelay = (Math.random() * 2) + 's'; container.appendChild(e); setTimeout(() => e.remove(), 7000); } return; }
-            if(type === "cats") { const catImages = ['./images/kot1.jpg', './images/kot2.jpg', './images/kot3.jpg']; count = 50; for(let i=0; i<count; i++) { const e = document.createElement('img'); const imgIndex = Math.floor(Math.random() * catImages.length); e.src = catImages[imgIndex]; e.classList.add('falling-cat'); const size = Math.random() * 60 + 50; e.style.width = size + 'px'; e.style.height = size + 'px'; e.style.left = Math.random() * 100 + 'vw'; e.style.animationDuration = (Math.random() * 2 + 3) + 's'; e.style.animationDelay = (Math.random() * 2) + 's'; container.appendChild(e); setTimeout(() => e.remove(), 6000); } sendData({type:"sys", text: `🎵 MIAU! Caine aktywował DESZCZ KOTÓW! 🎵`}); return; }
-            for(let i=0; i<count; i++) { const e = document.createElement(type === "gloink" ? 'img' : 'div'); if(type === "gloink") { e.src = `./images/gloink1.jpg`; e.classList.add('falling-gloink'); } else { e.classList.add('falling-confetti'); e.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`; } e.style.left = Math.random() * 100 + 'vw'; container.appendChild(e); setTimeout(() => e.remove(), 4000); }
-        }
-
-        // 🔥 SILNIK 3D (BEZPIECZNE ODPALANIE) 🔥
+        // 🔥 SILNIK 3D (ZABEZPIECZONY) 🔥
         let scene, camera, renderer, gameActive = false;
         let cubes = []; let heldCube = null; let raycaster, mouse;
         let loadedModelMesh = null; let gridHelper = null; 
@@ -469,6 +415,10 @@
 
         function init3DGame() {
             if(scene) return; 
+            if(typeof THREE === 'undefined') {
+                alert("BŁĄD KRYTYCZNY: Biblioteka 3D nie została pobrana! Sprawdź połączenie z internetem.");
+                return;
+            }
             const container = document.getElementById('gameContainer');
             scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x020000, 0.03); 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000); 
@@ -514,12 +464,20 @@
                 document.getElementById('btnExit').addEventListener('pointerdown', (e) => { gameActive = false; document.getElementById('gameContainer').classList.remove('active'); e.preventDefault(); });
                 
             } else {
+                // 🔥 PC: KLIKNIJ ABY ZABLOKOWAĆ (NIE KLAWISZ I) 🔥
+                container.addEventListener('mousedown', (e) => {
+                    if(!gameActive) return;
+                    if(document.pointerLockElement !== container) {
+                        container.requestPointerLock(); // Kliknij w czarne tło aby zablokować mysz!
+                    } else {
+                        if(e.button === 0) performGrabThrow();
+                    }
+                });
+
                 document.addEventListener('keydown', e => { 
                     if(!gameActive) return; let k = e.key.toLowerCase(); 
                     if(k === 'w') p.moveF = true; if(k === 's') p.moveB = true; 
                     if(k === 'a') p.moveL = true; if(k === 'd') p.moveR = true; 
-                    if(k === 'i') container.requestPointerLock(); 
-                    if(e.key === 'Escape') document.exitPointerLock();
                 });
                 document.addEventListener('keyup', e => { 
                     if(!gameActive) return; let k = e.key.toLowerCase(); 
@@ -531,10 +489,6 @@
                         yaw -= e.movementX * 0.003; pitch -= e.movementY * 0.003; 
                         pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch)); camera.rotation.set(pitch, yaw, 0, 'YXZ'); 
                     } 
-                });
-                document.addEventListener('mousedown', (e) => {
-                    if(!gameActive || document.pointerLockElement !== container) return;
-                    if(e.button === 0) performGrabThrow();
                 });
             }
             animate3D();
@@ -620,10 +574,9 @@
                     loadingUI.classList.add('hidden');
                     errorUI.style.display = "block"; 
                     errorUI.innerHTML = `⚠️ <b>BŁĄD WGRYWANIA!</b> ⚠️<br>
-                    Mainframe próbował otworzyć plik dokładnie tu:<br>
+                    Próbowałem otworzyć plik:<br>
                     <span style="color:#00f2ff; font-family:monospace;">${pathToLoad}</span><br>
-                    Ale go tam nie ma, albo brakuje do niego tekstur!<br>
-                    <i>(Upewnij się, że nie odpalasz tego z dysku C:/)</i>`;
+                    Błąd: <i>${error.message}</i>`;
                     
                     if(!gridHelper) { gridHelper = new THREE.GridHelper(100, 100, 0x550000, 0x220000); scene.add(gridHelper); }
                 }
@@ -631,21 +584,17 @@
         }
 
         function resetRoom() {
-            try {
-                p.x = 0; p.y = 1.5; p.z = 0; yaw = 0; pitch = 0; camera.rotation.set(0,0,0);
-                cubes.forEach(c => scene.remove(c)); cubes = []; heldCube = null;
-                document.getElementById('error3D').style.display = "none";
-                
-                load3DModel(false);
+            p.x = 0; p.y = 1.5; p.z = 0; yaw = 0; pitch = 0; camera.rotation.set(0,0,0);
+            cubes.forEach(c => scene.remove(c)); cubes = []; heldCube = null;
+            document.getElementById('error3D').style.display = "none";
+            
+            load3DModel(false);
 
-                const geo = new THREE.BoxGeometry(1, 1, 1); const mat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true });
-                for(let i=0; i<15; i++) {
-                    let mesh = new THREE.Mesh(geo, mat); mesh.position.set((Math.random() - 0.5) * 20, 2, (Math.random() - 0.5) * 20);
-                    mesh.userData = { id: i, vx: 0, vy: 0, vz: 0, rotX: Math.random()*0.1, rotY: Math.random()*0.1, heldByOther: false }; 
-                    scene.add(mesh); cubes.push(mesh);
-                }
-            } catch(e) {
-                console.error("Critical Room Error Ignored:", e);
+            const geo = new THREE.BoxGeometry(1, 1, 1); const mat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true });
+            for(let i=0; i<15; i++) {
+                let mesh = new THREE.Mesh(geo, mat); mesh.position.set((Math.random() - 0.5) * 20, 2, (Math.random() - 0.5) * 20);
+                mesh.userData = { id: i, vx: 0, vy: 0, vz: 0, rotX: Math.random()*0.1, rotY: Math.random()*0.1, heldByOther: false }; 
+                scene.add(mesh); cubes.push(mesh);
             }
         }
 
@@ -693,11 +642,25 @@
             renderer.render(scene, camera);
         }
 
-        // 🔥 ODPALANIE KLAWISZEM ENTER (ZMIENIONO NA KEYDOWN) 🔥
-        document.getElementById('chatInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleChat(); });
-        document.getElementById('cmdInputTop').addEventListener('keydown', function (e) { if (e.key === 'Enter') exeTop(); });
-        document.getElementById('nickInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') start(false); });
-        document.getElementById('pinInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') loginAdmin(); });
+        // FUNKCJA BEZPIECZNEGO OTWIERANIA POKOJU
+        function runEff(cmd) {
+            const gameCont = document.getElementById('gameContainer');
+            if(cmd === "room") { 
+                try {
+                    gameCont.classList.add('active'); // Otwiera czarny ekran jako pierwsze!
+                    gameActive = true; 
+                    init3DGame(); 
+                    resetRoom(); 
+                } catch(err) {
+                    alert("BŁĄD SILNIKA 3D: " + err.message);
+                }
+            } 
+            else if(cmd === "unroom") { 
+                gameCont.classList.remove('active'); gameActive = false; 
+                if(document.pointerLockElement) document.exitPointerLock(); 
+            } 
+        }
+
     </script>
 </body>
 </html>
