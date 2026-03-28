@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TADC - Global Mainframe OS v40</title>
+    <title>TADC - Global Mainframe OS v41</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -13,7 +13,6 @@
         @keyframes textBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         @keyframes audioPulse { 0% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.6; } }
 
-        /* 🔥 GLOBALNA BLOKADA ZAZNACZANIA TEKSTU 🔥 */
         * { user-select: none; -webkit-user-select: none; }
         input { user-select: auto; -webkit-user-select: auto; }
 
@@ -91,10 +90,18 @@
             .chat-controls button { border-radius: 8px; padding: 12px 25px; }
         }
 
-        /* 🔥 SILNIK 3D - ZABEZPIECZONY 🔥 */
-        #gameContainer { 
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5555; display: none; background: #020000; cursor: crosshair;
-        }
+        .hologram-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 350px; z-index: 1000; border: none; border-radius: 0; box-shadow: 0 0 60px 10px rgba(255, 0, 68, 0.7); transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); pointer-events: none; opacity: 0; }
+        .hologram-popup.active { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        @keyframes entityFall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+        .falling-gloink { position: fixed; top: -10vh; width: 60px; height: 60px; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 5px #ff0044); animation: entityFall 3s linear forwards; }
+        .falling-confetti { position: fixed; top: -10vh; width: 10px; height: 10px; border-radius: 50%; z-index: 1001; pointer-events: none; animation: entityFall 2s linear forwards; }
+        .falling-cat { position: fixed; top: -20vh; z-index: 1001; pointer-events: none; filter: drop-shadow(0 0 8px #00f2ff); animation: entityFall 4s linear forwards; object-fit: cover; border-radius: 8px; }
+
+        #censorBar { position: fixed; top: 50%; left: 0; width: 100%; height: 120px; background: repeating-linear-gradient(45deg, #000, #000 20px, #fff 20px, #fff 40px); transform: translateY(-50%) scaleY(0); z-index: 3000; display: flex; justify-content: center; align-items: center; transition: 0.1s; pointer-events: none;}
+        #censorBar.active { transform: translateY(-50%) scaleY(1); pointer-events: auto;}
+        #censorBar span { background: #ff0044; color: #fff; padding: 10px 30px; font-size: 40px; font-weight: bold; border: 4px solid #000; text-transform: uppercase; transform: rotate(-5deg); letter-spacing: 5px; animation: textBlink 0.5s infinite;}
+
+        #gameContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5555; display: none; background: #020000; cursor: crosshair;}
         #gameContainer.active { display: block; }
         
         #gameUI { position: absolute; top: 15px; left: 15px; color: #fff; font-size: 14px; font-weight: bold; z-index: 5556; text-shadow: 1px 1px #000; pointer-events: none;}
@@ -133,8 +140,8 @@
             <span style="color:#00f2ff;">MAPA: <span id="mapNameUI" style="color:#f9e11e;">OFFICE.GLB</span></span><br>
             <span id="loading3D" class="hidden">🔄 POBIERANIE MODELU...</span><br>
             <div id="error3D"></div>
-            <span id="pcInstr" style="font-size: 11px; color:#aaa;">PC: W/A/S/D = Chodzenie. <b style="color:#fff;">KLIKNIJ EKRAN, ABY ZABLOKOWAĆ MYSZ!</b> LPM: Rzut. ESC: Wyjście z blokady.</span>
-            <span id="mobInstr" style="font-size: 10px; color:#aaa; display:none;">MOBILE: Joystick lewo, przesuwanie po prawej do obrotu.</span>
+            <span id="pcInstr" style="font-size: 11px; color:#aaa;">PC: W/A/S/D = Chodzenie. <b style="color:#fff;">KOLIZJE AKTYWNE.</b> LPM: Rzut.</span>
+            <span id="mobInstr" style="font-size: 10px; color:#aaa; display:none;">MOBILE: Joystick lewo, przesuwanie po prawej do obrotu. KOLIZJE AKTYWNE.</span>
         </div>
         
         <div id="dpad">
@@ -208,7 +215,6 @@
             checkIfCaine();
         };
 
-        // 🔥 GLOBALNY OBSŁUGIWACZ KLAWISZA ENTER (NIEZAWODNY) 🔥
         window.addEventListener('keydown', function(e) {
             if(e.key === 'Enter') {
                 if(document.activeElement === document.getElementById('chatInput')) { handleChat(); e.preventDefault(); }
@@ -219,13 +225,11 @@
         });
 
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v40"; 
+        const topic = "cyfrowycyrk/globalchat/final_v41"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let userAvatar = ""; let activeUsers = {}; 
         let currentMapName = "office.glb"; 
         let isOfflineMode = false;
-
-        const badWords = [ "kurw", "kurv", "jeb", "chuj", "huj", "pierdol", "pierdal", "piedol", "piedal", "spierd", "wypierd", "wypied", "zajeb", "zjeb", "dziwk", "suka", "szmat", "cwel", "pedał", "pedal", "pizd", "fiut", "rucha", "fuck", "shit", "bitch", "debil", "idiot", "kurna", "psiawoker" ];
 
         function updateStatus(online) {
             const dot = document.getElementById('sDot'); const txt = document.getElementById('sText');
@@ -260,7 +264,7 @@
             };
             mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
                 updateStatus(true); mqtt.subscribe(topic); 
-                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v40 👑" : `[${user}] dołączył do cyrku.`}); 
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v41 👑" : `[${user}] dołączył do cyrku.`}); 
                 setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
                 setInterval(() => { if(gameActive && !isOfflineMode) { let heldId = heldCube ? heldCube.userData.id : -1; sendData({type: "pos", nick: user, x: p.x, z: p.z, rot: yaw, color: userColor, hold: heldId}); } }, 100);
                 activeUsers[user] = { time: Date.now(), isAdmin: isAdmin, avatar: userAvatar }; 
@@ -282,14 +286,12 @@
             uBtn.innerText = `👥 Aktywni: ${count}`; 
         }
 
-        // 🔥 ULEPSZONE WYSYŁANIE - DZIAŁA NAWET JAK PADNE INTERNET 🔥
         function sendData(obj) { 
             if(mqtt && mqtt.isConnected()) { 
                 const msg = new Paho.MQTT.Message(JSON.stringify(obj)); 
                 msg.destinationName = topic; 
                 mqtt.send(msg); 
             } else {
-                // TRYB OFFLINE - Wykonaj to sam u siebie!
                 if(obj.type === "cmd") {
                     if(obj.cmd === "changemap") {
                         currentMapName = obj.target;
@@ -298,7 +300,6 @@
                     } else {
                         runEff(obj.cmd);
                     }
-                    showSys(`> [TRYB OFFLINE] Wykonano lokalnie: ${obj.cmd}`);
                 } else if (obj.type === "chat") {
                     showMsg(obj.nick, obj.text, obj.color, obj.admin, obj.avatar);
                 }
@@ -385,7 +386,6 @@
                 if(rawMapName === "pomni") { finalMapName = "pomni_room/pomni.gltf"; } 
                 else if(!finalMapName.endsWith('.glb') && !finalMapName.endsWith('.gltf')) { finalMapName += ".glb"; }
 
-                // WYSYŁA ZAWSZE, NAWET JAK JEST OFFLINE
                 sendData({type:"cmd", cmd:"changemap", target: finalMapName});
                 if(mqtt && mqtt.isConnected()) sendData({type:"sys", text: `> CAINE ZMIENIA WYMIAR NA: ${finalMapName.toUpperCase()}`});
                 return;
@@ -403,7 +403,7 @@
             showSys(`> Błąd: Moduł '${cmd}' nie istnieje.`); 
         }
 
-        // 🔥 SILNIK 3D (ZABEZPIECZONY) 🔥
+        // 🔥 SILNIK 3D (KOLIZJE + SPAWN) 🔥
         let scene, camera, renderer, gameActive = false;
         let cubes = []; let heldCube = null; let raycaster, mouse;
         let loadedModelMesh = null; let gridHelper = null; 
@@ -415,10 +415,6 @@
 
         function init3DGame() {
             if(scene) return; 
-            if(typeof THREE === 'undefined') {
-                alert("BŁĄD KRYTYCZNY: Biblioteka 3D nie została pobrana! Sprawdź połączenie z internetem.");
-                return;
-            }
             const container = document.getElementById('gameContainer');
             scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x020000, 0.03); 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000); 
@@ -464,11 +460,10 @@
                 document.getElementById('btnExit').addEventListener('pointerdown', (e) => { gameActive = false; document.getElementById('gameContainer').classList.remove('active'); e.preventDefault(); });
                 
             } else {
-                // 🔥 PC: KLIKNIJ ABY ZABLOKOWAĆ (NIE KLAWISZ I) 🔥
                 container.addEventListener('mousedown', (e) => {
                     if(!gameActive) return;
                     if(document.pointerLockElement !== container) {
-                        container.requestPointerLock(); // Kliknij w czarne tło aby zablokować mysz!
+                        container.requestPointerLock(); 
                     } else {
                         if(e.button === 0) performGrabThrow();
                     }
@@ -558,6 +553,7 @@
                     const maxDim = Math.max(size.x, size.y, size.z);
                     if(maxDim > 0 && maxDim !== Infinity) { const scale = 40 / maxDim; loadedModelMesh.scale.set(scale, scale, scale); }
                     
+                    // Środek sprowadza gracza na absolutne współrzędne 0,0 (idealny Spawn!)
                     const boxScaled = new THREE.Box3().setFromObject(loadedModelMesh);
                     const centerScaled = boxScaled.getCenter(new THREE.Vector3());
                     
@@ -567,39 +563,39 @@
                 undefined, 
                 function(error) {
                     if(!isFallback && currentMapName === "pomni_room/pomni.gltf") {
-                        console.warn("Nie znaleziono w folderze, próbuje w głównym...");
-                        load3DModel(true);
-                        return;
+                        load3DModel(true); return;
                     }
                     loadingUI.classList.add('hidden');
                     errorUI.style.display = "block"; 
-                    errorUI.innerHTML = `⚠️ <b>BŁĄD WGRYWANIA!</b> ⚠️<br>
-                    Próbowałem otworzyć plik:<br>
-                    <span style="color:#00f2ff; font-family:monospace;">${pathToLoad}</span><br>
-                    Błąd: <i>${error.message}</i>`;
-                    
-                    if(!gridHelper) { gridHelper = new THREE.GridHelper(100, 100, 0x550000, 0x220000); scene.add(gridHelper); }
+                    errorUI.innerHTML = `⚠️ <b>BŁĄD WGRYWANIA!</b> ⚠️<br>Brak pliku na serwerze!`;
                 }
             );
         }
 
         function resetRoom() {
-            p.x = 0; p.y = 1.5; p.z = 0; yaw = 0; pitch = 0; camera.rotation.set(0,0,0);
-            cubes.forEach(c => scene.remove(c)); cubes = []; heldCube = null;
-            document.getElementById('error3D').style.display = "none";
-            
-            load3DModel(false);
+            try {
+                // SPAWN Gracza:
+                p.x = 0; p.y = 1.5; p.z = 0; yaw = 0; pitch = 0; camera.rotation.set(0,0,0);
+                cubes.forEach(c => scene.remove(c)); cubes = []; heldCube = null;
+                document.getElementById('error3D').style.display = "none";
+                
+                load3DModel(false);
 
-            const geo = new THREE.BoxGeometry(1, 1, 1); const mat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true });
-            for(let i=0; i<15; i++) {
-                let mesh = new THREE.Mesh(geo, mat); mesh.position.set((Math.random() - 0.5) * 20, 2, (Math.random() - 0.5) * 20);
-                mesh.userData = { id: i, vx: 0, vy: 0, vz: 0, rotX: Math.random()*0.1, rotY: Math.random()*0.1, heldByOther: false }; 
-                scene.add(mesh); cubes.push(mesh);
-            }
+                const geo = new THREE.BoxGeometry(1, 1, 1); const mat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true });
+                for(let i=0; i<15; i++) {
+                    let mesh = new THREE.Mesh(geo, mat); mesh.position.set((Math.random() - 0.5) * 15, 2, (Math.random() - 0.5) * 15);
+                    mesh.userData = { id: i, vx: 0, vy: 0, vz: 0, rotX: Math.random()*0.1, rotY: Math.random()*0.1, heldByOther: false }; 
+                    scene.add(mesh); cubes.push(mesh);
+                }
+            } catch(e) { }
         }
 
         function animate3D() {
             requestAnimationFrame(animate3D); if(!gameActive) return;
+            
+            // 🔥 FIZYKA KOLIZJI (Odbijanie od ścian z .glb) 🔥
+            let oldX = p.x; 
+            let oldZ = p.z;
             
             const speed = 0.25; 
             if(p.moveF) { p.x -= Math.sin(yaw) * speed; p.z -= Math.cos(yaw) * speed; } 
@@ -608,10 +604,33 @@
             if(p.moveR) { p.x += Math.cos(yaw) * speed; p.z -= Math.sin(yaw) * speed; }
             
             p.x = Math.max(-49, Math.min(49, p.x)); p.z = Math.max(-49, Math.min(49, p.z));
+
+            // System ślizgającego się Raycastera (jeśli załadowano model)
+            if(loadedModelMesh) {
+                let colRay = new THREE.Raycaster();
+                let pHeight = 1.0; 
+                let colDist = 0.6; 
+                
+                // Sprawdzanie osi X
+                if(p.x !== oldX) {
+                    let dirX = new THREE.Vector3(p.x > oldX ? 1 : -1, 0, 0);
+                    colRay.set(new THREE.Vector3(oldX, pHeight, oldZ), dirX);
+                    let interX = colRay.intersectObject(loadedModelMesh, true);
+                    if(interX.length > 0 && interX[0].distance < colDist) { p.x = oldX; }
+                }
+                
+                // Sprawdzanie osi Z
+                if(p.z !== oldZ) {
+                    let dirZ = new THREE.Vector3(0, 0, p.z > oldZ ? 1 : -1);
+                    colRay.set(new THREE.Vector3(p.x, pHeight, oldZ), dirZ);
+                    let interZ = colRay.intersectObject(loadedModelMesh, true);
+                    if(interZ.length > 0 && interZ[0].distance < colDist) { p.z = oldZ; }
+                }
+            }
+
             camera.position.set(p.x, p.y, p.z);
 
             cubes.forEach(c => c.userData.heldByOther = false);
-
             for(let pName in players3D) {
                 let otherPlayer = players3D[pName];
                 if(otherPlayer.heldCubeId !== -1) {
@@ -642,18 +661,15 @@
             renderer.render(scene, camera);
         }
 
-        // FUNKCJA BEZPIECZNEGO OTWIERANIA POKOJU
         function runEff(cmd) {
             const gameCont = document.getElementById('gameContainer');
             if(cmd === "room") { 
                 try {
-                    gameCont.classList.add('active'); // Otwiera czarny ekran jako pierwsze!
+                    gameCont.classList.add('active'); 
                     gameActive = true; 
                     init3DGame(); 
                     resetRoom(); 
-                } catch(err) {
-                    alert("BŁĄD SILNIKA 3D: " + err.message);
-                }
+                } catch(err) { }
             } 
             else if(cmd === "unroom") { 
                 gameCont.classList.remove('active'); gameActive = false; 
