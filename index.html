@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TADC - Global Mainframe OS v46</title>
+    <title>TADC - Global Mainframe OS v48</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -223,7 +223,7 @@
 
     <div id="dashboard" class="hidden">
         <div id="caineTerminal" class="hidden">
-            <input type="text" id="cmdInputTop" placeholder="np. /map pomni, /cats...">
+            <input type="text" id="cmdInputTop" placeholder="np. /map office, /cats...">
             <button onclick="exeTop()">WYKONAJ</button>
         </div>
 
@@ -302,10 +302,12 @@
         });
 
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v46"; 
+        const topic = "cyfrowycyrk/globalchat/final_v48"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let userAvatar = ""; let activeUsers = {}; 
-        let currentMapName = "office.glb"; 
+        
+        // 🔥 NOWA DOMYŚLNA MAPA 🔥
+        let currentMapName = "office/office.glb"; 
         let isOfflineMode = false;
         
         const badWords = [ "kurw", "kurv", "jeb", "chuj", "huj", "pierdol", "pierdal", "piedol", "piedal", "spierd", "wypierd", "wypied", "zajeb", "zjeb", "dziwk", "suka", "szmat", "cwel", "pedał", "pedal", "pizd", "fiut", "rucha", "fuck", "shit", "bitch", "debil", "idiot", "kurna", "psiawoker" ];
@@ -318,7 +320,7 @@
 
         function initMQTT() {
             const clientId = "Cyrk_" + Math.random().toString(16).slice(2, 12);
-            mqtt = new Paho.MQTT.Client("broker.emqx.io", 8084, clientId);
+            mqtt = new Paho.MQTT.Client("broker.hivemq.com", 8884, clientId); 
             mqtt.onConnectionLost = () => { updateStatus(false); setTimeout(initMQTT, 3000); };
             mqtt.onMessageArrived = (m) => {
                 try {
@@ -343,7 +345,7 @@
             };
             mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
                 updateStatus(true); mqtt.subscribe(topic); 
-                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v46 👑" : `[${user}] dołączył do cyrku.`}); 
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v48 👑" : `[${user}] dołączył do cyrku.`}); 
                 setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
                 setInterval(() => { if(gameActive && !isOfflineMode) { let heldId = heldCube ? heldCube.userData.id : -1; sendData({type: "pos", nick: user, x: p.x, y: p.y, z: p.z, rot: yaw, color: userColor, hold: heldId}); } }, 100);
                 activeUsers[user] = { time: Date.now(), isAdmin: isAdmin, avatar: userAvatar }; 
@@ -453,7 +455,7 @@
         
         function populateCmdWindow() { 
             const list = document.getElementById('cmdList'); 
-            let html = `<div><span class="cmd-real" style="color:#00ff00;">/map [nazwa]</span> <span class="cmd-desc">Zmienia mapę. (np. /map pomni)</span></div>`;
+            let html = `<div><span class="cmd-real" style="color:#00ff00;">/map [nazwa]</span> <span class="cmd-desc">Zmienia mapę. (np. /map pomni, /map office)</span></div>`;
             effectList.forEach(e => html += `<div><span class="cmd-real">/${e} [nick]</span></div>`); 
             list.innerHTML = html; 
         }
@@ -469,8 +471,12 @@
                 let rawMapName = parts.slice(1).join(" ").toLowerCase();
                 if(!rawMapName) rawMapName = "office";
                 let finalMapName = rawMapName;
+                
+                // 🔥 OBSŁUGA NOWEJ MAPY "OFFICE" 🔥
                 if(rawMapName === "pomni") { finalMapName = "pomni_room/pomni.gltf"; } 
+                else if (rawMapName === "office") { finalMapName = "office/office.glb"; }
                 else if(!finalMapName.endsWith('.glb') && !finalMapName.endsWith('.gltf')) { finalMapName += ".glb"; }
+                
                 sendData({type:"cmd", cmd:"changemap", target: finalMapName});
                 if(mqtt && mqtt.isConnected()) sendData({type:"sys", text: `> CAINE ZMIENIA WYMIAR NA: ${finalMapName.toUpperCase()}`});
                 return;
@@ -564,7 +570,11 @@
                 document.getElementById('btnGrab').addEventListener('pointerdown', (e) => { performGrabThrow(); e.preventDefault(); });
                 document.getElementById('btnExit').addEventListener('pointerdown', (e) => { gameActive = false; document.getElementById('gameContainer').classList.remove('active'); e.preventDefault(); });
                 
-                document.getElementById('btnJump').addEventListener('pointerdown', (e) => { if(p.canJump && !isBuildingWorld) { p.vy = 0.2; p.canJump = false; } e.preventDefault(); });
+                document.getElementById('btnJump').addEventListener('pointerdown', (e) => { 
+                    if(user === "CAINE") { p.vy = 0.3; } 
+                    else if(p.canJump && !isBuildingWorld) { p.vy = 0.2; p.canJump = false; } 
+                    e.preventDefault(); 
+                });
 
             } else {
                 container.addEventListener('mousedown', (e) => {
@@ -577,7 +587,11 @@
                     if(!gameActive || isBuildingWorld) return; let k = e.key.toLowerCase(); 
                     if(k === 'w') p.moveF = true; if(k === 's') p.moveB = true; 
                     if(k === 'a') p.moveL = true; if(k === 'd') p.moveR = true; 
-                    if(k === ' ' && p.canJump) { p.vy = 0.2; p.canJump = false; }
+                    
+                    if(k === ' ') { 
+                        if(user === "CAINE") { p.vy = 0.3; } 
+                        else if(p.canJump) { p.vy = 0.2; p.canJump = false; } 
+                    }
                 });
                 document.addEventListener('keyup', e => { 
                     if(!gameActive) return; let k = e.key.toLowerCase(); 
@@ -607,47 +621,45 @@
             }
         }
 
-        // 🔥 FUNKCJA ŁADOWANIA PRYWATNYCH AWATARÓW 🔥
         function createPlayerAvatar(playerName, color) {
             const group = new THREE.Group();
             
-            // 1. Domyślny Avatar Robota (Pokazuje się na ułamek sekundy, zanim wgra się pełny model)
             const fallback = new THREE.Group();
             const mat = new THREE.MeshStandardMaterial({ color: color || 0xffffff, roughness: 0.5, metalness: 0.5 });
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), mat); head.position.y = 1.6;
-            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.2, 1.0, 8), mat); body.position.y = 0.6;
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), mat); head.position.y = 2.4;
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.3, 1.5, 8), mat); body.position.y = 0.9;
             head.castShadow = true; head.receiveShadow = true;
             body.castShadow = true; body.receiveShadow = true;
             fallback.add(head); fallback.add(body);
             group.add(fallback);
 
-            // 2. Sprawdzanie nicku i wybór pliku .gltf
             let modelPath = "";
             let uName = playerName.toUpperCase();
             if(uName === "CAINE") { modelPath = "./models/avatars/avatar_caine/scene.gltf"; }
             else if(uName === "TETO") { modelPath = "./models/avatars/avatar_teto/scene.gltf"; }
 
-            // 3. Ładowanie Customowego Modelu
             if(modelPath !== "") {
                 const loader = new THREE.GLTFLoader();
                 loader.load(modelPath, function(gltf) {
-                    group.remove(fallback); // Usuń stare pudła!
+                    group.remove(fallback); 
                     const avatarMesh = gltf.scene;
                     
-                    // Skalowanie awatara (wymuszenie wysokości około 1.8-2.0)
                     const box = new THREE.Box3().setFromObject(avatarMesh);
                     const size = box.getSize(new THREE.Vector3());
                     const maxDim = Math.max(size.x, size.y, size.z);
-                    if(maxDim > 0) { const scale = 2.0 / maxDim; avatarMesh.scale.set(scale, scale, scale); }
+                    if(maxDim > 0) { 
+                        const scale = 3.5 / maxDim; 
+                        avatarMesh.scale.set(scale, scale, scale); 
+                    }
                     
-                    // Stopy twardo na ziemi
+                    avatarMesh.updateMatrixWorld(true);
                     const boxScaled = new THREE.Box3().setFromObject(avatarMesh);
                     const centerScaled = boxScaled.getCenter(new THREE.Vector3());
+                    
                     avatarMesh.position.x = -centerScaled.x; 
                     avatarMesh.position.y = -boxScaled.min.y; 
                     avatarMesh.position.z = -centerScaled.z;
                     
-                    // Odpalanie cieni dla modelu awatara
                     avatarMesh.traverse(function(node) {
                         if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; }
                     });
@@ -655,22 +667,20 @@
                     group.add(avatarMesh);
                 }, undefined, function(err) {
                     console.log("Nie udało się załadować awatara: " + modelPath);
-                    // Jeśli wystąpi błąd z plikiem, robot (fallback) po prostu zostanie na graczu.
                 });
             }
 
             return group;
         }
 
-        // 🔥 ODŚWIEŻONA FUNKCJA UPDATE GRACZA 🔥
         function updateOtherPlayer3D(playerName, x, py, z, playerYaw, pColor, heldCubeId) {
             if(!scene || !gameActive) return;
             if(!players3D[playerName]) {
-                const mesh = createPlayerAvatar(playerName, pColor); // PRZEKAZUJEMY NICK!
+                const mesh = createPlayerAvatar(playerName, pColor); 
                 scene.add(mesh); players3D[playerName] = { mesh: mesh, heldCubeId: -1 };
             }
             players3D[playerName].mesh.position.set(x, py - 1.5, z); 
-            players3D[playerName].mesh.rotation.y = playerYaw;
+            players3D[playerName].mesh.rotation.y = playerYaw + Math.PI;
             players3D[playerName].heldCubeId = heldCubeId; 
         }
 
@@ -719,7 +729,7 @@
                 }, 
                 undefined, 
                 function(error) {
-                    if(!isFallback && currentMapName === "pomni_room/pomni.gltf") { load3DModel(true); return; }
+                    if(!isFallback && currentMapName === "office/office.glb") { load3DModel(true); return; }
                     loadingUI.classList.add('hidden'); errorUI.style.display = "block"; 
                     errorUI.innerHTML = `⚠️ <b>BŁĄD WGRYWANIA!</b> ⚠️<br>Brak pliku: ${pathToLoad}`;
                     isBuildingWorld = false; 
