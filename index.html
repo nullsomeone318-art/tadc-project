@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TADC - Global Mainframe OS v54</title>
+    <title>TADC - Global Mainframe OS v56 (Metaverse Edition)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -46,10 +46,10 @@
         .progress-fill { height: 100%; width: 0%; background: repeating-linear-gradient(45deg, #00f2ff, #00f2ff 10px, #0099ff 10px, #0099ff 20px); transition: width 0.2s; }
 
         /* 🔥 STYLE SCENKI KINOWEJ 🔥 */
-        #cutsceneContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5500; background: #000; display: flex; justify-content: center; align-items: center; }
-        .skip-btn { position: absolute; bottom: 20px; right: 20px; z-index: 5501; background: rgba(0, 0, 0, 0.8); color: #fff; border: 2px solid #00f2ff; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; font-size: 14px; transition: 0.2s;}
+        #cutsceneContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background: #000; display: flex; justify-content: center; align-items: center; }
+        .skip-btn { position: absolute; bottom: 20px; right: 20px; z-index: 10000; background: rgba(0, 0, 0, 0.8); color: #fff; border: 2px solid #00f2ff; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; font-size: 14px; transition: 0.2s;}
         .skip-btn:hover { background: #00f2ff; color: #000; }
-        #cutsceneText { position: absolute; color: #f9e11e; font-size: 18px; font-weight: bold; animation: textBlink 1s infinite; z-index: 5501; pointer-events: none;}
+        #cutsceneText { position: absolute; color: #f9e11e; font-size: 18px; font-weight: bold; animation: textBlink 1s infinite; z-index: 10000; pointer-events: none;}
 
         #dashboard { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 60; display: flex; flex-direction: column; transition: 0.5s;}
         #caineTerminal { background: rgba(255, 0, 68, 0.95); padding: 10px; display: flex; gap: 5px; justify-content: center; border-bottom: 2px solid #fff; flex-shrink: 0; animation: breatheGlow 3s infinite ease-in-out; z-index: 10;}
@@ -134,7 +134,7 @@
         #censorBar { position: fixed; top: 50%; left: 0; width: 100%; height: 120px; background: repeating-linear-gradient(45deg, #000, #000 20px, #fff 20px, #fff 40px); transform: translateY(-50%) scaleY(0); z-index: 3000; display: flex; justify-content: center; align-items: center; transition: 0.1s; pointer-events: none;}
         #censorBar.active { transform: translateY(-50%) scaleY(1); pointer-events: auto;}
         #censorBar span { background: #ff0044; color: #fff; padding: 10px 30px; font-size: 40px; font-weight: bold; border: 4px solid #000; text-transform: uppercase; transform: rotate(-5deg); letter-spacing: 5px; animation: textBlink 0.5s infinite;}
-        .effect-censor-alert { box-shadow: inset 0 0 100px rgba(255,0,0,0.8); transition: 0.2s; }
+        .effect-censor-alert { box-shadow: inset 0 0 100px rgba(255,0,0,0.8); transition: 0.2s; filter: hue-rotate(45deg) saturate(200%); animation: shake 0.1s infinite; }
         
         #jailScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent, transparent 40px, #111 40px, #111 60px), repeating-linear-gradient(0deg, transparent, transparent 150px, #111 150px, #111 170px); z-index: 2500; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: inset 0 0 100px #000;}
         #jailScreen.active { opacity: 0.8; pointer-events: auto; }
@@ -175,7 +175,7 @@
             <span id="coordsUI" style="color:#00ff00; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.6); padding: 2px 5px; border-radius: 4px;">X: 0.0 | Y: 0.0 | Z: 0.0</span><br>
             <span id="loading3D" class="hidden">🔄 POBIERANIE MODELU I SHADERÓW HD...</span><br>
             <div id="error3D"></div>
-            <span id="pcInstr" style="font-size: 11px; color:#aaa;">PC: W/A/S/D = Chód | SPACJA = Skok | <b style="color:#fff;">LPM EKRAN: BLOKADA | [ T ] KONSOLA ROOT</b></span>
+            <span id="pcInstr" style="font-size: 11px; color:#aaa;">PC: W/A/S/D = Chód | SHIFT = Sprint | SPACJA = Skok | <b style="color:#fff;">LPM: BLOKADA KAMERY | [ T ] KONSOLA</b></span>
             <span id="mobInstr" style="font-size: 10px; color:#aaa; display:none;">MOBILE: Joystick lewo, przesuwanie po prawej do obrotu.</span>
         </div>
         
@@ -197,7 +197,7 @@
 
         <div id="roomConsole">
             <span>💻 TERMINAL LOKALNY ROOT</span>
-            <input type="text" id="roomCmdInput" placeholder="np. /glitch, /map pomni...">
+            <input type="text" id="roomCmdInput" placeholder="np. /glitch, /map pomni, /portal office...">
             <button onclick="exeRoomCmd()">WYKONAJ</button>
         </div>
     </div>
@@ -238,7 +238,7 @@
 
     <div id="dashboard" class="hidden">
         <div id="caineTerminal" class="hidden">
-            <input type="text" id="cmdInputTop" placeholder="np. /map pomni, /cats...">
+            <input type="text" id="cmdInputTop" placeholder="np. /map pomni, /portal office...">
             <button onclick="exeTop()">WYKONAJ</button>
         </div>
 
@@ -343,7 +343,7 @@
         }
 
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v54"; 
+        const topic = "cyfrowycyrk/globalchat/final_v56"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let userAvatar = ""; let activeUsers = {}; 
         
@@ -373,10 +373,17 @@
                             document.getElementById('mapNameUI').innerText = currentMapName.toUpperCase();
                             if(gameActive) load3DModel(false); 
                         }
+                        // 🔥 Odbieranie portalu 🔥
+                        else if(d.cmd === "spawnportal" && gameActive) {
+                            spawnPortal3D(d.target, d.x, d.y, d.z);
+                        }
                         else if(!d.target || d.target === "" || d.target === "ALL" || d.target === user) { runEff(d.cmd); } 
                     }
                     else if(d.type === "ping") { activeUsers[d.nick] = { time: Date.now(), isAdmin: d.admin, avatar: d.avatar }; }
-                    else if(d.type === "pos" && d.nick !== user && gameActive) { updateOtherPlayer3D(d.nick, d.x, d.y, d.z, d.rot, d.color, d.hold); }
+                    // 🔥 Odbieranie stanu ruchu innych graczy 🔥
+                    else if(d.type === "pos" && d.nick !== user && gameActive) { 
+                        updateOtherPlayer3D(d.nick, d.x, d.y, d.z, d.rot, d.color, d.hold, d.isMoving); 
+                    }
                     else if(d.type === "throw" && d.nick !== user && gameActive) {
                         let c = cubes.find(cube => cube.userData.id === d.id);
                         if(c) { c.userData.vx = d.vx; c.userData.vy = d.vy; c.userData.vz = d.vz; }
@@ -385,9 +392,16 @@
             };
             mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
                 updateStatus(true); mqtt.subscribe(topic); 
-                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v54 👑" : `[${user}] dołączył do cyrku.`}); 
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v56 👑" : `[${user}] dołączył do cyrku.`}); 
                 setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
-                setInterval(() => { if(gameActive && !isOfflineMode) { let heldId = heldCube ? heldCube.userData.id : -1; sendData({type: "pos", nick: user, x: p.x, y: p.y, z: p.z, rot: yaw, color: userColor, hold: heldId}); } }, 100);
+                // 🔥 Wysyłanie swojego ruchu co 100ms 🔥
+                setInterval(() => { 
+                    if(gameActive && !isOfflineMode && !isBuildingWorld) { 
+                        let heldId = heldCube ? heldCube.userData.id : -1; 
+                        let amIMoving = p.moveF || p.moveB || p.moveL || p.moveR;
+                        sendData({type: "pos", nick: user, x: p.x, y: p.y, z: p.z, rot: yaw, color: userColor, hold: heldId, isMoving: amIMoving}); 
+                    } 
+                }, 100);
                 activeUsers[user] = { time: Date.now(), isAdmin: isAdmin, avatar: userAvatar }; 
             }, onFailure: () => { updateStatus(false); } });
         }
@@ -418,6 +432,8 @@
                         currentMapName = obj.target;
                         document.getElementById('mapNameUI').innerText = currentMapName.toUpperCase();
                         if(gameActive) load3DModel(false);
+                    } else if(obj.cmd === "spawnportal" && gameActive) {
+                        spawnPortal3D(obj.target, obj.x, obj.y, obj.z);
                     } else { runEff(obj.cmd); }
                 } else if (obj.type === "chat") { showMsg(obj.nick, obj.text, obj.color, obj.admin, obj.avatar); }
             }
@@ -438,7 +454,6 @@
             else { alert("ODMOWA. NIEPRAWIDŁOWY KOD / HASŁO."); document.getElementById('pinInput').value = ""; } 
         }
 
-        // 🔥 ODPALANIE CUTSCENKI PO ZALOGOWANIU 🔥
         function start(adminState) { 
             let rawNick = document.getElementById('nickInput').value.trim();
             let rawAv = document.getElementById('avatarInput').value.trim();
@@ -460,8 +475,6 @@
             const interval = setInterval(() => { pr += 5; fill.style.width = pr + "%"; if(pr >= 100) { 
                 clearInterval(interval); 
                 document.getElementById('step-2').classList.add('hidden'); 
-                
-                // Zamiast od razu Dashboard, puszczamy Intro!
                 playCutscene();
             } }, 60); 
         }
@@ -496,7 +509,7 @@
 
             const loader = new THREE.GLTFLoader();
             loader.load('./models/cutscene1.gltf', function(gltf) {
-                document.getElementById('cutsceneText').style.display = 'none'; // Ukryj napis po wczytaniu
+                document.getElementById('cutsceneText').style.display = 'none'; 
                 const model = gltf.scene;
                 
                 const box = new THREE.Box3().setFromObject(model);
@@ -508,7 +521,6 @@
                 model.position.set(-center.x, -center.y, -center.z);
                 csScene.add(model);
 
-                // Odtwarzacz Animacji Intro
                 if(gltf.animations && gltf.animations.length > 0) {
                     cutsceneMixer = new THREE.AnimationMixer(model);
                     gltf.animations.forEach((clip) => { cutsceneMixer.clipAction(clip).play(); });
@@ -518,16 +530,14 @@
                     cutsceneReqId = requestAnimationFrame(animateCutscene);
                     let delta = cutsceneClock.getDelta();
                     if(cutsceneMixer) cutsceneMixer.update(delta);
-                    else { csScene.rotation.y += 0.005; } // Obracaj model, jeśli nie ma animacji
+                    else { csScene.rotation.y += 0.005; } 
                     cutsceneRenderer.render(csScene, csCamera);
                 }
                 animateCutscene();
                 
-                // Koniec intro po 12 sekundach
                 setTimeout(endCutscene, 12000);
 
             }, undefined, function(error) {
-                // Jeśli plik nie istnieje, pomin intro i wejdź do gry
                 console.log("Brak pliku intro: cutscene1.gltf, pomijam...");
                 endCutscene();
             });
@@ -540,7 +550,6 @@
             
             const container = document.getElementById('cutsceneContainer');
             container.classList.add('hidden');
-            // Zwalniamy zasoby 3D intro
             if(cutsceneRenderer) container.removeChild(cutsceneRenderer.domElement); 
             
             document.getElementById('dashboard').classList.remove('hidden'); 
@@ -585,6 +594,7 @@
         function populateCmdWindow() { 
             const list = document.getElementById('cmdList'); 
             let html = `<div><span class="cmd-real" style="color:#00ff00;">/map [nazwa]</span> <span class="cmd-desc">Zmienia mapę. (np. /map pomni, /map office)</span></div>`;
+            html += `<div><span class="cmd-real" style="color:#00ff00;">/portal [mapa]</span> <span class="cmd-desc">Spawni portal! (np. /portal office)</span></div>`;
             effectList.forEach(e => html += `<div><span class="cmd-real">/${e} [nick]</span></div>`); 
             list.innerHTML = html; 
         }
@@ -609,6 +619,24 @@
                 if(mqtt && mqtt.isConnected()) sendData({type:"sys", text: `> CAINE ZMIENIA WYMIAR NA: ${finalMapName.toUpperCase()}`});
                 return;
             }
+            // 🔥 KOMENDA PORTALU 🔥
+            if(cmd === '/portal' && gameActive && !isBuildingWorld) {
+                let rawMapName = parts.slice(1).join(" ").toLowerCase();
+                if(!rawMapName) rawMapName = "office";
+                let finalMapName = rawMapName;
+                if(rawMapName === "pomni") { finalMapName = "pomni_room/pomni.gltf"; } 
+                else if (rawMapName === "office") { finalMapName = "office/scene.gltf"; }
+                else if(!finalMapName.endsWith('.glb') && !finalMapName.endsWith('.gltf')) { finalMapName += ".glb"; }
+                
+                // Oblicz miejsce 3 metry przed graczem
+                let px = p.x - Math.sin(yaw) * 3.0;
+                let pz = p.z - Math.cos(yaw) * 3.0;
+                
+                sendData({type:"cmd", cmd:"spawnportal", target: finalMapName, x: px, y: p.y, z: pz});
+                sendData({type:"sys", text: `> 🌀 CAINE OTWORZYŁ PORTAL DO: ${finalMapName.toUpperCase()} 🌀`});
+                return;
+            }
+
             let effectName = cmd.replace('/', ''); 
             if(effectList.includes(effectName)) { sendData({type:"cmd", cmd:effectName, target:target}); return; } 
             showSys(`> Błąd: Moduł '${cmd}' nie istnieje.`); 
@@ -621,16 +649,19 @@
             for(let i=0; i<count; i++) { const e = document.createElement(type === "gloink" ? 'img' : 'div'); if(type === "gloink") { e.src = `./images/gloink1.jpg`; e.classList.add('falling-gloink'); } else { e.classList.add('falling-confetti'); e.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`; } e.style.left = Math.random() * 100 + 'vw'; container.appendChild(e); setTimeout(() => e.remove(), 4000); }
         }
 
-        // 🔥 SILNIK 3D (Z PORTALEM I SKALĄ) 🔥
+        // 🔥 GŁÓWNY SILNIK 3D 🔥
         let scene, camera, renderer, gameActive = false;
         let cubes = []; let heldCube = null; let raycaster, mouse;
         let loadedModelMesh = null; let gridHelper = null; 
         
-        let p = { x: 0, y: 8, z: 0, moveF: false, moveB: false, moveL: false, moveR: false, vy: 0, canJump: false };
+        let p = { x: 0, y: 8, z: 0, moveF: false, moveB: false, moveL: false, moveR: false, vy: 0, canJump: false, isSprinting: false };
         let yaw = 0, pitch = 0;
         let players3D = {}; 
         let localPlayerMesh = null; 
         let isBuildingWorld = false; 
+        let clock; 
+        let particles; // Pył
+        let activePortalObj = null; // Portal
         
         const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
@@ -651,7 +682,17 @@
 
             container.appendChild(renderer.domElement);
 
-            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+            // 🔥 1. SKYBOX 🔥
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load('./images/skybox.jpg', function(texture) {
+                texture.encoding = THREE.sRGBEncoding;
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                scene.background = texture;
+                scene.environment = texture; // Piękne odbicia z nieba!
+            });
+
+            // Oświetlenie zoptymalizowane
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
             scene.add(hemiLight);
 
             const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2); 
@@ -668,7 +709,18 @@
             dirLight.shadow.bias = -0.0005;
             scene.add(dirLight);
 
+            // 🔥 10. CZĄSTECZKI KURZU 🔥
+            const partGeo = new THREE.BufferGeometry();
+            const partCount = 500;
+            const posArray = new Float32Array(partCount * 3);
+            for(let i=0;i<partCount*3;i++) posArray[i] = (Math.random() - 0.5) * 100;
+            partGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const partMat = new THREE.PointsMaterial({color: 0x00f2ff, size: 0.1, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending});
+            particles = new THREE.Points(partGeo, partMat);
+            scene.add(particles);
+
             raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2(0, 0); 
+            clock = new THREE.Clock(); 
 
             if(isMobile) {
                 document.getElementById('dpad').style.display = 'flex';
@@ -701,7 +753,11 @@
                 }, {passive: false});
 
                 document.getElementById('btnGrab').addEventListener('pointerdown', (e) => { performGrabThrow(); e.preventDefault(); });
-                document.getElementById('btnExit').addEventListener('pointerdown', (e) => { gameActive = false; document.getElementById('gameContainer').classList.remove('active'); e.preventDefault(); });
+                document.getElementById('btnExit').addEventListener('pointerdown', (e) => { 
+                    // 🔥 Zniknięcie ciała po ucieczce (Zabezpieczenie 20) 🔥
+                    sendData({type: "pos", nick: user, x: 0, y: -999, z: 0, rot: 0, color: userColor, hold: -1, isMoving: false}); 
+                    gameActive = false; document.getElementById('gameContainer').classList.remove('active'); e.preventDefault(); 
+                });
                 
                 document.getElementById('btnJump').addEventListener('pointerdown', (e) => { 
                     if(user === "CAINE") { p.vy = 0.3; } 
@@ -725,16 +781,22 @@
                     let k = e.key.toLowerCase(); 
                     if(k === 'w') p.moveF = true; if(k === 's') p.moveB = true; 
                     if(k === 'a') p.moveL = true; if(k === 'd') p.moveR = true; 
+                    if(k === 'shift') p.isSprinting = true; // SPRINT
                     
                     if(k === ' ') { 
                         if(user === "CAINE") { p.vy = 0.3; } 
                         else if(p.canJump) { p.vy = 0.2; p.canJump = false; } 
+                    }
+                    if(e.key === 'Escape') {
+                        // Zniknięcie przy ECS
+                        sendData({type: "pos", nick: user, x: 0, y: -999, z: 0, rot: 0, color: userColor, hold: -1, isMoving: false});
                     }
                 });
                 document.addEventListener('keyup', e => { 
                     if(!gameActive) return; let k = e.key.toLowerCase(); 
                     if(k === 'w') p.moveF = false; if(k === 's') p.moveB = false; 
                     if(k === 'a') p.moveL = false; if(k === 'd') p.moveR = false; 
+                    if(k === 'shift') p.isSprinting = false;
                 });
                 document.addEventListener('mousemove', (e) => { 
                     if (document.pointerLockElement === container && gameActive && !isBuildingWorld) { 
@@ -759,6 +821,55 @@
             }
         }
 
+        // 🔥 FUNKCJA SPAWNOWANIA PORTALU W 3D 🔥
+        function spawnPortal3D(targetMap, px, py, pz) {
+            if(activePortalObj) scene.remove(activePortalObj.mesh);
+
+            const loader = new THREE.GLTFLoader();
+            loader.load('./models/portal/scene.gltf', function(gltf) {
+                const pMesh = gltf.scene;
+                pMesh.position.set(px, py, pz);
+                
+                // Ustaw portal żeby patrzył na środek
+                pMesh.lookAt(0, py, 0);
+
+                let pMixer = null;
+                if(gltf.animations && gltf.animations.length > 0) {
+                    pMixer = new THREE.AnimationMixer(pMesh);
+                    pMixer.clipAction(gltf.animations[0]).play();
+                }
+
+                // Dodaj blask portalu
+                const pLight = new THREE.PointLight(0x00f2ff, 1.5, 10);
+                pMesh.add(pLight);
+
+                scene.add(pMesh);
+                activePortalObj = { mesh: pMesh, mixer: pMixer, target: targetMap };
+            });
+        }
+
+        // 🔥 NAMETAGS (Nicki nad głową) 🔥
+        function createNametagSprite(name, color) {
+            let canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 128;
+            let ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#00000000'; ctx.fillRect(0,0,512,128);
+            ctx.font = 'bold 50px Courier New';
+            ctx.textAlign = 'center'; 
+            ctx.fillStyle = color || '#00f2ff';
+            ctx.shadowColor = "black";
+            ctx.shadowBlur = 7;
+            ctx.fillText(name, 256, 80);
+            
+            let tex = new THREE.CanvasTexture(canvas);
+            let mat = new THREE.SpriteMaterial({map: tex, depthTest: false});
+            let sprite = new THREE.Sprite(mat);
+            sprite.scale.set(4, 1, 1);
+            sprite.position.y = 4.0; // Nad głową
+            return sprite;
+        }
+
+        // 🔥 ŁADOWANIE ZAAWANSOWANEGO AWATARA Z CHODEM I IDLE 🔥
         function createPlayerAvatar(playerName, color) {
             const group = new THREE.Group();
             
@@ -770,6 +881,10 @@
             body.castShadow = true; body.receiveShadow = true;
             fallback.add(head); fallback.add(body);
             group.add(fallback);
+
+            // Dodaj nametag
+            const nametag = createNametagSprite(playerName, color);
+            group.add(nametag);
 
             let modelPath = "";
             let uName = playerName.toUpperCase();
@@ -816,22 +931,57 @@
                         }
                     });
                     
+                    // 🔥 ZAAWANSOWANE ZARZĄDZANIE ANIMACJAMI (IDLE vs WALK) 🔥
+                    let mixer = null, walkAct = null, idleAct = null;
+                    if(gltf.animations && gltf.animations.length > 0) {
+                        mixer = new THREE.AnimationMixer(avatarMesh);
+                        gltf.animations.forEach((clip) => {
+                            let cName = clip.name.toLowerCase();
+                            if(cName.includes('walk') || cName.includes('run')) walkAct = mixer.clipAction(clip);
+                            else if(cName.includes('idle')) idleAct = mixer.clipAction(clip);
+                        });
+                        
+                        // Fallback jeśli nie ma idealnych nazw
+                        if(!walkAct) walkAct = mixer.clipAction(gltf.animations[0]);
+                        if(!idleAct && gltf.animations.length > 1) idleAct = mixer.clipAction(gltf.animations[1]);
+                        
+                        if(idleAct) idleAct.play(); // Domyślnie stoi
+                        else if(walkAct) walkAct.play(); // Ostateczny fallback
+                    }
+                    
                     group.add(avatarMesh);
+                    group.userData.animState = { mixer: mixer, walk: walkAct, idle: idleAct, isMoving: false }; 
                 }, undefined, function(err) {});
             }
 
             return group;
         }
 
-        function updateOtherPlayer3D(playerName, x, py, z, playerYaw, pColor, heldCubeId) {
+        function updateOtherPlayer3D(playerName, x, py, z, playerYaw, pColor, heldCubeId, isMoving) {
             if(!scene || !gameActive) return;
             if(!players3D[playerName]) {
                 const mesh = createPlayerAvatar(playerName, pColor); 
-                scene.add(mesh); players3D[playerName] = { mesh: mesh, heldCubeId: -1 };
+                scene.add(mesh); 
+                players3D[playerName] = { mesh: mesh, heldCubeId: -1 };
             }
             
-            let playerHeight = currentMapName.includes("office") ? 1.0 : 1.5;
-            players3D[playerName].mesh.position.set(x, py - playerHeight, z); 
+            // 🔥 Obsługa przejścia Idle/Walk dla graczy z sieci 🔥
+            let animState = players3D[playerName].mesh.userData.animState;
+            if(animState) {
+                if(isMoving !== animState.isMoving) {
+                    animState.isMoving = isMoving;
+                    if(isMoving) {
+                        if(animState.idle) animState.idle.stop();
+                        if(animState.walk) animState.walk.play();
+                    } else {
+                        if(animState.walk) animState.walk.stop();
+                        if(animState.idle) animState.idle.play();
+                    }
+                }
+            }
+
+            // Płynny obrót LERP
+            players3D[playerName].mesh.position.set(x, py - (currentMapName.includes("office") ? 1.0 : 1.5), z); 
             players3D[playerName].mesh.rotation.y = playerYaw + Math.PI;
             players3D[playerName].heldCubeId = heldCubeId; 
         }
@@ -844,6 +994,7 @@
             if(!isFallback) {
                 if(loadedModelMesh) { scene.remove(loadedModelMesh); loadedModelMesh = null; }
                 if(gridHelper) { scene.remove(gridHelper); gridHelper = null; }
+                if(activePortalObj) { scene.remove(activePortalObj.mesh); activePortalObj = null; } // Usuń stary portal
             }
             
             isBuildingWorld = true; 
@@ -930,17 +1081,32 @@
             requestAnimationFrame(animate3D); if(!gameActive) return;
             
             document.getElementById('coordsUI').innerText = `X: ${p.x.toFixed(1)} | Y: ${p.y.toFixed(1)} | Z: ${p.z.toFixed(1)}`;
-
-            if(currentMapName.includes("pomni") && !isBuildingWorld) {
-                let distX = p.x - 4.2; let distY = p.y - 2.9; let distZ = p.z - 15.4;
-                let portalDist = Math.sqrt(distX*distX + distY*distY + distZ*distZ);
+            
+            // Aktualizacja zegara dla wszystkich animacji
+            if(clock) {
+                let delta = clock.getDelta();
                 
-                if(portalDist < 1.5) {
-                    isBuildingWorld = true; 
-                    p.x = -13.9; p.y = 3.5; p.z = 0.2; p.vy = 0;
-                    sendData({type:"sys", text: `> 🌀 CAINE WYKRYŁ ANOMALIĘ: Portal z Pomni Room do Biura został użyty przez ${user}! 🌀`});
-                    sendData({type:"cmd", cmd:"changemap", target: "office/scene.gltf"});
-                    return;
+                if(particles) particles.rotation.y += 0.0005; // Kurz w locie
+                if(activePortalObj && activePortalObj.mixer) activePortalObj.mixer.update(delta); // Animacja portalu
+                
+                // Lokalny avatar (Przejście stania w chód)
+                if(localPlayerMesh && localPlayerMesh.userData.animState) {
+                    let st = localPlayerMesh.userData.animState;
+                    if(st.mixer) {
+                        st.mixer.update(delta);
+                        let amIMoving = p.moveF || p.moveB || p.moveL || p.moveR;
+                        if(amIMoving !== st.isMoving) {
+                            st.isMoving = amIMoving;
+                            if(amIMoving) { if(st.idle) st.idle.stop(); if(st.walk) st.walk.play(); }
+                            else { if(st.walk) st.walk.stop(); if(st.idle) st.idle.play(); }
+                        }
+                    }
+                }
+                
+                for(let pName in players3D) {
+                    if(players3D[pName].mesh.userData.animState && players3D[pName].mesh.userData.animState.mixer) {
+                        players3D[pName].mesh.userData.animState.mixer.update(delta);
+                    }
                 }
             }
 
@@ -953,7 +1119,9 @@
             let oldX = p.x; let oldZ = p.z;
             let playerHeight = currentMapName.includes("office") ? 1.0 : 1.5;
             
-            const speed = 0.25; 
+            // Sprinting
+            const speed = p.isSprinting ? 0.45 : 0.25; 
+            
             if(p.moveF) { p.x -= Math.sin(yaw) * speed; p.z -= Math.cos(yaw) * speed; } 
             if(p.moveB) { p.x += Math.sin(yaw) * speed; p.z += Math.cos(yaw) * speed; } 
             if(p.moveL) { p.x -= Math.cos(yaw) * speed; p.z += Math.sin(yaw) * speed; } 
@@ -969,7 +1137,10 @@
                 let rayDown = new THREE.Raycaster(new THREE.Vector3(p.x, p.y + 0.5, p.z), new THREE.Vector3(0, -1, 0));
                 let hits = rayDown.intersectObject(loadedModelMesh, true);
                 if(hits.length > 0 && hits[0].distance < 2.0) { 
-                    p.y = hits[0].point.y + playerHeight; 
+                    // Cushioning (Ugięcie kolan przy upadku)
+                    if(p.vy < -0.3) p.y = hits[0].point.y + playerHeight - 0.2; 
+                    else p.y = hits[0].point.y + playerHeight;
+                    
                     p.vy = 0; p.canJump = true; floorHit = true;
                 }
                 
@@ -990,13 +1161,39 @@
                 if(p.y < playerHeight) { p.y = playerHeight; p.vy = 0; p.canJump = true; } 
             }
 
-            camera.position.set(p.x, p.y, p.z);
+            // Head Bobbing & Dynamic FOV
+            let isMoving = p.moveF || p.moveB || p.moveL || p.moveR;
+            if(isMoving && floorHit) {
+                camera.position.y = p.y + Math.sin(Date.now() * (p.isSprinting ? 0.015 : 0.01)) * 0.1;
+                camera.fov = THREE.MathUtils.lerp(camera.fov, p.isSprinting ? 85 : 75, 0.1);
+            } else {
+                camera.position.y = p.y;
+                camera.fov = THREE.MathUtils.lerp(camera.fov, 75, 0.1);
+            }
+            camera.position.set(p.x, camera.position.y, p.z);
+            camera.updateProjectionMatrix();
 
             if(localPlayerMesh) {
                 localPlayerMesh.position.set(p.x, p.y - playerHeight, p.z);
                 localPlayerMesh.rotation.y = yaw + Math.PI;
                 localPlayerMesh.position.x += Math.sin(yaw) * 0.25;
                 localPlayerMesh.position.z += Math.cos(yaw) * 0.25;
+            }
+
+            // 🔥 KOLIZJA Z PORTALEM 🔥
+            if(activePortalObj) {
+                let dx = p.x - activePortalObj.mesh.position.x;
+                let dy = p.y - activePortalObj.mesh.position.y;
+                let dz = p.z - activePortalObj.mesh.position.z;
+                if(Math.sqrt(dx*dx + dy*dy + dz*dz) < 2.0) {
+                    let target = activePortalObj.target;
+                    isBuildingWorld = true; 
+                    p.x = 0; p.y = 8; p.z = 0; p.vy = 0;
+                    activePortalObj = null; // usuń po przejściu
+                    sendData({type:"cmd", cmd:"changemap", target: target});
+                    sendData({type:"sys", text: `> 🌀 CAINE WSZEDŁ W PORTAL DO: ${target.toUpperCase()} 🌀`});
+                    return;
+                }
             }
 
             cubes.forEach(c => c.userData.heldByOther = false);
@@ -1036,6 +1233,7 @@
                     if(c.position.x > 49 || c.position.x < -49) { c.userData.vx *= -0.8; c.position.x = Math.max(-49, Math.min(49, c.position.x)); }
                     if(c.position.z > 49 || c.position.z < -49) { c.userData.vz *= -0.8; c.position.z = Math.max(-49, Math.min(49, c.position.z)); }
                     
+                    // Rotacja przy uderzeniu zależnie od siły (ulepszenie 14)
                     c.rotation.x += c.userData.rotX * (Math.abs(c.userData.vx)+Math.abs(c.userData.vy)+0.1);
                     c.rotation.y += c.userData.rotY * (Math.abs(c.userData.vz)+Math.abs(c.userData.vy)+0.1);
                 }
@@ -1043,6 +1241,7 @@
             renderer.render(scene, camera);
         }
 
+        // reszta standardowych efektów ...
         function runEff(cmd) {
             const b = document.body; const h = document.getElementById('hologramImg'); const c = document.getElementById('censorBar'); const chatCont = document.getElementById('chatContainer'); const jail = document.getElementById('jailScreen'); const gameCont = document.getElementById('gameContainer');
             
