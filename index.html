@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TADC - Global Mainframe OS v49</title>
+    <title>TADC - Global Mainframe OS v51</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -104,13 +104,19 @@
         .g-btn { background: rgba(0,242,255,0.2); border: 2px solid #00f2ff; color: #fff; width: 55px; height: 55px; font-size: 20px; font-weight: bold; border-radius: 12px; display: flex; justify-content: center; align-items: center; }
         .g-btn:active { background: rgba(0,242,255,0.7); transform: scale(0.95); }
 
-        #actionPad { position: absolute; bottom: 20px; right: 20px; display: none; gap: 10px; z-index: 5557; }
+        #actionPad { position: absolute; bottom: 20px; right: 20px; display: none; gap: 10px; z-index: 5557; align-items: center;}
         .act-btn { width: 55px; height: 55px; border-radius: 50%; font-size: 20px; border: 3px solid; background: rgba(0,0,0,0.5); color: #fff; display: flex; justify-content: center; align-items: center; }
         .act-btn.grab { border-color: #ff0044; background: rgba(255,0,68,0.4); }
         .act-btn.jump { border-color: #00f2ff; background: rgba(0,242,255,0.4); }
         .act-btn.exit { border-color: #f9e11e; background: rgba(249,225,30,0.4); color: #000; }
+        .act-btn.admin { border-color: #ff0044; background: rgba(255,0,68,0.6); display: none; }
 
         #touchLookZone { position: absolute; top: 0; right: 0; width: 50vw; height: 100vh; z-index: 5555; display: none; }
+
+        /* 🔥 KONSOLA W 3D 🔥 */
+        #roomConsole { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); display: none; flex-direction: column; gap: 10px; width: 90%; max-width: 450px; z-index: 6000; background: rgba(5,5,10,0.95); padding: 15px; border: 2px solid #ff0044; border-radius: 8px; box-shadow: 0 0 40px rgba(255,0,68,0.5); }
+        #roomConsole span { color: #ff0044; font-weight: bold; text-align: center; font-size: 14px; animation: textBlink 1.5s infinite;}
+        #roomConsole input { margin: 0; }
 
         .hud-top { position: fixed; top: 10px; left: 10px; font-size: 12px; font-weight: bold; z-index: 110; color: #fff; text-shadow: 1px 1px #000; display: flex; flex-direction: column; gap: 8px; opacity: 0.9;}
         .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: red; margin-right: 5px; box-shadow: 0 0 5px red;}
@@ -118,7 +124,6 @@
         .users-btn { background: rgba(0,0,0,0.6); padding: 5px 10px; border: 1px solid #00f2ff; border-radius: 5px; cursor: pointer; color: #00f2ff; transition: 0.2s;}
         .audio-btn { position: fixed; top: 10px; right: 10px; font-size: 24px; z-index: 110; cursor: pointer; text-shadow: 0 0 10px #00f2ff; animation: audioPulse 1.5s infinite;}
         
-        /* 🔥 EFEKTY WIZUALNE I POPUPY 🔥 */
         .hologram-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 350px; z-index: 1000; border: none; border-radius: 0; box-shadow: 0 0 60px 10px rgba(255, 0, 68, 0.7); transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); pointer-events: none; opacity: 0; }
         .hologram-popup.active { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         @keyframes entityFall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
@@ -164,11 +169,12 @@
         <div id="touchLookZone"></div> 
         
         <div id="gameUI">
-            <span style="color:#00f2ff;">MAPA: <span id="mapNameUI" style="color:#f9e11e;">OFFICE.GLB</span></span><br>
+            <span style="color:#00f2ff; font-size: 16px; font-weight: 900; text-shadow: 2px 2px #000;">MAPA: <span id="mapNameUI" style="color:#f9e11e;">OFFICE/SCENE.GLTF</span></span><br>
+            <span id="coordsUI" style="color:#00ff00; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.6); padding: 2px 5px; border-radius: 4px;">X: 0.0 | Y: 0.0 | Z: 0.0</span><br>
             <span id="loading3D" class="hidden">🔄 POBIERANIE MODELU...</span><br>
             <div id="error3D"></div>
-            <span id="pcInstr" style="font-size: 11px; color:#aaa;">PC: W/A/S/D = Chód | SPACJA = Skok | <b style="color:#fff;">LPM NA EKRANIE BLOKUJE KAMERĘ!</b></span>
-            <span id="mobInstr" style="font-size: 10px; color:#aaa; display:none;">MOBILE: Joystick lewo, przesuwanie po prawej do obrotu. Skacz rakietą!</span>
+            <span id="pcInstr" style="font-size: 11px; color:#aaa;">PC: W/A/S/D = Chód | SPACJA = Skok | <b style="color:#fff;">LPM EKRAN: BLOKADA | [ T ] KONSOLA ROOT</b></span>
+            <span id="mobInstr" style="font-size: 10px; color:#aaa; display:none;">MOBILE: Joystick lewo, przesuwanie po prawej do obrotu.</span>
         </div>
         
         <div id="dpad">
@@ -181,9 +187,16 @@
         </div>
 
         <div id="actionPad">
+            <button class="act-btn admin" id="btnAdminCmd" onclick="toggleRoomConsole()">💻</button>
             <button class="act-btn exit" id="btnExit">❌</button>
             <button class="act-btn jump" id="btnJump">🚀</button>
             <button class="act-btn grab" id="btnGrab">✋</button>
+        </div>
+
+        <div id="roomConsole">
+            <span>💻 TERMINAL LOKALNY ROOT</span>
+            <input type="text" id="roomCmdInput" placeholder="np. /glitch, /map pomni...">
+            <button onclick="exeRoomCmd()">WYKONAJ</button>
         </div>
     </div>
 
@@ -298,15 +311,41 @@
                 else if(document.activeElement === document.getElementById('cmdInputTop')) { exeTop(); e.preventDefault(); }
                 else if(document.activeElement === document.getElementById('nickInput')) { start(false); e.preventDefault(); }
                 else if(document.activeElement === document.getElementById('pinInput')) { loginAdmin(); e.preventDefault(); }
+                else if(document.activeElement === document.getElementById('roomCmdInput')) { exeRoomCmd(); e.preventDefault(); }
+            }
+            if(e.key.toLowerCase() === 't' && isAdmin && gameActive && !isBuildingWorld && document.activeElement.tagName !== "INPUT") {
+                toggleRoomConsole(); e.preventDefault();
             }
         });
 
+        function toggleRoomConsole() {
+            if(!isAdmin) return;
+            let rc = document.getElementById('roomConsole');
+            if(rc.style.display === 'flex') {
+                rc.style.display = 'none';
+                if(!isMobile) document.getElementById('gameContainer').requestPointerLock();
+            } else {
+                rc.style.display = 'flex';
+                if(!isMobile) document.exitPointerLock();
+                setTimeout(() => document.getElementById('roomCmdInput').focus(), 50);
+            }
+        }
+        function exeRoomCmd() {
+            let val = document.getElementById('roomCmdInput').value.trim();
+            if(val) { 
+                if(!val.startsWith('/')) val = '/' + val;
+                procCmd(val); 
+                document.getElementById('roomCmdInput').value = ''; 
+            }
+            toggleRoomConsole();
+        }
+
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v49"; 
+        const topic = "cyfrowycyrk/globalchat/final_v51"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let userAvatar = ""; let activeUsers = {}; 
         
-        // 🔥 NOWA DOMYŚLNA MAPA: OFFICE (wskazuje na scene.gltf) 🔥
+        // 🔥 W V51 DOMYŚLNY PLIK STARTOWY JEST ZDEFINIOWANY PERFEKCYJNIE 🔥
         let currentMapName = "office/scene.gltf"; 
         let isOfflineMode = false;
         
@@ -345,7 +384,7 @@
             };
             mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
                 updateStatus(true); mqtt.subscribe(topic); 
-                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v49 👑" : `[${user}] dołączył do cyrku.`}); 
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v51 👑" : `[${user}] dołączył do cyrku.`}); 
                 setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
                 setInterval(() => { if(gameActive && !isOfflineMode) { let heldId = heldCube ? heldCube.userData.id : -1; sendData({type: "pos", nick: user, x: p.x, y: p.y, z: p.z, rot: yaw, color: userColor, hold: heldId}); } }, 100);
                 activeUsers[user] = { time: Date.now(), isAdmin: isAdmin, avatar: userAvatar }; 
@@ -472,7 +511,6 @@
                 if(!rawMapName) rawMapName = "office";
                 let finalMapName = rawMapName;
                 
-                // 🔥 POPRAWKA ŚCIEŻKI DLA OFFICE 🔥
                 if(rawMapName === "pomni") { finalMapName = "pomni_room/pomni.gltf"; } 
                 else if (rawMapName === "office") { finalMapName = "office/scene.gltf"; }
                 else if(!finalMapName.endsWith('.glb') && !finalMapName.endsWith('.gltf')) { finalMapName += ".glb"; }
@@ -501,6 +539,7 @@
         let p = { x: 0, y: 8, z: 0, moveF: false, moveB: false, moveL: false, moveR: false, vy: 0, canJump: false };
         let yaw = 0, pitch = 0;
         let players3D = {}; 
+        let localPlayerMesh = null; 
         let isBuildingWorld = false; 
         
         const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -579,12 +618,17 @@
             } else {
                 container.addEventListener('mousedown', (e) => {
                     if(!gameActive) return;
-                    if(document.pointerLockElement !== container) { container.requestPointerLock(); } 
+                    if(document.pointerLockElement !== container && document.getElementById('roomConsole').style.display !== 'flex') { 
+                        container.requestPointerLock(); 
+                    } 
                     else { if(e.button === 0 && !isBuildingWorld) performGrabThrow(); }
                 });
 
                 document.addEventListener('keydown', e => { 
-                    if(!gameActive || isBuildingWorld) return; let k = e.key.toLowerCase(); 
+                    if(!gameActive || isBuildingWorld) return; 
+                    if(document.activeElement.tagName === "INPUT") return; 
+                    
+                    let k = e.key.toLowerCase(); 
                     if(k === 'w') p.moveF = true; if(k === 's') p.moveB = true; 
                     if(k === 'a') p.moveL = true; if(k === 'd') p.moveR = true; 
                     
@@ -665,9 +709,7 @@
                     });
                     
                     group.add(avatarMesh);
-                }, undefined, function(err) {
-                    console.log("Nie udało się załadować awatara: " + modelPath);
-                });
+                }, undefined, function(err) {});
             }
 
             return group;
@@ -700,7 +742,7 @@
             loadingUI.classList.remove('hidden'); errorUI.style.display = "none";
 
             let pathToLoad = `./models/${currentMapName}`;
-            if(isFallback) { pathToLoad = `./models/pomni.gltf`; }
+            if(isFallback) { pathToLoad = `./models/pomni_room/pomni.gltf`; } // Poprawiony zapasowy fallback!
 
             const loader = new THREE.GLTFLoader();
             loader.load(
@@ -743,6 +785,10 @@
                 cubes.forEach(c => scene.remove(c)); cubes = []; heldCube = null;
                 document.getElementById('error3D').style.display = "none";
                 
+                if(localPlayerMesh) { scene.remove(localPlayerMesh); }
+                localPlayerMesh = createPlayerAvatar(user, userColor);
+                scene.add(localPlayerMesh);
+
                 load3DModel(false); 
 
                 const geo = new THREE.BoxGeometry(1, 1, 1); const mat = new THREE.MeshStandardMaterial({ color: 0x00f2ff, roughness: 0.3 });
@@ -759,6 +805,8 @@
         function animate3D() {
             requestAnimationFrame(animate3D); if(!gameActive) return;
             
+            document.getElementById('coordsUI').innerText = `X: ${p.x.toFixed(1)} | Y: ${p.y.toFixed(1)} | Z: ${p.z.toFixed(1)}`;
+
             if(isBuildingWorld) {
                 camera.position.set(0, 8, 0); 
                 renderer.render(scene, camera);
@@ -805,6 +853,13 @@
             }
 
             camera.position.set(p.x, p.y, p.z);
+
+            if(localPlayerMesh) {
+                localPlayerMesh.position.set(p.x, p.y - 1.5, p.z);
+                localPlayerMesh.rotation.y = yaw + Math.PI;
+                localPlayerMesh.position.x += Math.sin(yaw) * 0.25;
+                localPlayerMesh.position.z += Math.cos(yaw) * 0.25;
+            }
 
             cubes.forEach(c => c.userData.heldByOther = false);
 
@@ -853,6 +908,9 @@
         function runEff(cmd) {
             const b = document.body; const h = document.getElementById('hologramImg'); const c = document.getElementById('censorBar'); const chatCont = document.getElementById('chatContainer'); const jail = document.getElementById('jailScreen'); const gameCont = document.getElementById('gameContainer');
             
+            if(isAdmin) document.getElementById('btnAdminCmd').style.display = 'flex';
+            else document.getElementById('btnAdminCmd').style.display = 'none';
+
             if(cmd === "bubble") { h.src = './images/bubble.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); } 
             else if(cmd === "pomni") { h.src = './images/pomni.jpg'; h.classList.add('active'); setTimeout(() => h.classList.remove('active'), 3000); } 
             else if(cmd === "gloink") { createFallingEntities("gloink"); } 
@@ -861,5 +919,25 @@
             else if(cmd === "jail") { jail.classList.add('active'); } 
             else if(cmd === "unjail") { jail.classList.remove('active'); } 
             else if(cmd === "room") { try { gameCont.classList.add('active'); gameActive = true; init3DGame(); resetRoom(); } catch(err) { } } 
-            else if(cmd === "unroom") { gameCont.classList.remove('active'); gameActive = false; if(document.pointerLockElement) document.exitPointerLock(); } 
-            else if(cmd === "gravity") { chatCont.classList.add('effect-gravity'); setTimeout(() => chatCont.classList.remove('effect-gravity'), 5000); }
+            else if(cmd === "unroom") { gameCont.classList.remove('active'); gameActive = false; document.getElementById('roomConsole').style.display = 'none'; if(document.pointerLockElement) document.exitPointerLock(); } 
+            else if(cmd === "gravity") { chatCont.classList.add('effect-gravity'); setTimeout(() => chatCont.classList.remove('effect-gravity'), 5000); } 
+            else if(cmd === "censor") { c.classList.add('active'); setTimeout(() => c.classList.remove('active'), 2500); } 
+            else if(cmd === "glitch") { b.classList.add('effect-glitch'); setTimeout(() => b.classList.remove('effect-glitch'), 2000); } 
+            else if(cmd === "shake") { b.classList.add('effect-shake'); setTimeout(() => b.classList.remove('effect-shake'), 3000); } 
+            else if(cmd === "redalert") { b.classList.add('effect-redalert'); setTimeout(() => b.classList.remove('effect-redalert'), 4000); } 
+            else if(cmd === "nuke") { b.classList.add('effect-nuke'); setTimeout(() => b.classList.remove('effect-nuke'), 1000); } 
+            else if(cmd === "void") { b.classList.add('effect-void'); setTimeout(() => b.classList.remove('effect-void'), 4000); } 
+            else if(cmd === "abstract") { b.classList.add('effect-abstract'); setTimeout(() => b.classList.remove('effect-abstract'), 5000); } 
+            else if(cmd === "flip") { b.classList.add('effect-flip'); setTimeout(() => b.classList.remove('effect-flip'), 5000); } 
+            else if(cmd === "blur") { b.classList.add('effect-blur'); setTimeout(() => b.classList.remove('effect-blur'), 4000); } 
+            else if(cmd === "squish") { b.classList.add('effect-squish'); setTimeout(() => b.classList.remove('effect-squish'), 4000); } 
+            else if(cmd === "stretch") { b.classList.add('effect-stretch'); setTimeout(() => b.classList.remove('effect-stretch'), 4000); } 
+            else if(cmd === "dance") { b.classList.add('effect-dance'); setTimeout(() => b.classList.remove('effect-dance'), 5000); } 
+            else if(cmd === "zoom") { b.classList.add('effect-zoom'); setTimeout(() => b.classList.remove('effect-zoom'), 3000); } 
+            else if(cmd === "grayscale") { b.classList.add('effect-grayscale'); setTimeout(() => b.classList.remove('effect-grayscale'), 5000); } 
+            else if(cmd === "vr") { b.classList.add('effect-3d-active'); setTimeout(() => b.classList.remove('effect-3d-active'), 10000); }
+        }
+
+    </script>
+</body>
+</html>
