@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TADC - Global Mainframe OS v52</title>
+    <title>TADC - Global Mainframe OS v54</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -45,17 +45,18 @@
         .progress-bar-container { width: 100%; height: 20px; border: 2px solid #00f2ff; margin-top: 20px; background: #111; overflow: hidden; border-radius: 5px;}
         .progress-fill { height: 100%; width: 0%; background: repeating-linear-gradient(45deg, #00f2ff, #00f2ff 10px, #0099ff 10px, #0099ff 20px); transition: width 0.2s; }
 
+        /* 🔥 STYLE SCENKI KINOWEJ 🔥 */
+        #cutsceneContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5500; background: #000; display: flex; justify-content: center; align-items: center; }
+        .skip-btn { position: absolute; bottom: 20px; right: 20px; z-index: 5501; background: rgba(0, 0, 0, 0.8); color: #fff; border: 2px solid #00f2ff; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; font-size: 14px; transition: 0.2s;}
+        .skip-btn:hover { background: #00f2ff; color: #000; }
+        #cutsceneText { position: absolute; color: #f9e11e; font-size: 18px; font-weight: bold; animation: textBlink 1s infinite; z-index: 5501; pointer-events: none;}
+
         #dashboard { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 60; display: flex; flex-direction: column; transition: 0.5s;}
         #caineTerminal { background: rgba(255, 0, 68, 0.95); padding: 10px; display: flex; gap: 5px; justify-content: center; border-bottom: 2px solid #fff; flex-shrink: 0; animation: breatheGlow 3s infinite ease-in-out; z-index: 10;}
         #caineTerminal input { margin: 0; background: #000; border: 1px solid #fff; color: #fff; width: 70%; padding: 8px;}
         #caineTerminal button { width: 30%; background: #000; padding: 8px; border: 1px solid #fff; color: #fff;}
 
-        .popup-window { 
-            position: absolute; top: 10%; left: 50%; transform: translateX(-50%); width: 95%; max-width: 550px;
-            background: rgba(5, 5, 10, 0.98); border: 2px solid #00f2ff; border-radius: 8px;
-            z-index: 2000; display: flex; flex-direction: column; box-shadow: 0 0 40px rgba(0, 242, 255, 0.5);
-            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
+        .popup-window { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); width: 95%; max-width: 550px; background: rgba(5, 5, 10, 0.98); border: 2px solid #00f2ff; border-radius: 8px; z-index: 2000; display: flex; flex-direction: column; box-shadow: 0 0 40px rgba(0, 242, 255, 0.5); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .cmd-header { display: flex; justify-content: space-between; padding: 10px; background: #00f2ff; color: #000; font-weight: bold; font-size: 14px;}
         .cmd-header button { background: #000; color: #00f2ff; border: 1px solid #000; font-weight: bold; padding: 2px 8px; cursor: pointer;}
         .cmd-list { padding: 10px; max-height: 55vh; overflow-y: auto; text-align: left; font-size: 12px; color: #fff; scrollbar-width: thin; scrollbar-color: #00f2ff #000;}
@@ -160,6 +161,11 @@
     
     <div class="scanlines"></div>
     
+    <div id="cutsceneContainer" class="hidden">
+        <span id="cutsceneText">🎬 ŁADOWANIE KINOWEGO WPROWADZENIA...</span>
+        <button class="skip-btn" onclick="endCutscene()">POMIŃ >></button>
+    </div>
+
     <div id="gameContainer">
         <div id="crosshair"></div>
         <div id="touchLookZone"></div> 
@@ -337,7 +343,7 @@
         }
 
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v52"; 
+        const topic = "cyfrowycyrk/globalchat/final_v54"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let userAvatar = ""; let activeUsers = {}; 
         
@@ -379,7 +385,7 @@
             };
             mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
                 updateStatus(true); mqtt.subscribe(topic); 
-                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v52 👑" : `[${user}] dołączył do cyrku.`}); 
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v54 👑" : `[${user}] dołączył do cyrku.`}); 
                 setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
                 setInterval(() => { if(gameActive && !isOfflineMode) { let heldId = heldCube ? heldCube.userData.id : -1; sendData({type: "pos", nick: user, x: p.x, y: p.y, z: p.z, rot: yaw, color: userColor, hold: heldId}); } }, 100);
                 activeUsers[user] = { time: Date.now(), isAdmin: isAdmin, avatar: userAvatar }; 
@@ -431,7 +437,8 @@
             if(pin === "2222" || pin === "miku") { start(true); } 
             else { alert("ODMOWA. NIEPRAWIDŁOWY KOD / HASŁO."); document.getElementById('pinInput').value = ""; } 
         }
-        
+
+        // 🔥 ODPALANIE CUTSCENKI PO ZALOGOWANIU 🔥
         function start(adminState) { 
             let rawNick = document.getElementById('nickInput').value.trim();
             let rawAv = document.getElementById('avatarInput').value.trim();
@@ -450,7 +457,95 @@
             document.getElementById('step-1').classList.add('hidden'); document.getElementById('step-2').classList.remove('hidden'); 
             initMQTT(); populateCmdWindow(); 
             let pr = 0; const fill = document.getElementById('progressFill'); 
-            const interval = setInterval(() => { pr += 5; fill.style.width = pr + "%"; if(pr >= 100) { clearInterval(interval); document.getElementById('step-2').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); document.getElementById('usersBtn').classList.remove('hidden'); if(isAdmin) { document.getElementById('caineTerminal').classList.remove('hidden'); } } }, 60); 
+            const interval = setInterval(() => { pr += 5; fill.style.width = pr + "%"; if(pr >= 100) { 
+                clearInterval(interval); 
+                document.getElementById('step-2').classList.add('hidden'); 
+                
+                // Zamiast od razu Dashboard, puszczamy Intro!
+                playCutscene();
+            } }, 60); 
+        }
+
+        // 🔥 SILNIK KINOWY (INTRO 3D) 🔥
+        let cutsceneMixer, cutsceneClock, cutsceneReqId, cutsceneRenderer;
+        let cutsceneEnded = false;
+
+        function playCutscene() {
+            const container = document.getElementById('cutsceneContainer');
+            container.classList.remove('hidden');
+            
+            const csScene = new THREE.Scene();
+            csScene.background = new THREE.Color(0x050505);
+            csScene.fog = new THREE.FogExp2(0x050505, 0.05);
+
+            const csCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            csCamera.position.set(0, 2, 6);
+
+            cutsceneRenderer = new THREE.WebGLRenderer({ antialias: true });
+            cutsceneRenderer.setSize(window.innerWidth, window.innerHeight);
+            cutsceneRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+            container.appendChild(cutsceneRenderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            csScene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            dirLight.position.set(5, 10, 5);
+            csScene.add(dirLight);
+
+            cutsceneClock = new THREE.Clock();
+
+            const loader = new THREE.GLTFLoader();
+            loader.load('./models/cutscene1.gltf', function(gltf) {
+                document.getElementById('cutsceneText').style.display = 'none'; // Ukryj napis po wczytaniu
+                const model = gltf.scene;
+                
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                if(maxDim > 0 && maxDim !== Infinity) { const scale = 6 / maxDim; model.scale.set(scale, scale, scale); }
+                
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.set(-center.x, -center.y, -center.z);
+                csScene.add(model);
+
+                // Odtwarzacz Animacji Intro
+                if(gltf.animations && gltf.animations.length > 0) {
+                    cutsceneMixer = new THREE.AnimationMixer(model);
+                    gltf.animations.forEach((clip) => { cutsceneMixer.clipAction(clip).play(); });
+                }
+
+                function animateCutscene() {
+                    cutsceneReqId = requestAnimationFrame(animateCutscene);
+                    let delta = cutsceneClock.getDelta();
+                    if(cutsceneMixer) cutsceneMixer.update(delta);
+                    else { csScene.rotation.y += 0.005; } // Obracaj model, jeśli nie ma animacji
+                    cutsceneRenderer.render(csScene, csCamera);
+                }
+                animateCutscene();
+                
+                // Koniec intro po 12 sekundach
+                setTimeout(endCutscene, 12000);
+
+            }, undefined, function(error) {
+                // Jeśli plik nie istnieje, pomin intro i wejdź do gry
+                console.log("Brak pliku intro: cutscene1.gltf, pomijam...");
+                endCutscene();
+            });
+        }
+
+        function endCutscene() {
+            if(cutsceneEnded) return;
+            cutsceneEnded = true;
+            if(cutsceneReqId) cancelAnimationFrame(cutsceneReqId);
+            
+            const container = document.getElementById('cutsceneContainer');
+            container.classList.add('hidden');
+            // Zwalniamy zasoby 3D intro
+            if(cutsceneRenderer) container.removeChild(cutsceneRenderer.domElement); 
+            
+            document.getElementById('dashboard').classList.remove('hidden'); 
+            document.getElementById('usersBtn').classList.remove('hidden'); 
+            if(isAdmin) { document.getElementById('caineTerminal').classList.remove('hidden'); }
         }
         
         function censorText(text) { 
@@ -526,7 +621,7 @@
             for(let i=0; i<count; i++) { const e = document.createElement(type === "gloink" ? 'img' : 'div'); if(type === "gloink") { e.src = `./images/gloink1.jpg`; e.classList.add('falling-gloink'); } else { e.classList.add('falling-confetti'); e.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`; } e.style.left = Math.random() * 100 + 'vw'; container.appendChild(e); setTimeout(() => e.remove(), 4000); }
         }
 
-        // 🔥 SILNIK 3D (SHADERY KINOWE + DYNAMICZNA SKALA) 🔥
+        // 🔥 SILNIK 3D (Z PORTALEM I SKALĄ) 🔥
         let scene, camera, renderer, gameActive = false;
         let cubes = []; let heldCube = null; let raycaster, mouse;
         let loadedModelMesh = null; let gridHelper = null; 
@@ -548,7 +643,6 @@
             renderer = new THREE.WebGLRenderer({ antialias: true }); 
             renderer.setSize(window.innerWidth, window.innerHeight); 
             
-            // 🔥 ULEPSZONE SHADERY I OŚWIETLENIE 🔥
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.outputEncoding = THREE.sRGBEncoding;
@@ -665,7 +759,6 @@
             }
         }
 
-        // 🔥 DYNAMICZNA SKALA AWATARÓW (Zależnie od mapy) 🔥
         function createPlayerAvatar(playerName, color) {
             const group = new THREE.Group();
             
@@ -682,7 +775,6 @@
             let uName = playerName.toUpperCase();
             if(uName === "CAINE") { modelPath = "./models/avatars/avatar_caine/scene.gltf"; }
             else if(uName === "TETO") { modelPath = "./models/avatars/avatar_teto/scene.gltf"; }
-            // 🔥 DODANO MIKU! Pamiętaj o folderze! 🔥
             else if(uName.includes("MIKU")) { modelPath = "./models/avatars/avatar_miku/scene.gltf"; }
 
             if(modelPath !== "") {
@@ -695,9 +787,8 @@
                     const size = box.getSize(new THREE.Vector3());
                     const maxDim = Math.max(size.x, size.y, size.z);
                     
-                    // Skala: 1.5 w Biurze, 3.5 u Pomni
                     let targetScale = currentMapName.includes("office") ? 1.5 : 3.5;
-                    if(maxDim > 0) { 
+                    if(maxDim > 0 && maxDim !== Infinity) { 
                         const scale = targetScale / maxDim; 
                         avatarMesh.scale.set(scale, scale, scale); 
                     }
@@ -711,8 +802,17 @@
                     avatarMesh.position.z = -centerScaled.z;
                     
                     avatarMesh.traverse(function(node) {
-                        if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; 
-                            if(node.material) node.material.needsUpdate = true; // Odświeża dla nowych shaderów
+                        if (node.isMesh) { 
+                            node.castShadow = true; 
+                            node.receiveShadow = true; 
+                            node.frustumCulled = false; 
+                            if(node.material) {
+                                if(node.material.transparent) {
+                                    node.material.transparent = false; 
+                                    node.material.alphaTest = 0.5;
+                                }
+                                node.material.needsUpdate = true;
+                            }
                         }
                     });
                     
@@ -730,7 +830,6 @@
                 scene.add(mesh); players3D[playerName] = { mesh: mesh, heldCubeId: -1 };
             }
             
-            // Dynamiczna wysokość nóg
             let playerHeight = currentMapName.includes("office") ? 1.0 : 1.5;
             players3D[playerName].mesh.position.set(x, py - playerHeight, z); 
             players3D[playerName].mesh.rotation.y = playerYaw + Math.PI;
@@ -774,8 +873,17 @@
                     loadedModelMesh.position.x = -centerScaled.x; loadedModelMesh.position.y = -boxScaled.min.y; loadedModelMesh.position.z = -centerScaled.z;
                     
                     loadedModelMesh.traverse(function(node) {
-                        if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; 
-                            if(node.material) node.material.needsUpdate = true;
+                        if (node.isMesh) { 
+                            node.castShadow = true; 
+                            node.receiveShadow = true; 
+                            node.frustumCulled = false; 
+                            if(node.material) {
+                                if(node.material.transparent) {
+                                    node.material.transparent = false;
+                                    node.material.alphaTest = 0.5;
+                                }
+                                node.material.needsUpdate = true;
+                            }
                         }
                     });
 
@@ -798,7 +906,6 @@
                 cubes.forEach(c => scene.remove(c)); cubes = []; heldCube = null;
                 document.getElementById('error3D').style.display = "none";
                 
-                // Usuwamy wszystkich graczy przy restarcie, żeby załadowali się w nowej Skali!
                 if(localPlayerMesh) { scene.remove(localPlayerMesh); }
                 localPlayerMesh = createPlayerAvatar(user, userColor);
                 scene.add(localPlayerMesh);
@@ -824,13 +931,12 @@
             
             document.getElementById('coordsUI').innerText = `X: ${p.x.toFixed(1)} | Y: ${p.y.toFixed(1)} | Z: ${p.z.toFixed(1)}`;
 
-            // 🔥 LOGIKA PORTALU POMNI -> OFFICE 🔥
             if(currentMapName.includes("pomni") && !isBuildingWorld) {
                 let distX = p.x - 4.2; let distY = p.y - 2.9; let distZ = p.z - 15.4;
                 let portalDist = Math.sqrt(distX*distX + distY*distY + distZ*distZ);
                 
                 if(portalDist < 1.5) {
-                    isBuildingWorld = true; // Zabezpieczenie przed pętlą teleportu
+                    isBuildingWorld = true; 
                     p.x = -13.9; p.y = 3.5; p.z = 0.2; p.vy = 0;
                     sendData({type:"sys", text: `> 🌀 CAINE WYKRYŁ ANOMALIĘ: Portal z Pomni Room do Biura został użyty przez ${user}! 🌀`});
                     sendData({type:"cmd", cmd:"changemap", target: "office/scene.gltf"});
