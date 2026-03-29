@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TADC - Global Mainframe OS v51</title>
+    <title>TADC - Global Mainframe OS v52</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -113,7 +113,6 @@
 
         #touchLookZone { position: absolute; top: 0; right: 0; width: 50vw; height: 100vh; z-index: 5555; display: none; }
 
-        /* 🔥 KONSOLA W 3D 🔥 */
         #roomConsole { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); display: none; flex-direction: column; gap: 10px; width: 90%; max-width: 450px; z-index: 6000; background: rgba(5,5,10,0.95); padding: 15px; border: 2px solid #ff0044; border-radius: 8px; box-shadow: 0 0 40px rgba(255,0,68,0.5); }
         #roomConsole span { color: #ff0044; font-weight: bold; text-align: center; font-size: 14px; animation: textBlink 1.5s infinite;}
         #roomConsole input { margin: 0; }
@@ -155,9 +154,6 @@
         .effect-gravity { transform: translateY(-30vh) rotate(5deg); }
         .effect-zoom { transform: scale(1.5); }
         .effect-grayscale { filter: grayscale(100%); }
-        body.effect-3d-active { perspective: 1000px; }
-        body.effect-3d-active #dashboard, body.effect-3d-active .box { transform-style: preserve-3d; animation: wobble3d 4s infinite alternate ease-in-out; box-shadow: 20px 20px 60px rgba(0, 242, 255, 0.3), -20px -20px 60px rgba(255, 0, 68, 0.3); }
-        @keyframes wobble3d { 0% { transform: rotateX(15deg) rotateY(-20deg) translateZ(50px) scale(0.85); } 100% { transform: rotateX(-15deg) rotateY(20deg) translateZ(-50px) scale(0.85); } }
     </style>
 </head>
 <body onselectstart="return false;">
@@ -171,7 +167,7 @@
         <div id="gameUI">
             <span style="color:#00f2ff; font-size: 16px; font-weight: 900; text-shadow: 2px 2px #000;">MAPA: <span id="mapNameUI" style="color:#f9e11e;">OFFICE/SCENE.GLTF</span></span><br>
             <span id="coordsUI" style="color:#00ff00; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.6); padding: 2px 5px; border-radius: 4px;">X: 0.0 | Y: 0.0 | Z: 0.0</span><br>
-            <span id="loading3D" class="hidden">🔄 POBIERANIE MODELU...</span><br>
+            <span id="loading3D" class="hidden">🔄 POBIERANIE MODELU I SHADERÓW HD...</span><br>
             <div id="error3D"></div>
             <span id="pcInstr" style="font-size: 11px; color:#aaa;">PC: W/A/S/D = Chód | SPACJA = Skok | <b style="color:#fff;">LPM EKRAN: BLOKADA | [ T ] KONSOLA ROOT</b></span>
             <span id="mobInstr" style="font-size: 10px; color:#aaa; display:none;">MOBILE: Joystick lewo, przesuwanie po prawej do obrotu.</span>
@@ -341,11 +337,10 @@
         }
 
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v51"; 
+        const topic = "cyfrowycyrk/globalchat/final_v52"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let userAvatar = ""; let activeUsers = {}; 
         
-        // 🔥 W V51 DOMYŚLNY PLIK STARTOWY JEST ZDEFINIOWANY PERFEKCYJNIE 🔥
         let currentMapName = "office/scene.gltf"; 
         let isOfflineMode = false;
         
@@ -384,7 +379,7 @@
             };
             mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
                 updateStatus(true); mqtt.subscribe(topic); 
-                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v51 👑" : `[${user}] dołączył do cyrku.`}); 
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v52 👑" : `[${user}] dołączył do cyrku.`}); 
                 setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
                 setInterval(() => { if(gameActive && !isOfflineMode) { let heldId = heldCube ? heldCube.userData.id : -1; sendData({type: "pos", nick: user, x: p.x, y: p.y, z: p.z, rot: yaw, color: userColor, hold: heldId}); } }, 100);
                 activeUsers[user] = { time: Date.now(), isAdmin: isAdmin, avatar: userAvatar }; 
@@ -531,7 +526,7 @@
             for(let i=0; i<count; i++) { const e = document.createElement(type === "gloink" ? 'img' : 'div'); if(type === "gloink") { e.src = `./images/gloink1.jpg`; e.classList.add('falling-gloink'); } else { e.classList.add('falling-confetti'); e.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`; } e.style.left = Math.random() * 100 + 'vw'; container.appendChild(e); setTimeout(() => e.remove(), 4000); }
         }
 
-        // 🔥 SILNIK 3D 🔥
+        // 🔥 SILNIK 3D (SHADERY KINOWE + DYNAMICZNA SKALA) 🔥
         let scene, camera, renderer, gameActive = false;
         let cubes = []; let heldCube = null; let raycaster, mouse;
         let loadedModelMesh = null; let gridHelper = null; 
@@ -553,16 +548,20 @@
             renderer = new THREE.WebGLRenderer({ antialias: true }); 
             renderer.setSize(window.innerWidth, window.innerHeight); 
             
+            // 🔥 ULEPSZONE SHADERY I OŚWIETLENIE 🔥
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
 
             container.appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); scene.add(ambientLight);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8); 
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+            scene.add(hemiLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2); 
             dirLight.position.set(15, 30, 15); 
-            
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 2048;
             dirLight.shadow.mapSize.height = 2048;
@@ -572,6 +571,7 @@
             dirLight.shadow.camera.right = 30;
             dirLight.shadow.camera.top = 30;
             dirLight.shadow.camera.bottom = -30;
+            dirLight.shadow.bias = -0.0005;
             scene.add(dirLight);
 
             raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2(0, 0); 
@@ -665,6 +665,7 @@
             }
         }
 
+        // 🔥 DYNAMICZNA SKALA AWATARÓW (Zależnie od mapy) 🔥
         function createPlayerAvatar(playerName, color) {
             const group = new THREE.Group();
             
@@ -681,6 +682,8 @@
             let uName = playerName.toUpperCase();
             if(uName === "CAINE") { modelPath = "./models/avatars/avatar_caine/scene.gltf"; }
             else if(uName === "TETO") { modelPath = "./models/avatars/avatar_teto/scene.gltf"; }
+            // 🔥 DODANO MIKU! Pamiętaj o folderze! 🔥
+            else if(uName.includes("MIKU")) { modelPath = "./models/avatars/avatar_miku/scene.gltf"; }
 
             if(modelPath !== "") {
                 const loader = new THREE.GLTFLoader();
@@ -691,8 +694,11 @@
                     const box = new THREE.Box3().setFromObject(avatarMesh);
                     const size = box.getSize(new THREE.Vector3());
                     const maxDim = Math.max(size.x, size.y, size.z);
+                    
+                    // Skala: 1.5 w Biurze, 3.5 u Pomni
+                    let targetScale = currentMapName.includes("office") ? 1.5 : 3.5;
                     if(maxDim > 0) { 
-                        const scale = 3.5 / maxDim; 
+                        const scale = targetScale / maxDim; 
                         avatarMesh.scale.set(scale, scale, scale); 
                     }
                     
@@ -705,7 +711,9 @@
                     avatarMesh.position.z = -centerScaled.z;
                     
                     avatarMesh.traverse(function(node) {
-                        if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; }
+                        if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; 
+                            if(node.material) node.material.needsUpdate = true; // Odświeża dla nowych shaderów
+                        }
                     });
                     
                     group.add(avatarMesh);
@@ -721,7 +729,10 @@
                 const mesh = createPlayerAvatar(playerName, pColor); 
                 scene.add(mesh); players3D[playerName] = { mesh: mesh, heldCubeId: -1 };
             }
-            players3D[playerName].mesh.position.set(x, py - 1.5, z); 
+            
+            // Dynamiczna wysokość nóg
+            let playerHeight = currentMapName.includes("office") ? 1.0 : 1.5;
+            players3D[playerName].mesh.position.set(x, py - playerHeight, z); 
             players3D[playerName].mesh.rotation.y = playerYaw + Math.PI;
             players3D[playerName].heldCubeId = heldCubeId; 
         }
@@ -742,7 +753,7 @@
             loadingUI.classList.remove('hidden'); errorUI.style.display = "none";
 
             let pathToLoad = `./models/${currentMapName}`;
-            if(isFallback) { pathToLoad = `./models/pomni_room/pomni.gltf`; } // Poprawiony zapasowy fallback!
+            if(isFallback) { pathToLoad = `./models/pomni_room/pomni.gltf`; } 
 
             const loader = new THREE.GLTFLoader();
             loader.load(
@@ -763,7 +774,9 @@
                     loadedModelMesh.position.x = -centerScaled.x; loadedModelMesh.position.y = -boxScaled.min.y; loadedModelMesh.position.z = -centerScaled.z;
                     
                     loadedModelMesh.traverse(function(node) {
-                        if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; }
+                        if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; 
+                            if(node.material) node.material.needsUpdate = true;
+                        }
                     });
 
                     scene.add(loadedModelMesh);
@@ -785,9 +798,13 @@
                 cubes.forEach(c => scene.remove(c)); cubes = []; heldCube = null;
                 document.getElementById('error3D').style.display = "none";
                 
+                // Usuwamy wszystkich graczy przy restarcie, żeby załadowali się w nowej Skali!
                 if(localPlayerMesh) { scene.remove(localPlayerMesh); }
                 localPlayerMesh = createPlayerAvatar(user, userColor);
                 scene.add(localPlayerMesh);
+
+                for(let n in players3D) { scene.remove(players3D[n].mesh); }
+                players3D = {};
 
                 load3DModel(false); 
 
@@ -807,6 +824,20 @@
             
             document.getElementById('coordsUI').innerText = `X: ${p.x.toFixed(1)} | Y: ${p.y.toFixed(1)} | Z: ${p.z.toFixed(1)}`;
 
+            // 🔥 LOGIKA PORTALU POMNI -> OFFICE 🔥
+            if(currentMapName.includes("pomni") && !isBuildingWorld) {
+                let distX = p.x - 4.2; let distY = p.y - 2.9; let distZ = p.z - 15.4;
+                let portalDist = Math.sqrt(distX*distX + distY*distY + distZ*distZ);
+                
+                if(portalDist < 1.5) {
+                    isBuildingWorld = true; // Zabezpieczenie przed pętlą teleportu
+                    p.x = -13.9; p.y = 3.5; p.z = 0.2; p.vy = 0;
+                    sendData({type:"sys", text: `> 🌀 CAINE WYKRYŁ ANOMALIĘ: Portal z Pomni Room do Biura został użyty przez ${user}! 🌀`});
+                    sendData({type:"cmd", cmd:"changemap", target: "office/scene.gltf"});
+                    return;
+                }
+            }
+
             if(isBuildingWorld) {
                 camera.position.set(0, 8, 0); 
                 renderer.render(scene, camera);
@@ -814,6 +845,7 @@
             }
 
             let oldX = p.x; let oldZ = p.z;
+            let playerHeight = currentMapName.includes("office") ? 1.0 : 1.5;
             
             const speed = 0.25; 
             if(p.moveF) { p.x -= Math.sin(yaw) * speed; p.z -= Math.cos(yaw) * speed; } 
@@ -831,7 +863,7 @@
                 let rayDown = new THREE.Raycaster(new THREE.Vector3(p.x, p.y + 0.5, p.z), new THREE.Vector3(0, -1, 0));
                 let hits = rayDown.intersectObject(loadedModelMesh, true);
                 if(hits.length > 0 && hits[0].distance < 2.0) { 
-                    p.y = hits[0].point.y + 1.5; 
+                    p.y = hits[0].point.y + playerHeight; 
                     p.vy = 0; p.canJump = true; floorHit = true;
                 }
                 
@@ -849,13 +881,13 @@
                     if(interZ.length > 0 && interZ[0].distance < 0.6) { p.z = oldZ; }
                 }
             } else {
-                if(p.y < 1.5) { p.y = 1.5; p.vy = 0; p.canJump = true; } 
+                if(p.y < playerHeight) { p.y = playerHeight; p.vy = 0; p.canJump = true; } 
             }
 
             camera.position.set(p.x, p.y, p.z);
 
             if(localPlayerMesh) {
-                localPlayerMesh.position.set(p.x, p.y - 1.5, p.z);
+                localPlayerMesh.position.set(p.x, p.y - playerHeight, p.z);
                 localPlayerMesh.rotation.y = yaw + Math.PI;
                 localPlayerMesh.position.x += Math.sin(yaw) * 0.25;
                 localPlayerMesh.position.z += Math.cos(yaw) * 0.25;
