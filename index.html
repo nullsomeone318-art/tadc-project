@@ -1,13 +1,20 @@
-
 <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TADC - Global Mainframe OS v56 (Metaverse Edition)</title>
+    <title>TADC - Global Mainframe OS v57 (RTX ON)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
     <style>
         @keyframes crtFlicker { 0% { opacity: 0.98; } 50% { opacity: 0.94; } 100% { opacity: 1; } }
         @keyframes breatheGlow { 0% { box-shadow: 0 0 20px rgba(0, 242, 255, 0.4), inset 0 0 10px rgba(0, 242, 255, 0.2); } 50% { box-shadow: 0 0 40px rgba(0, 242, 255, 0.7), inset 0 0 20px rgba(0, 242, 255, 0.4); } 100% { box-shadow: 0 0 20px rgba(0, 242, 255, 0.4), inset 0 0 10px rgba(0, 242, 255, 0.2); } }
@@ -174,9 +181,9 @@
         <div id="gameUI">
             <span style="color:#00f2ff; font-size: 16px; font-weight: 900; text-shadow: 2px 2px #000;">MAPA: <span id="mapNameUI" style="color:#f9e11e;">OFFICE/SCENE.GLTF</span></span><br>
             <span id="coordsUI" style="color:#00ff00; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.6); padding: 2px 5px; border-radius: 4px;">X: 0.0 | Y: 0.0 | Z: 0.0</span><br>
-            <span id="loading3D" class="hidden">🔄 POBIERANIE MODELU I SHADERÓW HD...</span><br>
+            <span id="loading3D" class="hidden">🔄 POBIERANIE MODELU I SHADERÓW RTX...</span><br>
             <div id="error3D"></div>
-            <span id="pcInstr" style="font-size: 11px; color:#aaa;">PC: W/A/S/D = Chód | SHIFT = Sprint | SPACJA = Skok | <b style="color:#fff;">LPM: BLOKADA KAMERY | [ T ] KONSOLA</b></span>
+            <span id="pcInstr" style="font-size: 11px; color:#aaa;">PC: W/A/S/D = Chód | SHIFT = Sprint | SPACJA = Skok/Góra | <b style="color:#fff;">LPM: BLOKADA | [ T ] KONSOLA</b></span>
             <span id="mobInstr" style="font-size: 10px; color:#aaa; display:none;">MOBILE: Joystick lewo, przesuwanie po prawej do obrotu.</span>
         </div>
         
@@ -198,7 +205,7 @@
 
         <div id="roomConsole">
             <span>💻 TERMINAL LOKALNY ROOT</span>
-            <input type="text" id="roomCmdInput" placeholder="np. /glitch, /map pomni, /portal office...">
+            <input type="text" id="roomCmdInput" placeholder="np. /glitch, /fly, /portal office...">
             <button onclick="exeRoomCmd()">WYKONAJ</button>
         </div>
     </div>
@@ -239,7 +246,7 @@
 
     <div id="dashboard" class="hidden">
         <div id="caineTerminal" class="hidden">
-            <input type="text" id="cmdInputTop" placeholder="np. /map pomni, /portal office...">
+            <input type="text" id="cmdInputTop" placeholder="np. /map pomni, /fly, /portal...">
             <button onclick="exeTop()">WYKONAJ</button>
         </div>
 
@@ -344,7 +351,7 @@
         }
 
         let mqtt; 
-        const topic = "cyfrowycyrk/globalchat/final_v56"; 
+        const topic = "cyfrowycyrk/globalchat/final_v57"; 
         let user = ""; let isAdmin = false; let userColor = `hsl(${Math.floor(Math.random()*360)}, 80%, 65%)`;
         let userAvatar = ""; let activeUsers = {}; 
         
@@ -374,14 +381,12 @@
                             document.getElementById('mapNameUI').innerText = currentMapName.toUpperCase();
                             if(gameActive) load3DModel(false); 
                         }
-                        // 🔥 Odbieranie portalu 🔥
                         else if(d.cmd === "spawnportal" && gameActive) {
                             spawnPortal3D(d.target, d.x, d.y, d.z);
                         }
                         else if(!d.target || d.target === "" || d.target === "ALL" || d.target === user) { runEff(d.cmd); } 
                     }
                     else if(d.type === "ping") { activeUsers[d.nick] = { time: Date.now(), isAdmin: d.admin, avatar: d.avatar }; }
-                    // 🔥 Odbieranie stanu ruchu innych graczy 🔥
                     else if(d.type === "pos" && d.nick !== user && gameActive) { 
                         updateOtherPlayer3D(d.nick, d.x, d.y, d.z, d.rot, d.color, d.hold, d.isMoving); 
                     }
@@ -393,9 +398,8 @@
             };
             mqtt.connect({ useSSL: true, timeout: 5, onSuccess: () => { 
                 updateStatus(true); mqtt.subscribe(topic); 
-                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v56 👑" : `[${user}] dołączył do cyrku.`}); 
+                sendData({type:"sys", text: isAdmin ? "👑 CAINE PRZEJĄŁ SYSTEM v57 👑" : `[${user}] dołączył do cyrku.`}); 
                 setInterval(() => { sendData({type: "ping", nick: user, admin: isAdmin, avatar: userAvatar}); }, 1000); 
-                // 🔥 Wysyłanie swojego ruchu co 100ms 🔥
                 setInterval(() => { 
                     if(gameActive && !isOfflineMode && !isBuildingWorld) { 
                         let heldId = heldCube ? heldCube.userData.id : -1; 
@@ -469,6 +473,10 @@
             else if (isAdmin && !isMiku) { userAvatar = "https://api.dicebear.com/7.x/shapes/svg?seed=Caine&backgroundColor=ff0044"; } 
             else if (rawAv) { userAvatar = rawAv; } 
             else { userAvatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${user}`; }
+
+            // 🔥 Wymuszenie audio przy kliknięciu (Zabezpieczenie) 🔥
+            audioAllowed = true;
+            if (music.paused) safePlayAudio(music);
 
             document.getElementById('step-1').classList.add('hidden'); document.getElementById('step-2').classList.remove('hidden'); 
             initMQTT(); populateCmdWindow(); 
@@ -590,11 +598,11 @@
         function handleChat() { const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return; if(text.startsWith('/')) { procCmd(text); input.value=""; return; } sendData({type:"chat", nick:user, text:text, color:userColor, admin:isAdmin, avatar:userAvatar}); input.value = ""; }
         function exeTop() { const input = document.getElementById('cmdInputTop'); let text = input.value.trim(); if(!text) return; if(!text.startsWith('/')) text = '/' + text; procCmd(text); input.value = ""; }
 
-        const effectList = ["bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "squish", "stretch", "dance", "zoom", "grayscale", "confetti", "jail", "unjail", "gravity", "vr", "room", "unroom", "cats"];
+        const effectList = ["fly", "bubble", "gloink", "pomni", "glitch", "redalert", "nuke", "censor", "void", "abstract", "flip", "shake", "blur", "squish", "stretch", "dance", "zoom", "grayscale", "confetti", "jail", "unjail", "gravity", "vr", "room", "unroom", "cats"];
         
         function populateCmdWindow() { 
             const list = document.getElementById('cmdList'); 
-            let html = `<div><span class="cmd-real" style="color:#00ff00;">/map [nazwa]</span> <span class="cmd-desc">Zmienia mapę. (np. /map pomni, /map office)</span></div>`;
+            let html = `<div><span class="cmd-real" style="color:#00ff00;">/map [nazwa]</span> <span class="cmd-desc">Zmienia mapę. (np. /map pomni)</span></div>`;
             html += `<div><span class="cmd-real" style="color:#00ff00;">/portal [mapa]</span> <span class="cmd-desc">Spawni portal! (np. /portal office)</span></div>`;
             effectList.forEach(e => html += `<div><span class="cmd-real">/${e} [nick]</span></div>`); 
             list.innerHTML = html; 
@@ -607,6 +615,15 @@
             let parts = rawCmd.trim().split(" "); let cmd = parts[0].toLowerCase(); let target = parts.length > 1 ? parts.slice(1).join(" ").toUpperCase() : "ALL"; 
             if(cmd === '/cmd') { toggleCmd(); return; } if(cmd === '/clear') { document.getElementById('chatBox').innerHTML = ""; return; } 
             if(!isAdmin) { showSys("> Błąd: Wymagane uprawnienia Root."); return; }
+            
+            // 🔥 KOMENDA FLY 🔥
+            if(cmd === '/fly') {
+                p.isFlying = !p.isFlying;
+                p.vy = 0;
+                sendData({type:"sys", text: `> 🦅 CAINE ZMIENIŁ TRYB LATANIA NA: ${p.isFlying ? "WŁĄCZONY" : "WYŁĄCZONY"} 🦅`});
+                return;
+            }
+
             if(cmd === '/map') {
                 let rawMapName = parts.slice(1).join(" ").toLowerCase();
                 if(!rawMapName) rawMapName = "office";
@@ -620,7 +637,6 @@
                 if(mqtt && mqtt.isConnected()) sendData({type:"sys", text: `> CAINE ZMIENIA WYMIAR NA: ${finalMapName.toUpperCase()}`});
                 return;
             }
-            // 🔥 KOMENDA PORTALU 🔥
             if(cmd === '/portal' && gameActive && !isBuildingWorld) {
                 let rawMapName = parts.slice(1).join(" ").toLowerCase();
                 if(!rawMapName) rawMapName = "office";
@@ -629,7 +645,6 @@
                 else if (rawMapName === "office") { finalMapName = "office/scene.gltf"; }
                 else if(!finalMapName.endsWith('.glb') && !finalMapName.endsWith('.gltf')) { finalMapName += ".glb"; }
                 
-                // Oblicz miejsce 3 metry przed graczem
                 let px = p.x - Math.sin(yaw) * 3.0;
                 let pz = p.z - Math.cos(yaw) * 3.0;
                 
@@ -650,57 +665,68 @@
             for(let i=0; i<count; i++) { const e = document.createElement(type === "gloink" ? 'img' : 'div'); if(type === "gloink") { e.src = `./images/gloink1.jpg`; e.classList.add('falling-gloink'); } else { e.classList.add('falling-confetti'); e.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`; } e.style.left = Math.random() * 100 + 'vw'; container.appendChild(e); setTimeout(() => e.remove(), 4000); }
         }
 
-        // 🔥 GŁÓWNY SILNIK 3D 🔥
-        let scene, camera, renderer, gameActive = false;
+        // 🔥 GŁÓWNY SILNIK 3D (RTX & BLOOM) 🔥
+        let scene, camera, renderer, composer, gameActive = false;
         let cubes = []; let heldCube = null; let raycaster, mouse;
         let loadedModelMesh = null; let gridHelper = null; 
         
-        let p = { x: 0, y: 8, z: 0, moveF: false, moveB: false, moveL: false, moveR: false, vy: 0, canJump: false, isSprinting: false };
+        let p = { x: 0, y: 8, z: 0, moveF: false, moveB: false, moveL: false, moveR: false, moveU: false, moveD: false, vy: 0, canJump: false, isSprinting: false, isFlying: false };
         let yaw = 0, pitch = 0;
         let players3D = {}; 
         let localPlayerMesh = null; 
         let isBuildingWorld = false; 
         let clock; 
-        let particles; // Pył
-        let activePortalObj = null; // Portal
+        let particles; 
+        let activePortalObj = null; 
         
         const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
         function init3DGame() {
             if(scene) return; 
             const container = document.getElementById('gameContainer');
-            scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x020000, 0.03); 
+            scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x050505, 0.02); 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000); 
             
             renderer = new THREE.WebGLRenderer({ antialias: true }); 
             renderer.setSize(window.innerWidth, window.innerHeight); 
-            
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.outputEncoding = THREE.sRGBEncoding;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1.2;
+            renderer.toneMappingExposure = 1.0;
+            // Fizycznie poprawne światła
+            renderer.physicallyCorrectLights = true;
 
             container.appendChild(renderer.domElement);
 
-            // 🔥 1. SKYBOX 🔥
+            // 🔥 POST-PROCESSING: RTX UNREAL BLOOM 🔥
+            const renderScene = new THREE.RenderPass(scene, camera);
+            const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+            bloomPass.threshold = 0.2;
+            bloomPass.strength = 1.5; // Fotorealistyczny blask!
+            bloomPass.radius = 0.8;
+
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(renderScene);
+            composer.addPass(bloomPass);
+
+            // Skybox
             const textureLoader = new THREE.TextureLoader();
             textureLoader.load('./images/skybox.jpg', function(texture) {
                 texture.encoding = THREE.sRGBEncoding;
                 texture.mapping = THREE.EquirectangularReflectionMapping;
                 scene.background = texture;
-                scene.environment = texture; // Piękne odbicia z nieba!
+                scene.environment = texture; 
             });
 
-            // Oświetlenie zoptymalizowane
-            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 2.0);
             scene.add(hemiLight);
 
-            const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2); 
+            const dirLight = new THREE.DirectionalLight(0xffeedd, 3.0); 
             dirLight.position.set(15, 30, 15); 
             dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 2048;
-            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.mapSize.width = 4096; // 4K Cienie
+            dirLight.shadow.mapSize.height = 4096;
             dirLight.shadow.camera.near = 0.5;
             dirLight.shadow.camera.far = 100;
             dirLight.shadow.camera.left = -30;
@@ -710,7 +736,6 @@
             dirLight.shadow.bias = -0.0005;
             scene.add(dirLight);
 
-            // 🔥 10. CZĄSTECZKI KURZU 🔥
             const partGeo = new THREE.BufferGeometry();
             const partCount = 500;
             const posArray = new Float32Array(partCount * 3);
@@ -755,16 +780,16 @@
 
                 document.getElementById('btnGrab').addEventListener('pointerdown', (e) => { performGrabThrow(); e.preventDefault(); });
                 document.getElementById('btnExit').addEventListener('pointerdown', (e) => { 
-                    // 🔥 Zniknięcie ciała po ucieczce (Zabezpieczenie 20) 🔥
                     sendData({type: "pos", nick: user, x: 0, y: -999, z: 0, rot: 0, color: userColor, hold: -1, isMoving: false}); 
                     gameActive = false; document.getElementById('gameContainer').classList.remove('active'); e.preventDefault(); 
                 });
                 
                 document.getElementById('btnJump').addEventListener('pointerdown', (e) => { 
-                    if(user === "CAINE") { p.vy = 0.3; } 
-                    else if(p.canJump && !isBuildingWorld) { p.vy = 0.2; p.canJump = false; } 
+                    p.moveU = true;
+                    if(!p.isFlying && p.canJump && !isBuildingWorld) { p.vy = 0.2; p.canJump = false; } 
                     e.preventDefault(); 
                 });
+                document.getElementById('btnJump').addEventListener('pointerup', (e) => { p.moveU = false; e.preventDefault(); });
 
             } else {
                 container.addEventListener('mousedown', (e) => {
@@ -782,14 +807,14 @@
                     let k = e.key.toLowerCase(); 
                     if(k === 'w') p.moveF = true; if(k === 's') p.moveB = true; 
                     if(k === 'a') p.moveL = true; if(k === 'd') p.moveR = true; 
-                    if(k === 'shift') p.isSprinting = true; // SPRINT
+                    
+                    if(k === 'shift') { p.isSprinting = true; p.moveD = true; }
                     
                     if(k === ' ') { 
-                        if(user === "CAINE") { p.vy = 0.3; } 
-                        else if(p.canJump) { p.vy = 0.2; p.canJump = false; } 
+                        p.moveU = true;
+                        if(!p.isFlying && p.canJump) { p.vy = 0.2; p.canJump = false; } 
                     }
                     if(e.key === 'Escape') {
-                        // Zniknięcie przy ECS
                         sendData({type: "pos", nick: user, x: 0, y: -999, z: 0, rot: 0, color: userColor, hold: -1, isMoving: false});
                     }
                 });
@@ -797,7 +822,8 @@
                     if(!gameActive) return; let k = e.key.toLowerCase(); 
                     if(k === 'w') p.moveF = false; if(k === 's') p.moveB = false; 
                     if(k === 'a') p.moveL = false; if(k === 'd') p.moveR = false; 
-                    if(k === 'shift') p.isSprinting = false;
+                    if(k === 'shift') { p.isSprinting = false; p.moveD = false; }
+                    if(k === ' ') { p.moveU = false; }
                 });
                 document.addEventListener('mousemove', (e) => { 
                     if (document.pointerLockElement === container && gameActive && !isBuildingWorld) { 
@@ -822,7 +848,6 @@
             }
         }
 
-        // 🔥 FUNKCJA SPAWNOWANIA PORTALU W 3D 🔥
         function spawnPortal3D(targetMap, px, py, pz) {
             if(activePortalObj) scene.remove(activePortalObj.mesh);
 
@@ -830,8 +855,6 @@
             loader.load('./models/portal/scene.gltf', function(gltf) {
                 const pMesh = gltf.scene;
                 pMesh.position.set(px, py, pz);
-                
-                // Ustaw portal żeby patrzył na środek
                 pMesh.lookAt(0, py, 0);
 
                 let pMixer = null;
@@ -840,8 +863,8 @@
                     pMixer.clipAction(gltf.animations[0]).play();
                 }
 
-                // Dodaj blask portalu
-                const pLight = new THREE.PointLight(0x00f2ff, 1.5, 10);
+                // RTX LIGHT dla portalu
+                const pLight = new THREE.PointLight(0x00f2ff, 10.0, 15);
                 pMesh.add(pLight);
 
                 scene.add(pMesh);
@@ -849,7 +872,6 @@
             });
         }
 
-        // 🔥 NAMETAGS (Nicki nad głową) 🔥
         function createNametagSprite(name, color) {
             let canvas = document.createElement('canvas');
             canvas.width = 512; canvas.height = 128;
@@ -866,11 +888,10 @@
             let mat = new THREE.SpriteMaterial({map: tex, depthTest: false});
             let sprite = new THREE.Sprite(mat);
             sprite.scale.set(4, 1, 1);
-            sprite.position.y = 4.0; // Nad głową
+            sprite.position.y = 4.0; 
             return sprite;
         }
 
-        // 🔥 ŁADOWANIE ZAAWANSOWANEGO AWATARA Z CHODEM I IDLE 🔥
         function createPlayerAvatar(playerName, color) {
             const group = new THREE.Group();
             
@@ -883,7 +904,6 @@
             fallback.add(head); fallback.add(body);
             group.add(fallback);
 
-            // Dodaj nametag
             const nametag = createNametagSprite(playerName, color);
             group.add(nametag);
 
@@ -932,7 +952,6 @@
                         }
                     });
                     
-                    // 🔥 ZAAWANSOWANE ZARZĄDZANIE ANIMACJAMI (IDLE vs WALK) 🔥
                     let mixer = null, walkAct = null, idleAct = null;
                     if(gltf.animations && gltf.animations.length > 0) {
                         mixer = new THREE.AnimationMixer(avatarMesh);
@@ -942,12 +961,11 @@
                             else if(cName.includes('idle')) idleAct = mixer.clipAction(clip);
                         });
                         
-                        // Fallback jeśli nie ma idealnych nazw
                         if(!walkAct) walkAct = mixer.clipAction(gltf.animations[0]);
                         if(!idleAct && gltf.animations.length > 1) idleAct = mixer.clipAction(gltf.animations[1]);
                         
-                        if(idleAct) idleAct.play(); // Domyślnie stoi
-                        else if(walkAct) walkAct.play(); // Ostateczny fallback
+                        if(idleAct) idleAct.play(); 
+                        else if(walkAct) walkAct.play(); 
                     }
                     
                     group.add(avatarMesh);
@@ -966,7 +984,6 @@
                 players3D[playerName] = { mesh: mesh, heldCubeId: -1 };
             }
             
-            // 🔥 Obsługa przejścia Idle/Walk dla graczy z sieci 🔥
             let animState = players3D[playerName].mesh.userData.animState;
             if(animState) {
                 if(isMoving !== animState.isMoving) {
@@ -981,8 +998,8 @@
                 }
             }
 
-            // Płynny obrót LERP
-            players3D[playerName].mesh.position.set(x, py - (currentMapName.includes("office") ? 1.0 : 1.5), z); 
+            let playerHeight = currentMapName.includes("office") ? 1.0 : 1.5;
+            players3D[playerName].mesh.position.set(x, py - playerHeight, z); 
             players3D[playerName].mesh.rotation.y = playerYaw + Math.PI;
             players3D[playerName].heldCubeId = heldCubeId; 
         }
@@ -995,7 +1012,7 @@
             if(!isFallback) {
                 if(loadedModelMesh) { scene.remove(loadedModelMesh); loadedModelMesh = null; }
                 if(gridHelper) { scene.remove(gridHelper); gridHelper = null; }
-                if(activePortalObj) { scene.remove(activePortalObj.mesh); activePortalObj = null; } // Usuń stary portal
+                if(activePortalObj) { scene.remove(activePortalObj.mesh); activePortalObj = null; } 
             }
             
             isBuildingWorld = true; 
@@ -1054,7 +1071,7 @@
 
         function resetRoom() {
             try {
-                p.x = 0; p.y = 8; p.z = 0; p.vy = 0; p.canJump = false; yaw = 0; pitch = 0; camera.rotation.set(0,0,0);
+                p.x = 0; p.y = 8; p.z = 0; p.vy = 0; p.canJump = false; p.isFlying = false; yaw = 0; pitch = 0; camera.rotation.set(0,0,0);
                 cubes.forEach(c => scene.remove(c)); cubes = []; heldCube = null;
                 document.getElementById('error3D').style.display = "none";
                 
@@ -1081,16 +1098,14 @@
         function animate3D() {
             requestAnimationFrame(animate3D); if(!gameActive) return;
             
-            document.getElementById('coordsUI').innerText = `X: ${p.x.toFixed(1)} | Y: ${p.y.toFixed(1)} | Z: ${p.z.toFixed(1)}`;
+            document.getElementById('coordsUI').innerText = `X: ${p.x.toFixed(1)} | Y: ${p.y.toFixed(1)} | Z: ${p.z.toFixed(1)} | Tryb: ${p.isFlying ? "FLY" : "WALK"}`;
             
-            // Aktualizacja zegara dla wszystkich animacji
             if(clock) {
                 let delta = clock.getDelta();
                 
-                if(particles) particles.rotation.y += 0.0005; // Kurz w locie
-                if(activePortalObj && activePortalObj.mixer) activePortalObj.mixer.update(delta); // Animacja portalu
+                if(particles) particles.rotation.y += 0.0005; 
+                if(activePortalObj && activePortalObj.mixer) activePortalObj.mixer.update(delta); 
                 
-                // Lokalny avatar (Przejście stania w chód)
                 if(localPlayerMesh && localPlayerMesh.userData.animState) {
                     let st = localPlayerMesh.userData.animState;
                     if(st.mixer) {
@@ -1113,14 +1128,13 @@
 
             if(isBuildingWorld) {
                 camera.position.set(0, 8, 0); 
-                renderer.render(scene, camera);
+                if(composer) composer.render(); else renderer.render(scene, camera);
                 return; 
             }
 
             let oldX = p.x; let oldZ = p.z;
             let playerHeight = currentMapName.includes("office") ? 1.0 : 1.5;
             
-            // Sprinting
             const speed = p.isSprinting ? 0.45 : 0.25; 
             
             if(p.moveF) { p.x -= Math.sin(yaw) * speed; p.z -= Math.cos(yaw) * speed; } 
@@ -1130,41 +1144,45 @@
             
             p.x = Math.max(-49, Math.min(49, p.x)); p.z = Math.max(-49, Math.min(49, p.z));
 
-            p.vy -= 0.012; 
-            p.y += p.vy;
-
             let floorHit = false;
-            if(loadedModelMesh) {
-                let rayDown = new THREE.Raycaster(new THREE.Vector3(p.x, p.y + 0.5, p.z), new THREE.Vector3(0, -1, 0));
-                let hits = rayDown.intersectObject(loadedModelMesh, true);
-                if(hits.length > 0 && hits[0].distance < 2.0) { 
-                    // Cushioning (Ugięcie kolan przy upadku)
-                    if(p.vy < -0.3) p.y = hits[0].point.y + playerHeight - 0.2; 
-                    else p.y = hits[0].point.y + playerHeight;
-                    
-                    p.vy = 0; p.canJump = true; floorHit = true;
-                }
-                
-                if(p.y < -20) { p.y = 10; p.vy = 0; } 
 
-                let colRay = new THREE.Raycaster();
-                if(p.x !== oldX) {
-                    colRay.set(new THREE.Vector3(oldX, p.y, oldZ), new THREE.Vector3(p.x > oldX ? 1 : -1, 0, 0));
-                    let interX = colRay.intersectObject(loadedModelMesh, true);
-                    if(interX.length > 0 && interX[0].distance < 0.6) { p.x = oldX; }
-                }
-                if(p.z !== oldZ) {
-                    colRay.set(new THREE.Vector3(p.x, p.y, oldZ), new THREE.Vector3(0, 0, p.z > oldZ ? 1 : -1));
-                    let interZ = colRay.intersectObject(loadedModelMesh, true);
-                    if(interZ.length > 0 && interZ[0].distance < 0.6) { p.z = oldZ; }
-                }
+            // 🔥 SYSTEM LATANIA 🔥
+            if (p.isFlying) {
+                if(p.moveU) p.y += speed;
+                if(p.moveD) p.y -= speed;
             } else {
-                if(p.y < playerHeight) { p.y = playerHeight; p.vy = 0; p.canJump = true; } 
+                p.vy -= 0.012; 
+                p.y += p.vy;
+
+                if(loadedModelMesh) {
+                    let rayDown = new THREE.Raycaster(new THREE.Vector3(p.x, p.y + 0.5, p.z), new THREE.Vector3(0, -1, 0));
+                    let hits = rayDown.intersectObject(loadedModelMesh, true);
+                    if(hits.length > 0 && hits[0].distance < 2.0) { 
+                        if(p.vy < -0.3) p.y = hits[0].point.y + playerHeight - 0.2; 
+                        else p.y = hits[0].point.y + playerHeight;
+                        p.vy = 0; p.canJump = true; floorHit = true;
+                    }
+                    
+                    if(p.y < -20) { p.y = 10; p.vy = 0; } 
+
+                    let colRay = new THREE.Raycaster();
+                    if(p.x !== oldX) {
+                        colRay.set(new THREE.Vector3(oldX, p.y, oldZ), new THREE.Vector3(p.x > oldX ? 1 : -1, 0, 0));
+                        let interX = colRay.intersectObject(loadedModelMesh, true);
+                        if(interX.length > 0 && interX[0].distance < 0.6) { p.x = oldX; }
+                    }
+                    if(p.z !== oldZ) {
+                        colRay.set(new THREE.Vector3(p.x, p.y, oldZ), new THREE.Vector3(0, 0, p.z > oldZ ? 1 : -1));
+                        let interZ = colRay.intersectObject(loadedModelMesh, true);
+                        if(interZ.length > 0 && interZ[0].distance < 0.6) { p.z = oldZ; }
+                    }
+                } else {
+                    if(p.y < playerHeight) { p.y = playerHeight; p.vy = 0; p.canJump = true; } 
+                }
             }
 
-            // Head Bobbing & Dynamic FOV
             let isMoving = p.moveF || p.moveB || p.moveL || p.moveR;
-            if(isMoving && floorHit) {
+            if(isMoving && floorHit && !p.isFlying) {
                 camera.position.y = p.y + Math.sin(Date.now() * (p.isSprinting ? 0.015 : 0.01)) * 0.1;
                 camera.fov = THREE.MathUtils.lerp(camera.fov, p.isSprinting ? 85 : 75, 0.1);
             } else {
@@ -1181,7 +1199,7 @@
                 localPlayerMesh.position.z += Math.cos(yaw) * 0.25;
             }
 
-            // 🔥 KOLIZJA Z PORTALEM 🔥
+            // 🔥 KOLIZJA Z PORTALEM (I ZNIKANIE) 🔥
             if(activePortalObj) {
                 let dx = p.x - activePortalObj.mesh.position.x;
                 let dy = p.y - activePortalObj.mesh.position.y;
@@ -1190,9 +1208,13 @@
                     let target = activePortalObj.target;
                     isBuildingWorld = true; 
                     p.x = 0; p.y = 8; p.z = 0; p.vy = 0;
-                    activePortalObj = null; // usuń po przejściu
+                    
+                    // BRUTALNE ZNISZCZENIE PORTALU PO WEJŚCIU
+                    scene.remove(activePortalObj.mesh);
+                    activePortalObj = null; 
+                    
                     sendData({type:"cmd", cmd:"changemap", target: target});
-                    sendData({type:"sys", text: `> 🌀 CAINE WSZEDŁ W PORTAL DO: ${target.toUpperCase()} 🌀`});
+                    sendData({type:"sys", text: `> 🌀 [${user}] WSZEDŁ W PORTAL DO: ${target.toUpperCase()} 🌀`});
                     return;
                 }
             }
@@ -1234,15 +1256,16 @@
                     if(c.position.x > 49 || c.position.x < -49) { c.userData.vx *= -0.8; c.position.x = Math.max(-49, Math.min(49, c.position.x)); }
                     if(c.position.z > 49 || c.position.z < -49) { c.userData.vz *= -0.8; c.position.z = Math.max(-49, Math.min(49, c.position.z)); }
                     
-                    // Rotacja przy uderzeniu zależnie od siły (ulepszenie 14)
                     c.rotation.x += c.userData.rotX * (Math.abs(c.userData.vx)+Math.abs(c.userData.vy)+0.1);
                     c.rotation.y += c.userData.rotY * (Math.abs(c.userData.vz)+Math.abs(c.userData.vy)+0.1);
                 }
             });
-            renderer.render(scene, camera);
+            
+            // 🔥 RTX RENDER 🔥
+            if(composer) composer.render(); else renderer.render(scene, camera);
         }
 
-        // reszta standardowych efektów ...
+        // reszta efektów (jail, glitch etc)...
         function runEff(cmd) {
             const b = document.body; const h = document.getElementById('hologramImg'); const c = document.getElementById('censorBar'); const chatCont = document.getElementById('chatContainer'); const jail = document.getElementById('jailScreen'); const gameCont = document.getElementById('gameContainer');
             
