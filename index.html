@@ -1155,6 +1155,7 @@
 
     let scene, camera, renderer, composer, gameActive = false;
     let ssaoPass = null, fxaaPass = null;
+    let dirLight = null, sunMesh = null;
     let maxAnisotropy = 1;
     let cubes = [];
     let heldCube = null;
@@ -1270,22 +1271,24 @@
         // 1) Hemisphere ambient — kolor nieba/ziemi
         scene.add(new THREE.HemisphereLight(0xb8d4ff, 0x2a1a0a, 0.4));
 
-        // 2) Słońce — główne kierunkowe, rzuca cienie
-        const dirLight = new THREE.DirectionalLight(0xffe6c8, 1.8);
+        // 2) Słońce — główne kierunkowe, rzuca cienie. Shadow camera podąża za graczem (animate3D).
+        dirLight = new THREE.DirectionalLight(0xffe6c8, 1.8);
         dirLight.position.set(30, 60, 25);
         if (!isMobile) {
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 2048;
             dirLight.shadow.mapSize.height = 2048;
+            // Frustum mały bo podąża za graczem — 50×50 w okolicy gracza.
+            // Sharper teksel/jednostka niż wcześniejsze 100×100.
             dirLight.shadow.camera.near = 1;
-            dirLight.shadow.camera.far = 200;
-            dirLight.shadow.camera.left = -50;
-            dirLight.shadow.camera.right = 50;
-            dirLight.shadow.camera.top = 50;
-            dirLight.shadow.camera.bottom = -50;
+            dirLight.shadow.camera.far = 120;
+            dirLight.shadow.camera.left = -25;
+            dirLight.shadow.camera.right = 25;
+            dirLight.shadow.camera.top = 25;
+            dirLight.shadow.camera.bottom = -25;
             dirLight.shadow.bias = -0.00012;
             dirLight.shadow.normalBias = 0.04;
-            dirLight.shadow.radius = 8;     // miększe PCF (było 4)
+            dirLight.shadow.radius = 8;
             dirLight.shadow.camera.updateProjectionMatrix();
         }
         scene.add(dirLight);
@@ -1295,6 +1298,33 @@
         const fillLight = new THREE.DirectionalLight(0x99bbff, 0.45);
         fillLight.position.set(-25, 25, -20);
         scene.add(fillLight);
+
+        // 4) Widzialne słońce w niebie — sfera + miękki halo. Ten sam kierunek co dirLight,
+        //    żeby cień miał sens kierunkowy. toneMapped:false trzyma sfera białą po ACES.
+        const sunDir = new THREE.Vector3(30, 60, 25).normalize();
+        const sunCoreMat = new THREE.MeshBasicMaterial({
+            color: 0xffeebb, fog: false, toneMapped: false
+        });
+        sunMesh = new THREE.Mesh(new THREE.SphereGeometry(6, 24, 16), sunCoreMat);
+        sunMesh.position.copy(sunDir).multiplyScalar(280);
+        sunMesh.frustumCulled = false;
+        scene.add(sunMesh);
+
+        const haloMat = new THREE.MeshBasicMaterial({
+            color: 0xffeebb, transparent: true, opacity: 0.18,
+            fog: false, toneMapped: false, depthWrite: false,
+            blending: THREE.AdditiveBlending, side: THREE.BackSide
+        });
+        const sunHalo = new THREE.Mesh(new THREE.SphereGeometry(15, 24, 16), haloMat);
+        sunMesh.add(sunHalo);
+
+        const halo2Mat = new THREE.MeshBasicMaterial({
+            color: 0xffd699, transparent: true, opacity: 0.08,
+            fog: false, toneMapped: false, depthWrite: false,
+            blending: THREE.AdditiveBlending, side: THREE.BackSide
+        });
+        const sunHalo2 = new THREE.Mesh(new THREE.SphereGeometry(35, 16, 12), halo2Mat);
+        sunMesh.add(sunHalo2);
 
         // Particles
         const partGeo = new THREE.BufferGeometry();
@@ -1940,6 +1970,22 @@
                 c.rotation.y += c.userData.rotY * (Math.abs(c.userData.vz) + Math.abs(c.userData.vy) + 0.1);
             }
         });
+
+        // ---- Shadow camera follows player ----
+        // Eliminuje glitche cieni na krawędziach świata. Frustum ±25 zostaje wokół gracza.
+        if (dirLight && dirLight.castShadow) {
+            // Target = ground beneath player; light position = target + sun offset
+            dirLight.target.position.set(p.x, 0, p.z);
+            dirLight.position.set(p.x + 30, 60, p.z + 25);
+            dirLight.target.updateMatrixWorld();
+        }
+
+        // Słońce w niebie — translacja XZ za graczem (bez Y), żeby zawsze było w tym samym
+        // wycinku nieba, niezależnie gdzie jest gracz. Far plane camery 1000, więc 280 + offset OK.
+        if (sunMesh) {
+            const sunDir = new THREE.Vector3(30, 60, 25).normalize();
+            sunMesh.position.set(p.x + sunDir.x * 280, sunDir.y * 280, p.z + sunDir.z * 280);
+        }
 
         // ---- Caine powers per-frame updates ----
         updateSpotlight();
