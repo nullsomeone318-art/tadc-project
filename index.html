@@ -1031,8 +1031,8 @@
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.0;
-        renderer.physicallyCorrectLights = true;
+        renderer.toneMappingExposure = 0.85;            // było 1.0 — globalnie ciemniej
+        renderer.physicallyCorrectLights = false;       // intensity są nie-fizyczne, więc wyłączamy
         container.appendChild(renderer.domElement);
 
         // Bloom tylko na desktopie — mobile pada
@@ -1040,42 +1040,55 @@
         composer = new THREE.EffectComposer(renderer);
         composer.addPass(renderScene);
         if (!isMobile) {
+            // (resolution, strength, radius, threshold)
             const bloomPass = new THREE.UnrealBloomPass(
                 new THREE.Vector2(window.innerWidth, window.innerHeight),
-                1.0, 0.4, 0.85
+                0.55, 0.4, 0.9
             );
-            bloomPass.threshold = 0.4;
-            bloomPass.strength = 1.0;
-            bloomPass.radius = 0.7;
+            bloomPass.threshold = 0.9;   // bloomuje tylko prawdziwie jasne piksele (emissive, słońce)
+            bloomPass.strength = 0.55;
+            bloomPass.radius = 0.4;
             composer.addPass(bloomPass);
         }
 
-        // Skybox
+        // Skybox + IBL. envMapIntensity ustawiamy per-material w traverse,
+        // żeby skybox nie świecił sceny z mocą reflektora.
         const textureLoader = new THREE.TextureLoader();
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        pmrem.compileEquirectangularShader();
         textureLoader.load('./images/skybox.jpg', function(texture) {
             texture.encoding = THREE.sRGBEncoding;
             texture.mapping = THREE.EquirectangularReflectionMapping;
             scene.background = texture;
-            scene.environment = texture;
+            // PMREM daje miękkie odbicia na materiałach PBR zamiast surowego skyboxu
+            scene.environment = pmrem.fromEquirectangular(texture).texture;
+            pmrem.dispose();
         });
 
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 2.0));
+        // Jedno światło ambientalne (HemiLight) + jedno kierunkowe (słońce). Bez sumowania.
+        scene.add(new THREE.HemisphereLight(0xb8d4ff, 0x2a1a0a, 0.45));
 
-        const dirLight = new THREE.DirectionalLight(0xffeedd, 3.0);
-        dirLight.position.set(15, 30, 15);
+        const dirLight = new THREE.DirectionalLight(0xffe6c8, 1.6);
+        dirLight.position.set(30, 60, 25); // wyżej + bardziej z boku — czytelniejsze cienie
         if (!isMobile) {
             dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 2048;  // było 4096 — zabijało GPU
+            dirLight.shadow.mapSize.width = 2048;
             dirLight.shadow.mapSize.height = 2048;
-            dirLight.shadow.camera.near = 0.5;
-            dirLight.shadow.camera.far = 100;
-            dirLight.shadow.camera.left = -30;
-            dirLight.shadow.camera.right = 30;
-            dirLight.shadow.camera.top = 30;
-            dirLight.shadow.camera.bottom = -30;
-            dirLight.shadow.bias = -0.0005;
+            // Frustum musi zmieścić cały świat (model skalowany do ~40 jednostek)
+            dirLight.shadow.camera.near = 1;
+            dirLight.shadow.camera.far = 200;
+            dirLight.shadow.camera.left = -50;
+            dirLight.shadow.camera.right = 50;
+            dirLight.shadow.camera.top = 50;
+            dirLight.shadow.camera.bottom = -50;
+            // bias: peter-panning vs acne. normalBias robi większość roboty — zostawiamy mały bias.
+            dirLight.shadow.bias = -0.00015;
+            dirLight.shadow.normalBias = 0.04;
+            dirLight.shadow.radius = 4;     // miękkie krawędzie PCFSoft
+            dirLight.shadow.camera.updateProjectionMatrix();
         }
         scene.add(dirLight);
+        scene.add(dirLight.target); // target w (0,0,0) — światło faktycznie celuje w środek
 
         // Particles
         const partGeo = new THREE.BufferGeometry();
@@ -1092,7 +1105,14 @@
 
         // Współdzielona geometria/materiał dla cubes (oszczędność)
         cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-        cubeMaterial = new THREE.MeshStandardMaterial({ color: 0x00f2ff, roughness: 0.3 });
+        cubeMaterial = new THREE.MeshStandardMaterial({
+            color: 0x00f2ff,
+            roughness: 0.35,
+            metalness: 0.1,
+            envMapIntensity: 0.6,
+            emissive: 0x002233,        // lekka poświata cyjan, żeby bloom je łapał
+            emissiveIntensity: 0.4
+        });
 
         raycaster = new THREE.Raycaster();
         mouse = new THREE.Vector2(0, 0);
@@ -1351,9 +1371,13 @@
                         node.receiveShadow = !isMobile;
                         node.frustumCulled = false;
                         if (node.material) {
-                            if (node.material.transparent) {
-                                node.material.transparent = false;
+                            // Tylko jeśli MASK alphaMode (zwykle binarna alfa), tnij — nie wyłączaj transparent globalnie
+                            if (node.material.transparent && node.material.alphaTest === 0) {
+                                // Zachowujemy oryginalny tryb, ale dodajemy alphaTest żeby cienie cutout działały
                                 node.material.alphaTest = 0.5;
+                            }
+                            if ('envMapIntensity' in node.material) {
+                                node.material.envMapIntensity = 0.5; // skybox nie świeci avatara jak reflektor
                             }
                             node.material.needsUpdate = true;
                         }
@@ -1462,9 +1486,11 @@
                         node.receiveShadow = !isMobile;
                         node.frustumCulled = false;
                         if (node.material) {
-                            if (node.material.transparent) {
-                                node.material.transparent = false;
+                            if (node.material.transparent && node.material.alphaTest === 0) {
                                 node.material.alphaTest = 0.5;
+                            }
+                            if ('envMapIntensity' in node.material) {
+                                node.material.envMapIntensity = 0.6;
                             }
                             node.material.needsUpdate = true;
                         }
