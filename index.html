@@ -241,6 +241,83 @@
         }
         #eyesVignette.active { opacity: 1; }
 
+        /* ========== BUBBLE AI COMPANION ========== */
+
+        /* Dymek mowy Bubble — śledzi pozycję 3D Bubble'a */
+        #bubbleSpeech {
+            position: fixed; pointer-events: none; z-index: 5800;
+            display: none;
+            background: rgba(255, 255, 255, 0.97);
+            color: #000; font-family: 'Courier New', monospace; font-weight: bold;
+            font-size: 14px; line-height: 1.3;
+            padding: 10px 14px; border-radius: 18px;
+            border: 3px solid #ff66cc;
+            box-shadow: 0 0 25px rgba(255,102,204,0.6), 0 4px 8px rgba(0,0,0,0.4);
+            max-width: 280px; min-width: 60px;
+            transform: translate(-50%, -100%);
+            animation: bubbleSpeakIn 0.25s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        #bubbleSpeech::after {
+            content: ''; position: absolute; bottom: -10px; left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 12px solid #ff66cc;
+        }
+        #bubbleSpeech.thinking::before {
+            content: '...'; display: inline-block;
+            animation: bubbleThinkDots 1s infinite;
+        }
+        @keyframes bubbleSpeakIn {
+            from { opacity: 0; transform: translate(-50%, -80%) scale(0.3); }
+            to   { opacity: 1; transform: translate(-50%, -100%) scale(1.0); }
+        }
+        @keyframes bubbleThinkDots {
+            0%, 20%   { content: '.'; }
+            40%       { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* Bubble settings modal */
+        #bubbleConfigModal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 9000; background: rgba(0,0,0,0.85);
+            display: none; justify-content: center; align-items: center;
+            padding: 20px; box-sizing: border-box;
+        }
+        #bubbleConfigModal.active { display: flex; }
+        #bubbleConfigModal .panel {
+            background: rgba(10, 10, 15, 0.98); border: 2px solid #ff66cc;
+            border-radius: 12px; padding: 25px; width: 100%; max-width: 480px;
+            max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 0 40px rgba(255,102,204,0.4);
+            font-family: 'Courier New', monospace;
+        }
+        #bubbleConfigModal h2 { color: #ff66cc; margin: 0 0 15px 0; font-size: 20px; letter-spacing: 2px;}
+        #bubbleConfigModal label { display: block; color: #00f2ff; margin-top: 12px; margin-bottom: 4px; font-size: 12px; font-weight: bold; }
+        #bubbleConfigModal select, #bubbleConfigModal input, #bubbleConfigModal textarea {
+            width: 100%; padding: 10px; box-sizing: border-box;
+            background: #000; border: 2px solid #00f2ff; color: #00f2ff;
+            font-family: 'Courier New', monospace; font-size: 13px;
+            border-radius: 4px; margin: 0;
+        }
+        #bubbleConfigModal textarea { min-height: 100px; resize: vertical; }
+        #bubbleConfigModal .btn-row { display: flex; gap: 10px; margin-top: 18px; }
+        #bubbleConfigModal .btn-row button { flex: 1; }
+        #bubbleConfigModal .preset-row { display: flex; gap: 5px; margin: 8px 0; flex-wrap: wrap; }
+        #bubbleConfigModal .preset-row button {
+            flex: 1; min-width: 100px; padding: 8px; font-size: 11px;
+            background: #00f2ff; color: #000; border-bottom: 3px solid #0088cc;
+        }
+        #bubbleConfigStatus {
+            margin-top: 10px; padding: 8px; border-radius: 4px;
+            font-size: 12px; text-align: center; display: none;
+        }
+        #bubbleConfigStatus.ok { background: rgba(0,255,0,0.15); color: #00ff88; display: block; }
+        #bubbleConfigStatus.err { background: rgba(255,0,68,0.2); color: #ff66aa; display: block; }
+        #bubbleConfigStatus.info { background: rgba(0,242,255,0.15); color: #00f2ff; display: block; }
+
         /* Applause emoji */
         @keyframes clapFloat {
             0%   { transform: translateY(0) rotate(0deg) scale(0.5); opacity: 1; }
@@ -309,6 +386,50 @@
     <div id="censorBar"><span>CENZURA</span></div>
     <div id="floorLavaOverlay"></div>
     <div id="eyesVignette"></div>
+
+    <div id="bubbleSpeech"><span id="bubbleSpeechText"></span></div>
+
+    <div id="bubbleConfigModal">
+        <div class="panel">
+            <h2>🫧 KONFIGURACJA BUBBLE AI</h2>
+
+            <label>Dostawca API</label>
+            <select id="bubbleProvider">
+                <option value="openai">OpenAI-compatible (Ollama, OpenRouter, OpenAI)</option>
+                <option value="anthropic">Anthropic (bezpośrednio)</option>
+            </select>
+
+            <label>Szybkie presety</label>
+            <div class="preset-row">
+                <button id="presetOllama">Ollama lokalny</button>
+                <button id="presetOpenRouter">OpenRouter</button>
+                <button id="presetAnthropic">Anthropic</button>
+            </div>
+
+            <label>Endpoint URL</label>
+            <input type="text" id="bubbleEndpoint" placeholder="http://localhost:11434/v1/chat/completions">
+
+            <label>Klucz API (puste dla lokalnego)</label>
+            <input type="password" id="bubbleApiKey" placeholder="sk-...">
+
+            <label>Model</label>
+            <input type="text" id="bubbleModel" placeholder="qwen2.5:7b">
+
+            <label>Prompt systemowy (osobowość Bubble)</label>
+            <textarea id="bubbleSystemPrompt"></textarea>
+
+            <label>Self-thinking — interwał (sekundy, 0 = wyłącz)</label>
+            <input type="number" id="bubbleThinkInterval" min="0" value="120">
+
+            <div id="bubbleConfigStatus"></div>
+
+            <div class="btn-row">
+                <button id="bubbleConfigTest">TEST</button>
+                <button id="bubbleConfigSave">ZAPISZ</button>
+                <button id="bubbleConfigCancel" style="background: #333; border-bottom: 3px solid #111;">ANULUJ</button>
+            </div>
+        </div>
+    </div>
 
     <div id="step-1" class="box">
         <h1>CYFROWY CYRK</h1>
@@ -594,6 +715,30 @@
                 } else if (d.type === "throw" && d.nick !== user && gameActive) {
                     const c = cubes.find(function(cube) { return cube.userData.id === d.id; });
                     if (c) { c.userData.vx = d.vx; c.userData.vy = d.vy; c.userData.vz = d.vz; }
+                } else if (d.type === "bubble_query") {
+                    // Każdy klient próbuje odpowiedzieć — pierwszy kto ma config wygrywa.
+                    // Cooldown w handleBubbleQuery zapobiega duplikatom z tego samego klienta.
+                    handleBubbleQuery(String(d.text || ''), d.nick);
+                } else if (d.type === "bubble_reply" && d.nick !== user) {
+                    // Inny klient odpowiedział jako Bubble — pokaż w naszym czacie + dymek
+                    const txt = String(d.text || '');
+                    if (txt && bubbleState.active) {
+                        const el = $('bubbleSpeech');
+                        const span = $('bubbleSpeechText');
+                        span.textContent = txt;
+                        el.classList.remove('thinking');
+                        el.style.display = 'block';
+                        bubbleState.speechHideAt = Date.now() + Math.max(4000, txt.length * 60);
+                    }
+                    if (txt) {
+                        appendChat(
+                            '<div class="msg-wrapper">' +
+                            '<img src="./images/bubble.jpg" class="avatar-img" style="border-color:#ff66cc; box-shadow: 0 0 8px #ff66cc;">' +
+                            '<div class="msg" style="border-left:3px solid #ff66cc; background:rgba(255,102,204,0.15);">' +
+                            '<span class="nick" style="color:#ff66cc;">🫧 BUBBLE:</span> ' +
+                            '<span class="text">' + escapeHTML(txt) + '</span></div></div>'
+                        );
+                    }
                 }
             } catch (e) {}
         };
@@ -816,6 +961,18 @@
         const text = input.value.trim();
         if (!text) return;
         if (text.startsWith('/')) { procCmd(text); input.value = ""; return; }
+
+        // @bubble TEKST → zapytanie do Bubble (broadcast, każdy klient z konfiguracją odpowie)
+        const bubbleMatch = text.match(/^@bubble\s+(.+)$/i);
+        if (bubbleMatch) {
+            const q = bubbleMatch[1].slice(0, 500);
+            // Pokaż własne zapytanie w czacie żeby inni widzieli kontekst
+            sendData({ type: "chat", nick: user, text: '@bubble ' + q, color: userColor, admin: isAdmin, avatar: userAvatar });
+            sendData({ type: "bubble_query", text: q, nick: user });
+            input.value = "";
+            return;
+        }
+
         sendData({ type: "chat", nick: user, text: text.slice(0, 500), color: userColor, admin: isAdmin, avatar: userAvatar });
         input.value = "";
     }
@@ -852,13 +1009,15 @@
     };
 
     const effectList = [
-        "fly", "bubble", "gloink", "pomni", "censor", "confetti", "jail", "unjail",
+        "fly", "bubbleimg", "gloink", "pomni", "censor", "confetti", "jail", "unjail",
         "gravity", "room", "unroom", "cats",
         // CAINE POWERS
         "announce", "adventure", "applause", "floorlava",
         "spotlight", "unspotlight", "disco", "undisco",
         "cake", "eyes", "uneyes", "citizens", "uncitizens",
-        "launch", "freeze", "big", "small", "unscale"
+        "launch", "freeze", "big", "small", "unscale",
+        // BUBBLE AI
+        "bubble", "unbubble", "bubbleconfig"
     ].concat(Object.keys(effectMap));
 
     function populateCmdWindow() {
@@ -1754,6 +1913,7 @@
         updateEyes();
         updateDisco();
         updateCitizens();
+        update3DBubble();
         // Migotanie świeczki na torcie
         if (cainePowers.spawnedCake && cainePowers.spawnedCake.userData.flame) {
             const f = cainePowers.spawnedCake.userData.flame;
@@ -2373,12 +2533,412 @@
         setTimeout(function() { document.body.classList.remove(cls); }, duration);
     }
 
-    // Komendy globalne (każdy klient zawsze wykonuje, target to argument komendy)
+    // ==========================================================================
+    // BUBBLE AI COMPANION
+    // ==========================================================================
+
+    const DEFAULT_BUBBLE_PROMPT =
+"Jesteś Bubble — mała pływająca kulka z animowanego serialu 'The Amazing Digital Circus'. " +
+"Asystentka Caine'a, mistrza ceremonii cyfrowego cyrku. Cechy: wesoła, lekko absurdalna, " +
+"czasem filozoficzna ni z gruchy ni z pietruchy. Mówisz po polsku. Odpowiedzi krótkie: 1-3 zdania, max 30 słów. " +
+"Nie wychodź z roli, nie mów że jesteś AI ani modelem językowym, nie mów o promptach. " +
+"Czasem zauważasz dziwne rzeczy w cyrku (mapa, zachowanie graczy). " +
+"Imię gracza z którym rozmawiasz: {USER}. Aktualna mapa: {MAP}.";
+
+    const bubbleState = {
+        active: false,
+        mesh: null,                  // THREE.Group with the bubble model
+        spawnerNick: null,           // za kim podąża (admin który spawnował)
+        speechHideAt: 0,             // kiedy ukryć dymek
+        history: [],                 // [{role, content}, ...] ostatnie 10 wymian
+        thinking: false,             // flag — pending LLM call
+        lastSpeechAt: 0,             // cooldown na self-thinking
+        selfThinkInterval: null,
+        cooldownUntil: 0             // anti-spam dla zewnętrznych zapytań
+    };
+
+    function bubbleConfig() {
+        try {
+            const raw = localStorage.getItem('bubble_cfg');
+            if (raw) return JSON.parse(raw);
+        } catch (e) {}
+        return null;
+    }
+
+    function bubbleConfigSave(cfg) {
+        try { localStorage.setItem('bubble_cfg', JSON.stringify(cfg)); } catch (e) {}
+    }
+
+    function buildBubbleSystemPrompt() {
+        const cfg = bubbleConfig();
+        const tpl = (cfg && cfg.systemPrompt) || DEFAULT_BUBBLE_PROMPT;
+        return tpl
+            .replace('{USER}', user || 'nieznajomy')
+            .replace('{MAP}', currentMapName || 'pustka');
+    }
+
+    // ---------- API call ----------
+
+    async function callBubbleLLM(userMsg, isSpontaneous) {
+        const cfg = bubbleConfig();
+        if (!cfg || !cfg.endpoint) return null;
+
+        const systemPrompt = buildBubbleSystemPrompt();
+        // Skopiuj historię, dodaj user msg
+        const history = bubbleState.history.slice(-10);
+        const userContent = isSpontaneous
+            ? "(myśl spontaniczna — krótki komentarz lub obserwacja, max 1 zdanie)"
+            : userMsg;
+
+        try {
+            let url, headers, body;
+
+            if (cfg.provider === 'anthropic') {
+                url = cfg.endpoint;
+                headers = {
+                    'Content-Type': 'application/json',
+                    'x-api-key': cfg.apiKey || '',
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                };
+                body = JSON.stringify({
+                    model: cfg.model || 'claude-haiku-4-5',
+                    max_tokens: 200,
+                    system: systemPrompt,
+                    messages: history.concat([{ role: 'user', content: userContent }])
+                });
+            } else {
+                // OpenAI-compatible
+                url = cfg.endpoint;
+                headers = { 'Content-Type': 'application/json' };
+                if (cfg.apiKey) headers['Authorization'] = 'Bearer ' + cfg.apiKey;
+                body = JSON.stringify({
+                    model: cfg.model || 'qwen2.5:7b',
+                    max_tokens: 200,
+                    temperature: 0.9,
+                    messages: [{ role: 'system', content: systemPrompt }]
+                        .concat(history)
+                        .concat([{ role: 'user', content: userContent }])
+                });
+            }
+
+            const resp = await fetch(url, { method: 'POST', headers: headers, body: body });
+            if (!resp.ok) {
+                const txt = await resp.text();
+                console.warn('Bubble LLM error', resp.status, txt);
+                return null;
+            }
+            const data = await resp.json();
+
+            let reply = null;
+            if (cfg.provider === 'anthropic') {
+                if (data.content && data.content[0] && data.content[0].text) reply = data.content[0].text;
+            } else {
+                if (data.choices && data.choices[0] && data.choices[0].message) reply = data.choices[0].message.content;
+            }
+            if (!reply) return null;
+
+            // Update history
+            bubbleState.history.push({ role: 'user', content: userContent });
+            bubbleState.history.push({ role: 'assistant', content: reply });
+            // trim
+            while (bubbleState.history.length > 20) bubbleState.history.shift();
+
+            return reply.trim();
+        } catch (e) {
+            console.warn('Bubble fetch failed', e);
+            return null;
+        }
+    }
+
+    // ---------- 3D model ----------
+
+    function spawn3DBubble(spawnerNick) {
+        if (!gameActive || !scene) return;
+        despawn3DBubble();
+        bubbleState.spawnerNick = spawnerNick || user;
+        bubbleState.active = true;
+
+        const loader = new THREE.GLTFLoader();
+        loader.load('./models/bubble.glb', function(gltf) {
+            const m = gltf.scene;
+            // normalizuj rozmiar do ~0.8 jednostek
+            const box = new THREE.Box3().setFromObject(m);
+            const sz = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(sz.x, sz.y, sz.z);
+            if (maxDim > 0 && isFinite(maxDim)) m.scale.setScalar(0.8 / maxDim);
+            m.traverse(function(node) {
+                if (node.isMesh) {
+                    node.castShadow = !isMobile;
+                    node.receiveShadow = !isMobile;
+                    node.frustumCulled = false;
+                    if (node.material && 'envMapIntensity' in node.material) {
+                        node.material.envMapIntensity = 0.7;
+                    }
+                }
+            });
+            // mixer dla animacji jeśli model ma
+            if (gltf.animations && gltf.animations.length > 0) {
+                m.userData.mixer = new THREE.AnimationMixer(m);
+                m.userData.mixer.clipAction(gltf.animations[0]).play();
+            }
+            bubbleState.mesh = m;
+            scene.add(m);
+        }, undefined, function() {
+            // Fallback: różowa półprzezroczysta sfera
+            const fallback = new THREE.Group();
+            const mat = new THREE.MeshPhysicalMaterial({
+                color: 0xff66cc, roughness: 0.1, metalness: 0.0,
+                clearcoat: 1.0, transmission: 0.5, thickness: 0.5,
+                emissive: 0xff0066, emissiveIntensity: 0.2
+            });
+            const ball = new THREE.Mesh(new THREE.SphereGeometry(0.4, 32, 24), mat);
+            ball.castShadow = !isMobile;
+            fallback.add(ball);
+            bubbleState.mesh = fallback;
+            scene.add(fallback);
+        });
+
+        // Self-thinking timer (jeśli skonfigurowany)
+        startBubbleSelfThinking();
+    }
+
+    function despawn3DBubble() {
+        bubbleState.active = false;
+        bubbleState.spawnerNick = null;
+        bubbleState.thinking = false;
+        if (bubbleState.mesh) {
+            scene.remove(bubbleState.mesh);
+            disposeObject3D(bubbleState.mesh);
+            bubbleState.mesh = null;
+        }
+        $('bubbleSpeech').style.display = 'none';
+        if (bubbleState.selfThinkInterval) {
+            clearInterval(bubbleState.selfThinkInterval);
+            bubbleState.selfThinkInterval = null;
+        }
+    }
+
+    function update3DBubble() {
+        if (!bubbleState.active || !bubbleState.mesh) return;
+
+        // Znajdź mesh spawnera (kogo śledzimy)
+        let targetMesh = findPlayerMeshByNick(bubbleState.spawnerNick);
+        const tx = targetMesh ? targetMesh.position.x : p.x;
+        const ty = targetMesh ? targetMesh.position.y : p.y - 1;
+        const tz = targetMesh ? targetMesh.position.z : p.z;
+
+        // Pożądana pozycja: nad-prawe ramię gracza
+        const desired = new THREE.Vector3(
+            tx + Math.sin(yaw) * 0.6 + Math.cos(yaw) * 1.0,
+            ty + 2.2 + Math.sin(Date.now() * 0.003) * 0.15,
+            tz + Math.cos(yaw) * 0.6 - Math.sin(yaw) * 1.0
+        );
+        bubbleState.mesh.position.lerp(desired, 0.06);
+        bubbleState.mesh.rotation.y += 0.01;
+
+        // Mixer animacji
+        if (bubbleState.mesh.userData.mixer) {
+            bubbleState.mesh.userData.mixer.update(0.016);
+        }
+
+        // Aktualizacja pozycji dymka mowy
+        const speechEl = $('bubbleSpeech');
+        if (speechEl.style.display !== 'none' && Date.now() < bubbleState.speechHideAt) {
+            const v = bubbleState.mesh.position.clone();
+            v.y += 0.6;
+            v.project(camera);
+            if (v.z < 1) {
+                const sx = (v.x * 0.5 + 0.5) * window.innerWidth;
+                const sy = (-v.y * 0.5 + 0.5) * window.innerHeight;
+                speechEl.style.left = sx + 'px';
+                speechEl.style.top = sy + 'px';
+                speechEl.style.visibility = 'visible';
+            } else {
+                speechEl.style.visibility = 'hidden';
+            }
+        } else if (speechEl.style.display !== 'none' && Date.now() >= bubbleState.speechHideAt) {
+            speechEl.style.display = 'none';
+        }
+    }
+
+    function bubbleSpeak(text, durationMs) {
+        if (!bubbleState.active) return;
+        const el = $('bubbleSpeech');
+        const txt = $('bubbleSpeechText');
+        txt.textContent = text;
+        el.classList.remove('thinking');
+        el.style.display = 'block';
+        bubbleState.speechHideAt = Date.now() + (durationMs || Math.max(4000, text.length * 60));
+        bubbleState.lastSpeechAt = Date.now();
+
+        // Pokaż też w czacie z avatarem Bubble
+        const safeText = escapeHTML(text);
+        appendChat(
+            '<div class="msg-wrapper">' +
+            '<img src="./images/bubble.jpg" class="avatar-img" style="border-color:#ff66cc; box-shadow: 0 0 8px #ff66cc;">' +
+            '<div class="msg" style="border-left:3px solid #ff66cc; background:rgba(255,102,204,0.15);">' +
+            '<span class="nick" style="color:#ff66cc;">🫧 BUBBLE:</span> ' +
+            '<span class="text">' + safeText + '</span></div></div>'
+        );
+    }
+
+    function bubbleShowThinking() {
+        if (!bubbleState.active) return;
+        const el = $('bubbleSpeech');
+        const txt = $('bubbleSpeechText');
+        txt.textContent = '';
+        el.classList.add('thinking');
+        el.style.display = 'block';
+        bubbleState.speechHideAt = Date.now() + 30000;
+    }
+
+    // ---------- Conversation handlers ----------
+
+    async function handleBubbleQuery(text, fromNick) {
+        if (!bubbleState.active) return;
+        if (Date.now() < bubbleState.cooldownUntil) return; // anti-spam
+        bubbleState.cooldownUntil = Date.now() + 3000;
+
+        const cfg = bubbleConfig();
+        if (!cfg || !cfg.endpoint) return; // brak konfiguracji — milcz
+
+        if (bubbleState.thinking) return; // już odpowiada
+        bubbleState.thinking = true;
+        bubbleShowThinking();
+
+        const promptText = (fromNick && fromNick !== user)
+            ? "[" + fromNick + "]: " + text
+            : text;
+
+        const reply = await callBubbleLLM(promptText, false);
+        bubbleState.thinking = false;
+
+        if (reply) {
+            bubbleSpeak(reply);
+            // broadcast tak żeby inni klienci też zobaczyli odpowiedź w czacie
+            sendData({ type: "bubble_reply", text: reply });
+        } else {
+            $('bubbleSpeech').style.display = 'none';
+        }
+    }
+
+    function startBubbleSelfThinking() {
+        if (bubbleState.selfThinkInterval) {
+            clearInterval(bubbleState.selfThinkInterval);
+            bubbleState.selfThinkInterval = null;
+        }
+        const cfg = bubbleConfig();
+        if (!cfg || !cfg.endpoint) return;
+        const intervalSec = parseInt(cfg.thinkInterval, 10);
+        if (!intervalSec || intervalSec <= 0) return;
+
+        bubbleState.selfThinkInterval = setInterval(async function() {
+            if (!bubbleState.active || bubbleState.thinking) return;
+            // tylko spawner generuje (uniknięcie duplikatów)
+            if (bubbleState.spawnerNick !== user) return;
+            // cooldown — nie częściej niż interwał od ostatniej mowy
+            if (Date.now() - bubbleState.lastSpeechAt < intervalSec * 1000) return;
+            // 70% szans w danym ticku (mniej deterministyczne)
+            if (Math.random() < 0.3) return;
+
+            bubbleState.thinking = true;
+            bubbleShowThinking();
+            const reply = await callBubbleLLM('', true);
+            bubbleState.thinking = false;
+            if (reply) {
+                bubbleSpeak(reply);
+                sendData({ type: "bubble_reply", text: reply });
+            } else {
+                $('bubbleSpeech').style.display = 'none';
+            }
+        }, Math.max(15000, intervalSec * 1000));
+    }
+
+    // ---------- Settings modal ----------
+
+    function openBubbleConfig() {
+        const cfg = bubbleConfig() || {};
+        $('bubbleProvider').value = cfg.provider || 'openai';
+        $('bubbleEndpoint').value = cfg.endpoint || 'http://localhost:11434/v1/chat/completions';
+        $('bubbleApiKey').value = cfg.apiKey || '';
+        $('bubbleModel').value = cfg.model || 'qwen2.5:7b';
+        $('bubbleSystemPrompt').value = cfg.systemPrompt || DEFAULT_BUBBLE_PROMPT;
+        $('bubbleThinkInterval').value = (cfg.thinkInterval != null) ? cfg.thinkInterval : 120;
+        $('bubbleConfigStatus').className = '';
+        $('bubbleConfigStatus').style.display = 'none';
+        $('bubbleConfigModal').classList.add('active');
+    }
+    function closeBubbleConfig() { $('bubbleConfigModal').classList.remove('active'); }
+
+    function bubbleConfigShowStatus(text, kind) {
+        const el = $('bubbleConfigStatus');
+        el.className = kind || '';
+        el.textContent = text;
+        el.style.display = 'block';
+    }
+
+    // Presety
+    $('presetOllama').addEventListener('click', function() {
+        $('bubbleProvider').value = 'openai';
+        $('bubbleEndpoint').value = 'http://localhost:11434/v1/chat/completions';
+        $('bubbleApiKey').value = '';
+        $('bubbleModel').value = 'qwen2.5:7b';
+    });
+    $('presetOpenRouter').addEventListener('click', function() {
+        $('bubbleProvider').value = 'openai';
+        $('bubbleEndpoint').value = 'https://openrouter.ai/api/v1/chat/completions';
+        $('bubbleModel').value = 'anthropic/claude-haiku-4.5';
+    });
+    $('presetAnthropic').addEventListener('click', function() {
+        $('bubbleProvider').value = 'anthropic';
+        $('bubbleEndpoint').value = 'https://api.anthropic.com/v1/messages';
+        $('bubbleModel').value = 'claude-haiku-4-5';
+    });
+
+    $('bubbleConfigCancel').addEventListener('click', closeBubbleConfig);
+
+    $('bubbleConfigSave').addEventListener('click', function() {
+        const cfg = {
+            provider: $('bubbleProvider').value,
+            endpoint: $('bubbleEndpoint').value.trim(),
+            apiKey: $('bubbleApiKey').value.trim(),
+            model: $('bubbleModel').value.trim(),
+            systemPrompt: $('bubbleSystemPrompt').value,
+            thinkInterval: parseInt($('bubbleThinkInterval').value, 10) || 0
+        };
+        if (!cfg.endpoint) { bubbleConfigShowStatus('Endpoint wymagany.', 'err'); return; }
+        bubbleConfigSave(cfg);
+        bubbleConfigShowStatus('Zapisano. Restart self-thinking.', 'ok');
+        if (bubbleState.active) startBubbleSelfThinking();
+        setTimeout(closeBubbleConfig, 1000);
+    });
+
+    $('bubbleConfigTest').addEventListener('click', async function() {
+        const cfg = {
+            provider: $('bubbleProvider').value,
+            endpoint: $('bubbleEndpoint').value.trim(),
+            apiKey: $('bubbleApiKey').value.trim(),
+            model: $('bubbleModel').value.trim(),
+            systemPrompt: $('bubbleSystemPrompt').value,
+            thinkInterval: 0
+        };
+        bubbleConfigSave(cfg);
+        bubbleConfigShowStatus('Testuję połączenie...', 'info');
+        // Tymczasowo wyczyść historię, zrób testowy strzał
+        const oldHistory = bubbleState.history;
+        bubbleState.history = [];
+        const reply = await callBubbleLLM('Powiedz krótko cześć.', false);
+        bubbleState.history = oldHistory;
+        if (reply) bubbleConfigShowStatus('OK: "' + reply.slice(0, 80) + '"', 'ok');
+        else bubbleConfigShowStatus('Błąd: brak odpowiedzi (sprawdź konsolę).', 'err');
+    });
     const GLOBAL_COMMANDS = {
         announce: 1, adventure: 1, applause: 1, floorlava: 1,
         spotlight: 1, unspotlight: 1, disco: 1, undisco: 1,
         cake: 1, eyes: 1, uneyes: 1, citizens: 1, uncitizens: 1,
-        launch: 1, freeze: 1, big: 1, small: 1, unscale: 1
+        launch: 1, freeze: 1, big: 1, small: 1, unscale: 1,
+        bubble: 1, unbubble: 1, bubbleconfig: 1
     };
 
     function runEff(cmd, target) {
@@ -2418,6 +2978,13 @@
                 return;
             case 'eyes':       spawnEyes(targetUpper, 20000); return;
             case 'uneyes':     despawnEyes(); return;
+            case 'bubble':
+                spawn3DBubble(targetUpper && targetUpper !== 'ALL' ? targetUpper : (typeof target === 'string' ? target : null) || user);
+                return;
+            case 'unbubble':   despawn3DBubble(); return;
+            case 'bubbleconfig':
+                if (meIsTarget) openBubbleConfig();
+                return;
             case 'citizens':   spawnCitizens(8); return;
             case 'uncitizens': clearCitizens(); return;
             case 'launch':     applyLaunch(targetUpper); return;
@@ -2435,7 +3002,7 @@
             return;
         }
 
-        if (cmd === "bubble") { h.src = './images/bubble.jpg'; h.classList.add('active'); setTimeout(function() { h.classList.remove('active'); }, 3000); }
+        if (cmd === "bubbleimg") { h.src = './images/bubble.jpg'; h.classList.add('active'); setTimeout(function() { h.classList.remove('active'); }, 3000); }
         else if (cmd === "pomni") { h.src = './images/pomni.jpg'; h.classList.add('active'); setTimeout(function() { h.classList.remove('active'); }, 3000); }
         else if (cmd === "gloink") { createFallingEntities("gloink"); }
         else if (cmd === "confetti") { createFallingEntities("confetti"); }
