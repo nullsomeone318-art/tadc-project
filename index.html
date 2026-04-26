@@ -53,11 +53,6 @@
         .progress-bar-container { width: 100%; height: 20px; border: 2px solid #00f2ff; margin-top: 20px; background: #111; overflow: hidden; border-radius: 5px;}
         .progress-fill { height: 100%; width: 0%; background: repeating-linear-gradient(45deg, #00f2ff, #00f2ff 10px, #0099ff 10px, #0099ff 20px); transition: width 0.2s; }
 
-        #cutsceneContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background: #000; display: flex; justify-content: center; align-items: center; }
-        .skip-btn { position: absolute; bottom: 20px; right: 20px; z-index: 10000; background: rgba(0, 0, 0, 0.8); color: #fff; border: 2px solid #00f2ff; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; font-size: 14px; transition: 0.2s;}
-        .skip-btn:hover { background: #00f2ff; color: #000; }
-        #cutsceneText { position: absolute; color: #f9e11e; font-size: 18px; font-weight: bold; animation: textBlink 1s infinite; z-index: 10000; pointer-events: none;}
-
         #dashboard { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 60; display: flex; flex-direction: column; transition: 0.5s;}
         #caineTerminal { background: rgba(255, 0, 68, 0.95); padding: 10px; display: flex; gap: 5px; justify-content: center; border-bottom: 2px solid #fff; flex-shrink: 0; animation: breatheGlow 3s infinite ease-in-out; z-index: 10;}
         #caineTerminal input { margin: 0; background: #000; border: 1px solid #fff; color: #fff; width: 70%; padding: 8px;}
@@ -261,11 +256,6 @@
 <body onselectstart="return false;">
 
     <div class="scanlines"></div>
-
-    <div id="cutsceneContainer" class="hidden">
-        <span id="cutsceneText">🎬 ŁADOWANIE KINOWEGO WPROWADZENIA...</span>
-        <button class="skip-btn" id="cutsceneSkipBtn">POMIŃ >></button>
-    </div>
 
     <div id="gameContainer">
         <div id="crosshair"></div>
@@ -764,102 +754,11 @@
             if (pr >= 100) {
                 clearInterval(interval);
                 $('step-2').classList.add('hidden');
-                playCutscene();
+                $('dashboard').classList.remove('hidden');
+                $('usersBtn').classList.remove('hidden');
+                if (isAdmin) $('caineTerminal').classList.remove('hidden');
             }
         }, 60);
-    }
-
-    // ---------- Cutscene ----------
-
-    let cutsceneMixer = null;
-    let cutsceneClock = null;
-    let cutsceneReqId = null;
-    let cutsceneRenderer = null;
-    let cutsceneEnded = false;
-
-    $('cutsceneSkipBtn').addEventListener('click', endCutscene);
-
-    function playCutscene() {
-        const container = $('cutsceneContainer');
-        container.classList.remove('hidden');
-        cutsceneEnded = false;
-
-        const csScene = new THREE.Scene();
-        csScene.background = new THREE.Color(0x050505);
-        csScene.fog = new THREE.FogExp2(0x050505, 0.05);
-
-        const csCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        csCamera.position.set(0, 2, 6);
-
-        cutsceneRenderer = new THREE.WebGLRenderer({ antialias: true });
-        cutsceneRenderer.setSize(window.innerWidth, window.innerHeight);
-        cutsceneRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-        container.appendChild(cutsceneRenderer.domElement);
-
-        csScene.add(new THREE.AmbientLight(0xffffff, 0.6));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        dirLight.position.set(5, 10, 5);
-        csScene.add(dirLight);
-
-        cutsceneClock = new THREE.Clock();
-
-        const loader = new THREE.GLTFLoader();
-        loader.load('./models/cutscene1.gltf', function(gltf) {
-            $('cutsceneText').style.display = 'none';
-            const model = gltf.scene;
-            const box = new THREE.Box3().setFromObject(model);
-            const size = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z);
-            if (maxDim > 0 && isFinite(maxDim)) {
-                const scale = 6 / maxDim;
-                model.scale.set(scale, scale, scale);
-            }
-            const center = box.getCenter(new THREE.Vector3());
-            model.position.set(-center.x, -center.y, -center.z);
-            csScene.add(model);
-
-            if (gltf.animations && gltf.animations.length > 0) {
-                cutsceneMixer = new THREE.AnimationMixer(model);
-                gltf.animations.forEach(function(clip) { cutsceneMixer.clipAction(clip).play(); });
-            }
-
-            function animateCutscene() {
-                if (cutsceneEnded) return;
-                cutsceneReqId = requestAnimationFrame(animateCutscene);
-                const delta = cutsceneClock.getDelta();
-                if (cutsceneMixer) cutsceneMixer.update(delta);
-                else csScene.rotation.y += 0.005;
-                cutsceneRenderer.render(csScene, csCamera);
-            }
-            animateCutscene();
-
-            setTimeout(endCutscene, 12000);
-        }, undefined, function() {
-            endCutscene();
-        });
-    }
-
-    function endCutscene() {
-        if (cutsceneEnded) return;
-        cutsceneEnded = true;
-        if (cutsceneReqId) cancelAnimationFrame(cutsceneReqId);
-        cutsceneReqId = null;
-
-        const container = $('cutsceneContainer');
-        container.classList.add('hidden');
-        if (cutsceneRenderer) {
-            try {
-                container.removeChild(cutsceneRenderer.domElement);
-                cutsceneRenderer.dispose();
-            } catch (e) {}
-            cutsceneRenderer = null;
-        }
-        cutsceneMixer = null;
-        cutsceneClock = null;
-
-        $('dashboard').classList.remove('hidden');
-        $('usersBtn').classList.remove('hidden');
-        if (isAdmin) $('caineTerminal').classList.remove('hidden');
     }
 
     // ---------- Chat ----------
