@@ -238,6 +238,14 @@
         }
         .effect-frozen { animation: freezePulse 1s infinite; filter: hue-rotate(180deg) brightness(0.85); }
 
+        /* Eyes vignette — atmosfera void podczas /eyes */
+        #eyesVignette {
+            position: fixed; inset: 0; z-index: 1500; pointer-events: none;
+            box-shadow: inset 0 0 250px 100px rgba(0,0,0,0.95);
+            opacity: 0; transition: opacity 1.2s ease-in-out;
+        }
+        #eyesVignette.active { opacity: 1; }
+
         /* Applause emoji */
         @keyframes clapFloat {
             0%   { transform: translateY(0) rotate(0deg) scale(0.5); opacity: 1; }
@@ -310,6 +318,7 @@
 
     <div id="censorBar"><span>CENZURA</span></div>
     <div id="floorLavaOverlay"></div>
+    <div id="eyesVignette"></div>
 
     <div id="step-1" class="box">
         <h1>CYFROWY CYRK</h1>
@@ -949,7 +958,7 @@
         // CAINE POWERS
         "announce", "adventure", "applause", "floorlava",
         "spotlight", "unspotlight", "disco", "undisco",
-        "cake", "eyes", "citizens", "uncitizens",
+        "cake", "eyes", "uneyes", "citizens", "uncitizens",
         "launch", "freeze", "big", "small", "unscale"
     ].concat(Object.keys(effectMap));
 
@@ -1871,6 +1880,7 @@
         spawnedCake: null,        // THREE.Group
         eyesGroup: null,          // THREE.Group of floating Caine eyes
         eyesEndsAt: 0,
+        eyesTargetNick: null,     // nick wokół którego krążą oczy
         eyesOriginalFogDensity: null, // żeby przywrócić fog po efekcie
         citizens: [],             // THREE.Group[]
         citizensEndsAt: 0
@@ -2047,20 +2057,65 @@
     }
 
     // ---------- Floating eyes (TADC ep5 intermission, opcjonalnie ./models/eye.glb) ----------
-    // Białe gałki, niebieska tęczówka, czarna źrenica. Różne rozmiary, gęsto upakowane,
-    // część patrzy na gracza, część w losowym kierunku. Tło ciemnieje (zwiększona fog density).
+    // Białe gałki z niebieską tęczówką, krążą wokół targetu (Caine'a). Spawn animation,
+    // pop-on-proximity (wejdź w gałkę żeby zniknęła), boss eye w centrum, vignette.
 
-    function spawnEyes(durationMs) {
+    function despawnEyes() {
+        if (!cainePowers.eyesGroup) return;
+        scene.remove(cainePowers.eyesGroup);
+        disposeObject3D(cainePowers.eyesGroup);
+        cainePowers.eyesGroup = null;
+        cainePowers.eyesTargetNick = null;
+        if (scene.fog && cainePowers.eyesOriginalFogDensity !== null) {
+            scene.fog.density = cainePowers.eyesOriginalFogDensity;
+            cainePowers.eyesOriginalFogDensity = null;
+        }
+        const v = $('eyesVignette');
+        if (v) v.classList.remove('active');
+    }
+
+    function spawnEyes(targetNick, durationMs) {
         if (!gameActive || !scene) return;
-        if (cainePowers.eyesGroup) {
-            scene.remove(cainePowers.eyesGroup);
-            disposeObject3D(cainePowers.eyesGroup);
+        despawnEyes();
+        cainePowers.eyesTargetNick = (targetNick && targetNick !== 'ALL') ? targetNick : null;
+
+        // Vignette + fog
+        const v = $('eyesVignette');
+        if (v) v.classList.add('active');
+        if (scene.fog) {
+            cainePowers.eyesOriginalFogDensity = scene.fog.density;
+            scene.fog.density = Math.max(scene.fog.density, 0.06);
         }
 
-        const group = new THREE.Group();
-        const COUNT = isMobile ? 16 : 30;
+        // Spróbuj wczytać model. Jeśli się załaduje przed timeoutem — używamy klonów modelu
+        // (z embedded teksturami). W przeciwnym razie fallback proceduralny.
+        let resolved = false;
+        const fallbackTimer = setTimeout(function() {
+            if (resolved) return;
+            resolved = true;
+            buildEyesScene(null, durationMs);
+        }, 2500);
 
-        // Materiały współdzielone — oszczędność. MeshPhysicalMaterial daje "mokry" połysk gałki.
+        const loader = new THREE.GLTFLoader();
+        loader.load('./models/eye.glb',
+            function(gltf) {
+                if (resolved) return;
+                resolved = true;
+                clearTimeout(fallbackTimer);
+                buildEyesScene(gltf.scene, durationMs);
+            },
+            undefined,
+            function() {
+                if (resolved) return;
+                resolved = true;
+                clearTimeout(fallbackTimer);
+                buildEyesScene(null, durationMs);
+            }
+        );
+    }
+
+    function buildProceduralEye(size) {
+        const eye = new THREE.Group();
         const usePhysical = typeof THREE.MeshPhysicalMaterial !== 'undefined';
         const eyeballMat = usePhysical
             ? new THREE.MeshPhysicalMaterial({
@@ -2073,54 +2128,92 @@
         });
         const pupilMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 1.0 });
 
-        // Spróbuj wczytać model, fallback proceduralny
-        const modelLoader = new THREE.GLTFLoader();
-        let modelTemplate = null;
-        modelLoader.load('./models/eye.glb', function(gltf) {
-            modelTemplate = gltf.scene;
-        }, undefined, function() { /* brak modelu — używamy proceduralnego */ });
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 18), eyeballMat);
+        ball.castShadow = !isMobile;
+        ball.receiveShadow = !isMobile;
+        const iris = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 12), irisMat);
+        iris.position.z = 0.62; iris.scale.z = 0.4;
+        const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), pupilMat);
+        pupil.position.z = 0.82; pupil.scale.z = 0.35;
+        eye.add(ball); eye.add(iris); eye.add(pupil);
+        // Outer scale = size; w spawn animation manipulujemy scale tej grupy
+        eye.userData.targetSize = size;
+        return eye;
+    }
 
-        // Buduj proceduralne gałki od razu (modelTemplate i tak załaduje się asynchronicznie po fakcie)
+    function buildModelEye(modelTemplate, size) {
+        // Sklonuj model dla każdej gałki. Materiały współdzielone (perf).
+        const eye = new THREE.Group();
+        const clone = modelTemplate.clone(true);
+        // Normalizuj rozmiar modelu do sfery jednostkowej, żeby `size` mapował na promień
+        const box = new THREE.Box3().setFromObject(clone);
+        const sz = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(sz.x, sz.y, sz.z);
+        if (maxDim > 0 && isFinite(maxDim)) clone.scale.setScalar(2.0 / maxDim);
+
+        clone.traverse(function(node) {
+            if (node.isMesh) {
+                node.castShadow = !isMobile;
+                node.receiveShadow = !isMobile;
+                node.frustumCulled = false;
+                if (node.material) {
+                    if ('envMapIntensity' in node.material) node.material.envMapIntensity = 0.7;
+                    node.material.needsUpdate = true;
+                }
+            }
+        });
+        eye.add(clone);
+        eye.userData.targetSize = size;
+        return eye;
+    }
+
+    function buildEyesScene(modelTemplate, durationMs) {
+        const group = new THREE.Group();
+        const COUNT = isMobile ? 16 : 30;
+        const now = Date.now();
+
+        // Boss eye — JEDNA wielka gałka w centrum, nie pop-uje, nie mruga
+        const bossSize = 2.5;
+        const bossEye = modelTemplate ? buildModelEye(modelTemplate, bossSize) : buildProceduralEye(bossSize);
+        bossEye.userData.isBoss = true;
+        bossEye.userData.tracksPlayer = true;
+        bossEye.userData.spawnTime = now;
+        bossEye.userData.orbitRadius = 0;       // Nie krąży
+        bossEye.userData.orbitHeight = 4.5;     // Nad targetem
+        bossEye.userData.orbitAngle = 0;
+        bossEye.userData.orbitSpeed = 0;
+        bossEye.userData.bobPhase = 0;
+        bossEye.userData.bobAmp = 0.4;
+        bossEye.userData.blinkStart = -1;
+        bossEye.userData.nextBlinkAt = Number.POSITIVE_INFINITY; // boss nie mruga
+        bossEye.userData.popping = false;
+        bossEye.userData.spawnDelay = 0;
+        bossEye.userData.canBePopped = false;
+        group.add(bossEye);
+
+        // Reszta gałek
         for (let i = 0; i < COUNT; i++) {
-            const eye = new THREE.Group();
-
-            // Rozkład rozmiarów: większość średnich, kilka dużych (tła), kilka małych (przód)
+            // Rozkład rozmiarów
             let size;
             const r = Math.random();
-            if (r < 0.15)      size = 1.2 + Math.random() * 0.8;   // duże (background)
+            if (r < 0.15)      size = 1.2 + Math.random() * 0.6;   // duże
             else if (r < 0.85) size = 0.4 + Math.random() * 0.5;   // średnie
             else               size = 0.2 + Math.random() * 0.2;   // małe
 
-            const ball = new THREE.Mesh(new THREE.SphereGeometry(size, 24, 18), eyeballMat);
-            ball.castShadow = !isMobile;
-            ball.receiveShadow = !isMobile;
+            const eye = modelTemplate ? buildModelEye(modelTemplate, size) : buildProceduralEye(size);
 
-            const iris = new THREE.Mesh(new THREE.SphereGeometry(size * 0.42, 16, 12), irisMat);
-            iris.position.z = size * 0.62;
-            iris.scale.z = 0.4; // spłaszczona z przodu
-
-            const pupil = new THREE.Mesh(new THREE.SphereGeometry(size * 0.18, 12, 10), pupilMat);
-            pupil.position.z = size * 0.82;
-            pupil.scale.z = 0.35;
-
-            eye.add(ball); eye.add(iris); eye.add(pupil);
-
-            // Pozycja: sfera wokół gracza, gęsto. Niektóre blisko (duże w foreground), niektóre daleko.
-            const azimuth = Math.random() * Math.PI * 2;
-            const elevation = (Math.random() - 0.2) * Math.PI * 0.7; // częściej powyżej horyzontu
-            const distance = 2.5 + Math.random() * 7;
-            eye.position.set(
-                p.x + Math.cos(elevation) * Math.cos(azimuth) * distance,
-                p.y + Math.sin(elevation) * distance + 1.2,
-                p.z + Math.cos(elevation) * Math.sin(azimuth) * distance
-            );
-            eye.userData.basePos = eye.position.clone();
+            // Orbit params: każda gałka ma własny radius/height/speed/start angle
+            eye.userData.isBoss = false;
+            eye.userData.orbitRadius = 2.5 + Math.random() * 6.5;
+            eye.userData.orbitHeight = 0.5 + (Math.random() - 0.3) * 4;  // raczej powyżej
+            eye.userData.orbitAngle = Math.random() * Math.PI * 2;
+            // Prędkość orbity (rad/s), w obu kierunkach żeby wyglądało chaotycznie
+            eye.userData.orbitSpeed = (0.05 + Math.random() * 0.25) * (Math.random() < 0.5 ? -1 : 1);
             eye.userData.bobPhase = Math.random() * Math.PI * 2;
-            eye.userData.bobAmp = 0.1 + Math.random() * 0.25;
-            // 60% patrzy na gracza, 40% w losowym kierunku (creepier, jak w show)
+            eye.userData.bobAmp = 0.1 + Math.random() * 0.3;
+            // Patrzenie
             eye.userData.tracksPlayer = Math.random() < 0.6;
             if (!eye.userData.tracksPlayer) {
-                // losowy kierunek patrzenia — generujemy "fałszywego" target
                 const lookAng = Math.random() * Math.PI * 2;
                 const lookEl = (Math.random() - 0.5) * Math.PI * 0.5;
                 eye.userData.lookOffset = new THREE.Vector3(
@@ -2129,71 +2222,130 @@
                     Math.cos(lookEl) * Math.sin(lookAng)
                 );
             }
-            eye.userData.nextBlinkAt = Date.now() + 1000 + Math.random() * 6000;
-            eye.userData.blinkPhase = -1;
+            // Mruganie — czas-zależne
+            eye.userData.blinkStart = -1;
+            eye.userData.nextBlinkAt = now + 1500 + Math.random() * 6000;
+            // Pop interaction
+            eye.userData.popping = false;
+            eye.userData.popStart = 0;
+            eye.userData.canBePopped = true;
+            // Spawn animation — staggered start
+            eye.userData.spawnTime = now + Math.random() * 700;
+            eye.userData.spawnDelay = 0;
 
             group.add(eye);
         }
 
-        // Ciemniej tło — fog gęstsza (przywracamy w cleanup)
-        if (scene.fog && cainePowers.eyesOriginalFogDensity === null) {
-            cainePowers.eyesOriginalFogDensity = scene.fog.density;
-            scene.fog.density = Math.max(scene.fog.density, 0.06);
-        }
-
         scene.add(group);
         cainePowers.eyesGroup = group;
-        cainePowers.eyesEndsAt = Date.now() + (durationMs || 15000);
+        cainePowers.eyesEndsAt = now + (durationMs || 20000);
     }
 
     function updateEyes() {
         if (!cainePowers.eyesGroup) return;
-        if (Date.now() >= cainePowers.eyesEndsAt) {
-            scene.remove(cainePowers.eyesGroup);
-            disposeObject3D(cainePowers.eyesGroup);
-            cainePowers.eyesGroup = null;
-            // Przywróć fog
-            if (scene.fog && cainePowers.eyesOriginalFogDensity !== null) {
-                scene.fog.density = cainePowers.eyesOriginalFogDensity;
-                cainePowers.eyesOriginalFogDensity = null;
-            }
+        const now = Date.now();
+
+        if (now >= cainePowers.eyesEndsAt) {
+            despawnEyes();
             return;
         }
 
-        const now = Date.now();
-        const t = now * 0.001;
+        // Znajdź target wokół którego krążą gałki. Domyślnie lokalny gracz.
+        const tNick = cainePowers.eyesTargetNick;
+        let targetMesh = null;
+        if (tNick) targetMesh = findPlayerMeshByNick(tNick);
+        const orbitX = targetMesh ? targetMesh.position.x : p.x;
+        const orbitY = targetMesh ? targetMesh.position.y + 1.0 : (p.y - 0.5);
+        const orbitZ = targetMesh ? targetMesh.position.z : p.z;
+
+        const driftT = now * 0.001;
+        const eyesToRemove = [];
 
         cainePowers.eyesGroup.children.forEach(function(eye) {
-            // Drift wokół pozycji bazowej
-            const base = eye.userData.basePos;
-            const ph = eye.userData.bobPhase;
-            const amp = eye.userData.bobAmp;
+            const data = eye.userData;
+            const baseSize = data.targetSize;
+
+            // ---- Pop animation (gracz wszedł w gałkę) ----
+            if (data.popping) {
+                const popElapsed = now - data.popStart;
+                const popK = Math.max(0, 1 - popElapsed / 250);
+                if (popK <= 0.01) { eyesToRemove.push(eye); return; }
+                const s = baseSize * popK;
+                eye.scale.set(s, s, s);
+                return;
+            }
+
+            // ---- Spawn animation (scale-in z opóźnieniem) ----
+            const spawnElapsed = now - data.spawnTime;
+            let spawnK = 1;
+            if (spawnElapsed < 0) {
+                eye.scale.set(0, 0, 0);
+                return; // jeszcze nie pora
+            } else if (spawnElapsed < 800) {
+                spawnK = spawnElapsed / 800;
+                spawnK = 1 - Math.pow(1 - spawnK, 3); // ease-out cubic
+            }
+
+            // ---- Orbita ----
+            const angleNow = data.orbitAngle + (now - data.spawnTime) * 0.001 * data.orbitSpeed;
             eye.position.set(
-                base.x + Math.sin(t * 0.5 + ph) * amp,
-                base.y + Math.sin(t * 0.7 + ph) * amp * 1.3,
-                base.z + Math.cos(t * 0.5 + ph) * amp
+                orbitX + Math.cos(angleNow) * data.orbitRadius + Math.sin(driftT * 0.5 + data.bobPhase) * data.bobAmp,
+                orbitY + data.orbitHeight + Math.sin(driftT * 0.7 + data.bobPhase) * data.bobAmp * 1.3,
+                orbitZ + Math.sin(angleNow) * data.orbitRadius + Math.cos(driftT * 0.5 + data.bobPhase) * data.bobAmp
             );
 
-            // Patrzenie
-            if (eye.userData.tracksPlayer) {
+            // ---- Pop check (proximity z lokalnym graczem) ----
+            if (data.canBePopped) {
+                const dx = eye.position.x - p.x;
+                const dy = eye.position.y - p.y;
+                const dz = eye.position.z - p.z;
+                const distSq = dx * dx + dy * dy + dz * dz;
+                const popDist = baseSize + 0.5;
+                if (distSq < popDist * popDist) {
+                    data.popping = true;
+                    data.popStart = now;
+                    return;
+                }
+            }
+
+            // ---- Patrzenie ----
+            if (data.tracksPlayer) {
                 eye.lookAt(p.x, p.y + 1.5, p.z);
             } else {
-                const o = eye.userData.lookOffset;
+                const o = data.lookOffset;
                 eye.lookAt(eye.position.x + o.x, eye.position.y + o.y, eye.position.z + o.z);
             }
 
-            // Mruganie
-            if (eye.userData.blinkPhase < 0) {
-                if (now > eye.userData.nextBlinkAt) eye.userData.blinkPhase = 0;
+            // ---- Mruganie czas-zależne (frame-rate independent) ----
+            let blinkScaleY = 1;
+            if (data.blinkStart < 0) {
+                if (now >= data.nextBlinkAt) {
+                    data.blinkStart = now;
+                    // 5% szans na długi wink (dramatyczne)
+                    data.blinkDuration = Math.random() < 0.05 ? 800 : 200;
+                }
             } else {
-                eye.userData.blinkPhase += 0.09;
-                if (eye.userData.blinkPhase >= 1) {
-                    eye.userData.blinkPhase = -1;
-                    eye.userData.nextBlinkAt = now + 2500 + Math.random() * 6000;
+                const elapsed = now - data.blinkStart;
+                if (elapsed >= data.blinkDuration) {
+                    data.blinkStart = -1;
+                    data.nextBlinkAt = now + 2500 + Math.random() * 6000;
+                } else {
+                    const tt = elapsed / data.blinkDuration;
+                    const closeAmount = Math.sin(tt * Math.PI);
+                    blinkScaleY = 1 - closeAmount * 0.92;
                 }
             }
-            const closeAmount = eye.userData.blinkPhase < 0 ? 0 : Math.sin(eye.userData.blinkPhase * Math.PI);
-            eye.scale.y = 1 - closeAmount * 0.92;
+
+            // ---- Końcowy scale: rozmiar × spawn × blink ----
+            const sxz = baseSize * spawnK;
+            const sy  = baseSize * spawnK * blinkScaleY;
+            eye.scale.set(sxz, sy, sxz);
+        });
+
+        // Usuń pop-niętych
+        eyesToRemove.forEach(function(e) {
+            cainePowers.eyesGroup.remove(e);
+            disposeObject3D(e);
         });
     }
 
@@ -2326,7 +2478,7 @@
     const GLOBAL_COMMANDS = {
         announce: 1, adventure: 1, applause: 1, floorlava: 1,
         spotlight: 1, unspotlight: 1, disco: 1, undisco: 1,
-        cake: 1, eyes: 1, citizens: 1, uncitizens: 1,
+        cake: 1, eyes: 1, uneyes: 1, citizens: 1, uncitizens: 1,
         launch: 1, freeze: 1, big: 1, small: 1, unscale: 1
     };
 
@@ -2365,7 +2517,8 @@
                     }
                 }
                 return;
-            case 'eyes':       spawnEyes(20000); return;
+            case 'eyes':       spawnEyes(targetUpper, 20000); return;
+            case 'uneyes':     despawnEyes(); return;
             case 'citizens':   spawnCitizens(8); return;
             case 'uncitizens': clearCitizens(); return;
             case 'launch':     applyLaunch(targetUpper); return;
