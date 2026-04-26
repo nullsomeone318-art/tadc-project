@@ -15,6 +15,12 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 
+    <!-- SSAO + FXAA dla realizmu -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/SimplexNoise.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FXAAShader.js"></script>
+
     <style>
         @keyframes crtFlicker { 0% { opacity: 0.98; } 50% { opacity: 0.94; } 100% { opacity: 1; } }
         @keyframes breatheGlow { 0% { box-shadow: 0 0 20px rgba(0, 242, 255, 0.4), inset 0 0 10px rgba(0, 242, 255, 0.2); } 50% { box-shadow: 0 0 40px rgba(0, 242, 255, 0.7), inset 0 0 20px rgba(0, 242, 255, 0.4); } 100% { box-shadow: 0 0 20px rgba(0, 242, 255, 0.4), inset 0 0 10px rgba(0, 242, 255, 0.2); } }
@@ -1148,6 +1154,8 @@
     // ==========================================================================
 
     let scene, camera, renderer, composer, gameActive = false;
+    let ssaoPass = null, fxaaPass = null;
+    let maxAnisotropy = 1;
     let cubes = [];
     let heldCube = null;
     let raycaster, mouse;
@@ -1179,6 +1187,12 @@
         camera.updateProjectionMatrix();
         renderer.setSize(w, h);
         if (composer) composer.setSize(w, h);
+        if (ssaoPass) ssaoPass.setSize(w, h);
+        if (fxaaPass) {
+            const pr = renderer.getPixelRatio();
+            fxaaPass.material.uniforms['resolution'].value.x = 1 / (w * pr);
+            fxaaPass.material.uniforms['resolution'].value.y = 1 / (h * pr);
+        }
     }
     window.addEventListener('resize', onWindowResize);
     window.addEventListener('orientationchange', onWindowResize);
@@ -1197,64 +1211,90 @@
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 0.85;            // było 1.0 — globalnie ciemniej
-        renderer.physicallyCorrectLights = false;       // intensity są nie-fizyczne, więc wyłączamy
+        renderer.toneMappingExposure = 0.95;            // było 0.85 — bliżej naturalnej ekspozycji
+        renderer.physicallyCorrectLights = false;
         container.appendChild(renderer.domElement);
 
-        // Bloom tylko na desktopie — mobile pada
+        // Maksymalna anizotropia (jedna wartość, używana wszędzie przy load tekstur)
+        maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+
+        // ---- Composer pipeline: scene → SSAO → bloom → FXAA → output ----
         const renderScene = new THREE.RenderPass(scene, camera);
         composer = new THREE.EffectComposer(renderer);
         composer.addPass(renderScene);
+
+        if (!isMobile && typeof THREE.SSAOPass !== 'undefined') {
+            // SSAO — ambient occlusion w rogach i szczelinach. Dużo dodaje do realizmu.
+            ssaoPass = new THREE.SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
+            ssaoPass.kernelRadius = 8;
+            ssaoPass.minDistance = 0.002;
+            ssaoPass.maxDistance = 0.08;
+            ssaoPass.output = THREE.SSAOPass.OUTPUT.Default;
+            composer.addPass(ssaoPass);
+        }
+
         if (!isMobile) {
-            // (resolution, strength, radius, threshold)
             const bloomPass = new THREE.UnrealBloomPass(
                 new THREE.Vector2(window.innerWidth, window.innerHeight),
-                0.55, 0.4, 0.9
+                0.45, 0.35, 0.95
             );
-            bloomPass.threshold = 0.9;   // bloomuje tylko prawdziwie jasne piksele (emissive, słońce)
-            bloomPass.strength = 0.55;
-            bloomPass.radius = 0.4;
+            bloomPass.threshold = 0.95;  // tylko emissive/słońce
+            bloomPass.strength = 0.45;
+            bloomPass.radius = 0.35;
             composer.addPass(bloomPass);
         }
 
-        // Skybox + IBL. envMapIntensity ustawiamy per-material w traverse,
-        // żeby skybox nie świecił sceny z mocą reflektora.
+        // FXAA — zawsze (composer wyłącza MSAA z renderera)
+        if (typeof THREE.FXAAShader !== 'undefined') {
+            fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
+            const pr = renderer.getPixelRatio();
+            fxaaPass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * pr);
+            fxaaPass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * pr);
+            composer.addPass(fxaaPass);
+        }
+
+        // Skybox + IBL przez PMREM
         const textureLoader = new THREE.TextureLoader();
         const pmrem = new THREE.PMREMGenerator(renderer);
         pmrem.compileEquirectangularShader();
         textureLoader.load('./images/skybox.jpg', function(texture) {
             texture.encoding = THREE.sRGBEncoding;
             texture.mapping = THREE.EquirectangularReflectionMapping;
+            texture.anisotropy = maxAnisotropy;
             scene.background = texture;
-            // PMREM daje miękkie odbicia na materiałach PBR zamiast surowego skyboxu
             scene.environment = pmrem.fromEquirectangular(texture).texture;
             pmrem.dispose();
         });
 
-        // Jedno światło ambientalne (HemiLight) + jedno kierunkowe (słońce). Bez sumowania.
-        scene.add(new THREE.HemisphereLight(0xb8d4ff, 0x2a1a0a, 0.45));
+        // ---- Lights ----
+        // 1) Hemisphere ambient — kolor nieba/ziemi
+        scene.add(new THREE.HemisphereLight(0xb8d4ff, 0x2a1a0a, 0.4));
 
-        const dirLight = new THREE.DirectionalLight(0xffe6c8, 1.6);
-        dirLight.position.set(30, 60, 25); // wyżej + bardziej z boku — czytelniejsze cienie
+        // 2) Słońce — główne kierunkowe, rzuca cienie
+        const dirLight = new THREE.DirectionalLight(0xffe6c8, 1.8);
+        dirLight.position.set(30, 60, 25);
         if (!isMobile) {
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 2048;
             dirLight.shadow.mapSize.height = 2048;
-            // Frustum musi zmieścić cały świat (model skalowany do ~40 jednostek)
             dirLight.shadow.camera.near = 1;
             dirLight.shadow.camera.far = 200;
             dirLight.shadow.camera.left = -50;
             dirLight.shadow.camera.right = 50;
             dirLight.shadow.camera.top = 50;
             dirLight.shadow.camera.bottom = -50;
-            // bias: peter-panning vs acne. normalBias robi większość roboty — zostawiamy mały bias.
-            dirLight.shadow.bias = -0.00015;
+            dirLight.shadow.bias = -0.00012;
             dirLight.shadow.normalBias = 0.04;
-            dirLight.shadow.radius = 4;     // miękkie krawędzie PCFSoft
+            dirLight.shadow.radius = 8;     // miększe PCF (było 4)
             dirLight.shadow.camera.updateProjectionMatrix();
         }
         scene.add(dirLight);
-        scene.add(dirLight.target); // target w (0,0,0) — światło faktycznie celuje w środek
+        scene.add(dirLight.target);
+
+        // 3) Fill light — niebieski sky-bounce z przeciwnej strony, BEZ cienia (tani)
+        const fillLight = new THREE.DirectionalLight(0x99bbff, 0.45);
+        fillLight.position.set(-25, 25, -20);
+        scene.add(fillLight);
 
         // Particles
         const partGeo = new THREE.BufferGeometry();
@@ -1488,6 +1528,31 @@
         });
     }
 
+    // Stosuje anizotropię i envMapIntensity na wszystkich materiałach + tekstur w obiekcie.
+    // envMapIntensity domyślnie 0.8 — daje pełniejsze PBR niż 0.5 ale nie wybucha jak 1.0.
+    function applyMaterialUpgrades(obj, envIntensity) {
+        if (!obj) return;
+        const env = (envIntensity != null) ? envIntensity : 0.8;
+        obj.traverse(function(node) {
+            if (!node.isMesh) return;
+            node.castShadow = !isMobile;
+            node.receiveShadow = !isMobile;
+            node.frustumCulled = false;
+            const mats = Array.isArray(node.material) ? node.material : (node.material ? [node.material] : []);
+            mats.forEach(function(m) {
+                // Cutout zamiast nadpisywania transparent
+                if (m.transparent && m.alphaTest === 0) m.alphaTest = 0.5;
+                if ('envMapIntensity' in m) m.envMapIntensity = env;
+                // Anizotropia na wszystkich teksturach materiału
+                ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'specularMap', 'alphaMap']
+                    .forEach(function(prop) {
+                        if (m[prop]) m[prop].anisotropy = maxAnisotropy;
+                    });
+                m.needsUpdate = true;
+            });
+        });
+    }
+
     function createPlayerAvatar(playerName, color) {
         const group = new THREE.Group();
 
@@ -1531,24 +1596,7 @@
                 avatarMesh.position.x = -centerScaled.x;
                 avatarMesh.position.y = -boxScaled.min.y;
                 avatarMesh.position.z = -centerScaled.z;
-                avatarMesh.traverse(function(node) {
-                    if (node.isMesh) {
-                        node.castShadow = !isMobile;
-                        node.receiveShadow = !isMobile;
-                        node.frustumCulled = false;
-                        if (node.material) {
-                            // Tylko jeśli MASK alphaMode (zwykle binarna alfa), tnij — nie wyłączaj transparent globalnie
-                            if (node.material.transparent && node.material.alphaTest === 0) {
-                                // Zachowujemy oryginalny tryb, ale dodajemy alphaTest żeby cienie cutout działały
-                                node.material.alphaTest = 0.5;
-                            }
-                            if ('envMapIntensity' in node.material) {
-                                node.material.envMapIntensity = 0.5; // skybox nie świeci avatara jak reflektor
-                            }
-                            node.material.needsUpdate = true;
-                        }
-                    }
-                });
+                applyMaterialUpgrades(avatarMesh, 0.7);
 
                 let mixer = null, walkAct = null, idleAct = null;
                 if (gltf.animations && gltf.animations.length > 0) {
@@ -1646,22 +1694,7 @@
                 loadedModelMesh.position.x = -centerScaled.x;
                 loadedModelMesh.position.y = -boxScaled.min.y;
                 loadedModelMesh.position.z = -centerScaled.z;
-                loadedModelMesh.traverse(function(node) {
-                    if (node.isMesh) {
-                        node.castShadow = !isMobile;
-                        node.receiveShadow = !isMobile;
-                        node.frustumCulled = false;
-                        if (node.material) {
-                            if (node.material.transparent && node.material.alphaTest === 0) {
-                                node.material.alphaTest = 0.5;
-                            }
-                            if ('envMapIntensity' in node.material) {
-                                node.material.envMapIntensity = 0.6;
-                            }
-                            node.material.needsUpdate = true;
-                        }
-                    }
-                });
+                applyMaterialUpgrades(loadedModelMesh, 0.85);
                 scene.add(loadedModelMesh);
                 isBuildingWorld = false;
             },
@@ -2210,17 +2243,7 @@
         const maxDim = Math.max(sz.x, sz.y, sz.z);
         if (maxDim > 0 && isFinite(maxDim)) clone.scale.setScalar(2.0 / maxDim);
 
-        clone.traverse(function(node) {
-            if (node.isMesh) {
-                node.castShadow = !isMobile;
-                node.receiveShadow = !isMobile;
-                node.frustumCulled = false;
-                if (node.material) {
-                    if ('envMapIntensity' in node.material) node.material.envMapIntensity = 0.7;
-                    node.material.needsUpdate = true;
-                }
-            }
-        });
+        applyMaterialUpgrades(clone, 0.7);
         eye.add(clone);
         eye.userData.targetSize = size;
         return eye;
@@ -2667,16 +2690,7 @@
             const sz = box.getSize(new THREE.Vector3());
             const maxDim = Math.max(sz.x, sz.y, sz.z);
             if (maxDim > 0 && isFinite(maxDim)) m.scale.setScalar(0.8 / maxDim);
-            m.traverse(function(node) {
-                if (node.isMesh) {
-                    node.castShadow = !isMobile;
-                    node.receiveShadow = !isMobile;
-                    node.frustumCulled = false;
-                    if (node.material && 'envMapIntensity' in node.material) {
-                        node.material.envMapIntensity = 0.7;
-                    }
-                }
-            });
+            applyMaterialUpgrades(m, 0.8);
             // mixer dla animacji jeśli model ma
             if (gltf.animations && gltf.animations.length > 0) {
                 m.userData.mixer = new THREE.AnimationMixer(m);
