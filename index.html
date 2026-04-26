@@ -163,6 +163,91 @@
         .effect-zoom { transform: scale(1.5); }
         .effect-grayscale { filter: grayscale(100%); }
         .effect-vr { filter: hue-rotate(45deg) saturate(150%); transform: scale(1.05); }
+
+        /* ========== CAINE POWERS — TADC ========== */
+
+        /* Announce banner — Caine's booming voice */
+        @keyframes announceIn {
+            0%   { transform: translate(-50%, -50%) scale(0.3) rotate(-8deg); opacity: 0; }
+            15%  { transform: translate(-50%, -50%) scale(1.15) rotate(-3deg); opacity: 1; }
+            25%  { transform: translate(-50%, -50%) scale(1.0) rotate(-3deg); }
+            85%  { transform: translate(-50%, -50%) scale(1.0) rotate(-3deg); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0.6) rotate(-8deg); opacity: 0; }
+        }
+        .announce-banner {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 8000; pointer-events: none;
+            font-family: 'Courier New', monospace; font-weight: 900;
+            font-size: clamp(28px, 7vw, 72px); text-align: center;
+            color: #f9e11e; text-shadow: 4px 4px 0 #ff0044, 8px 8px 0 #000, 0 0 30px #ff0044;
+            background: linear-gradient(135deg, rgba(255,0,68,0.95) 0%, rgba(0,0,0,0.95) 100%);
+            border: 6px solid #f9e11e; border-radius: 12px; padding: 20px 40px;
+            max-width: 90vw; letter-spacing: 3px; text-transform: uppercase;
+            animation: announceIn 5s ease-in-out forwards;
+            box-shadow: 0 0 80px rgba(255,0,68,0.8);
+        }
+        .announce-banner .announce-prefix {
+            display: block; font-size: 0.4em; color: #fff; letter-spacing: 8px;
+            text-shadow: 2px 2px 0 #000; margin-bottom: 10px;
+        }
+
+        /* Adventure banner — "TODAY'S ADVENTURE" */
+        @keyframes adventureIn {
+            0%   { transform: translate(-50%, -100vh); opacity: 0; }
+            20%  { transform: translate(-50%, -50%); opacity: 1; }
+            80%  { transform: translate(-50%, -50%); opacity: 1; }
+            100% { transform: translate(-50%, 100vh); opacity: 0; }
+        }
+        .adventure-banner {
+            position: fixed; top: 50%; left: 50%;
+            z-index: 8000; pointer-events: none;
+            font-family: 'Courier New', monospace;
+            text-align: center; max-width: 90vw;
+            background: #000; border: 8px double #f9e11e; padding: 30px 50px;
+            box-shadow: 0 0 100px rgba(249,225,30,0.9), inset 0 0 40px rgba(249,225,30,0.3);
+            animation: adventureIn 7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+        .adventure-banner .adv-header {
+            color: #f9e11e; font-size: clamp(20px, 4vw, 36px); font-weight: 900;
+            letter-spacing: 6px; text-shadow: 3px 3px 0 #ff0044;
+        }
+        .adventure-banner .adv-title {
+            color: #fff; font-size: clamp(28px, 6vw, 56px); font-weight: 900;
+            margin-top: 15px; letter-spacing: 2px; text-transform: uppercase;
+            text-shadow: 0 0 20px #00f2ff;
+        }
+        .adventure-banner .adv-stars { color: #f9e11e; font-size: 1.5em; margin: 10px; }
+
+        /* Floor is lava overlay */
+        @keyframes lavaPulse {
+            0%, 100% { opacity: 0.7; }
+            50%      { opacity: 0.5; }
+        }
+        #floorLavaOverlay {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 40vh;
+            background: radial-gradient(ellipse at bottom, #ff4400 0%, #ff0000 30%, transparent 80%);
+            z-index: 1500; pointer-events: none; opacity: 0; transition: opacity 0.5s;
+        }
+        #floorLavaOverlay.active { opacity: 0.8; animation: lavaPulse 0.8s infinite; }
+        .effect-floorlava { filter: hue-rotate(-15deg) saturate(140%) brightness(1.05); }
+
+        /* Frozen indicator on screen edge */
+        @keyframes freezePulse {
+            0%, 100% { box-shadow: inset 0 0 100px rgba(0,200,255,0.6); }
+            50%      { box-shadow: inset 0 0 150px rgba(0,200,255,0.9); }
+        }
+        .effect-frozen { animation: freezePulse 1s infinite; filter: hue-rotate(180deg) brightness(0.85); }
+
+        /* Applause emoji */
+        @keyframes clapFloat {
+            0%   { transform: translateY(0) rotate(0deg) scale(0.5); opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(720deg) scale(1.5); opacity: 0; }
+        }
+        .clap-emoji {
+            position: fixed; bottom: -50px; font-size: 48px; z-index: 1001;
+            pointer-events: none; user-select: none;
+            animation: clapFloat 4s linear forwards;
+        }
     </style>
 </head>
 <body onselectstart="return false;">
@@ -224,6 +309,7 @@
     <audio id="joinAudio"><source src="./music/join.mp3" type="audio/mpeg"></audio>
 
     <div id="censorBar"><span>CENZURA</span></div>
+    <div id="floorLavaOverlay"></div>
 
     <div id="step-1" class="box">
         <h1>CYFROWY CYRK</h1>
@@ -496,8 +582,9 @@
                         if (gameActive) load3DModel(false);
                     } else if (d.cmd === "spawnportal" && gameActive) {
                         spawnPortal3D(d.target, d.x, d.y, d.z);
-                    } else if (!d.target || d.target === "" || d.target === "ALL" || d.target === user) {
-                        runEff(d.cmd);
+                    } else {
+                        // runEff sam decyduje co robić z targetem (lokalny / globalny / tekst)
+                        runEff(d.cmd, d.target);
                     }
                 } else if (d.type === "ping") {
                     if (typeof d.nick === 'string') {
@@ -596,7 +683,7 @@
                 } else if (obj.cmd === "spawnportal" && gameActive) {
                     spawnPortal3D(obj.target, obj.x, obj.y, obj.z);
                 } else {
-                    runEff(obj.cmd);
+                    runEff(obj.cmd, obj.target);
                 }
             } else if (obj.type === "chat") {
                 showMsg(obj.nick, obj.text, obj.color, obj.admin, obj.avatar);
@@ -858,7 +945,12 @@
 
     const effectList = [
         "fly", "bubble", "gloink", "pomni", "censor", "confetti", "jail", "unjail",
-        "gravity", "room", "unroom", "cats"
+        "gravity", "room", "unroom", "cats",
+        // CAINE POWERS
+        "announce", "adventure", "applause", "floorlava",
+        "spotlight", "unspotlight", "disco", "undisco",
+        "cake", "eyes", "citizens", "uncitizens",
+        "launch", "freeze", "big", "small", "unscale"
     ].concat(Object.keys(effectMap));
 
     function populateCmdWindow() {
@@ -877,10 +969,18 @@
     $('usersWindowClose').addEventListener('click', toggleUsers);
     $('usersBtn').addEventListener('click', toggleUsers);
 
+    // Komendy biorące tekst jako argument (nie uppercase, nie traktować jako nick)
+    const TEXT_COMMANDS = { announce: 1, adventure: 1 };
+
     function procCmd(rawCmd) {
         const parts = rawCmd.trim().split(" ");
         const cmd = parts[0].toLowerCase();
-        const target = parts.length > 1 ? parts.slice(1).join(" ").toUpperCase() : "ALL";
+        const rawArg = parts.length > 1 ? parts.slice(1).join(" ") : "";
+        const effectName = cmd.replace('/', '');
+        // Dla komend tekstowych przekazujemy oryginał, dla pozostałych UPPERCASE jako nick
+        const target = rawArg
+            ? (TEXT_COMMANDS[effectName] ? rawArg : rawArg.toUpperCase())
+            : "ALL";
 
         if (cmd === '/cmd') { toggleCmd(); return; }
         if (cmd === '/clear') { $('chatBox').innerHTML = ""; return; }
@@ -919,7 +1019,6 @@
             return;
         }
 
-        const effectName = cmd.replace('/', '');
         if (effectList.indexOf(effectName) !== -1) {
             sendData({ type: "cmd", cmd: effectName, target: target });
             return;
@@ -1597,10 +1696,16 @@
         const playerHeight = currentMapName.indexOf("office") !== -1 ? 1.0 : 1.5;
         const speed = p.isSprinting ? 0.45 : 0.25;
 
-        if (p.moveF) { p.x -= Math.sin(yaw) * speed; p.z -= Math.cos(yaw) * speed; }
-        if (p.moveB) { p.x += Math.sin(yaw) * speed; p.z += Math.cos(yaw) * speed; }
-        if (p.moveL) { p.x -= Math.cos(yaw) * speed; p.z += Math.sin(yaw) * speed; }
-        if (p.moveR) { p.x += Math.cos(yaw) * speed; p.z -= Math.sin(yaw) * speed; }
+        // /freeze — gracz zamrożony, ruch zablokowany (ale fizyka grawitacji nadal działa)
+        const isFrozen = Date.now() < p.frozenUntil;
+        if (isFrozen) {
+            // wymuszamy zatrzymanie; zostaw klasę CSS jeśli jeszcze trwa
+        } else {
+            if (p.moveF) { p.x -= Math.sin(yaw) * speed; p.z -= Math.cos(yaw) * speed; }
+            if (p.moveB) { p.x += Math.sin(yaw) * speed; p.z += Math.cos(yaw) * speed; }
+            if (p.moveL) { p.x -= Math.cos(yaw) * speed; p.z += Math.sin(yaw) * speed; }
+            if (p.moveR) { p.x += Math.cos(yaw) * speed; p.z -= Math.sin(yaw) * speed; }
+        }
 
         p.x = Math.max(-49, Math.min(49, p.x));
         p.z = Math.max(-49, Math.min(49, p.z));
@@ -1736,8 +1841,478 @@
             }
         });
 
+        // ---- Caine powers per-frame updates ----
+        updateSpotlight();
+        updateEyes();
+        updateDisco();
+        updateCitizens();
+        // Migotanie świeczki na torcie
+        if (cainePowers.spawnedCake && cainePowers.spawnedCake.userData.flame) {
+            const f = cainePowers.spawnedCake.userData.flame;
+            f.scale.y = 1.4 + Math.sin(Date.now() * 0.02) * 0.3;
+        }
+
         if (composer) composer.render();
         else if (renderer) renderer.render(scene, camera);
+    }
+
+    // ==========================================================================
+    // CAINE POWERS — TADC
+    // ==========================================================================
+
+    // ---------- State for time-based powers ----------
+    const cainePowers = {
+        spotlightTarget: null,    // nick gracza pod reflektorem
+        spotlightObj: null,       // THREE.SpotLight
+        spotlightTargetMesh: null,// optional Object3D (.target)
+        floorLavaEndsAt: 0,
+        discoEndsAt: 0,
+        discoLights: [],          // array of THREE.PointLight
+        spawnedCake: null,        // THREE.Group
+        eyesGroup: null,          // THREE.Group of floating Caine eyes
+        eyesEndsAt: 0,
+        eyesOriginalFogDensity: null, // żeby przywrócić fog po efekcie
+        citizens: [],             // THREE.Group[]
+        citizensEndsAt: 0
+    };
+
+    // p.frozenUntil — timestamp; ruch zablokowany dopóki Date.now() < tej wartości
+    p.frozenUntil = 0;
+
+    // ---------- Announce / Adventure banners ----------
+
+    function showAnnounce(text) {
+        document.querySelectorAll('.announce-banner').forEach(function(n) { n.remove(); });
+        const div = document.createElement('div');
+        div.className = 'announce-banner';
+        const safe = escapeHTML(text || 'CAINE MA COŚ DO POWIEDZENIA');
+        div.innerHTML = '<span class="announce-prefix">📢 OGŁOSZENIE 📢</span>' + safe;
+        document.body.appendChild(div);
+        if (joinAudio) safePlayAudio(joinAudio);
+        setTimeout(function() { div.remove(); }, 5100);
+    }
+
+    function showAdventure(text) {
+        document.querySelectorAll('.adventure-banner').forEach(function(n) { n.remove(); });
+        const div = document.createElement('div');
+        div.className = 'adventure-banner';
+        const safe = escapeHTML(text || 'NIESPODZIANKA!');
+        div.innerHTML =
+            '<div class="adv-stars">★ ★ ★</div>' +
+            '<div class="adv-header">DZISIEJSZA PRZYGODA TO:</div>' +
+            '<div class="adv-title">' + safe + '</div>' +
+            '<div class="adv-stars">★ ★ ★</div>';
+        document.body.appendChild(div);
+        if (joinAudio) safePlayAudio(joinAudio);
+        setTimeout(function() { div.remove(); }, 7100);
+    }
+
+    // ---------- Applause ----------
+
+    function spawnApplause() {
+        const claps = ['👏', '🎉', '🎊', '👏', '👏', '✨'];
+        for (let i = 0; i < 60; i++) {
+            const e = document.createElement('div');
+            e.className = 'clap-emoji';
+            e.innerText = claps[Math.floor(Math.random() * claps.length)];
+            e.style.left = (Math.random() * 100) + 'vw';
+            e.style.fontSize = (Math.random() * 30 + 30) + 'px';
+            e.style.animationDuration = (Math.random() * 2 + 3) + 's';
+            e.style.animationDelay = (Math.random() * 1.5) + 's';
+            document.body.appendChild(e);
+            setTimeout(function() { e.remove(); }, 5000);
+        }
+        if (joinAudio) safePlayAudio(joinAudio);
+    }
+
+    // ---------- Floor lava ----------
+
+    function startFloorLava(durationMs) {
+        cainePowers.floorLavaEndsAt = Date.now() + durationMs;
+        $('floorLavaOverlay').classList.add('active');
+        document.body.classList.add('effect-floorlava');
+        setTimeout(function() {
+            if (Date.now() >= cainePowers.floorLavaEndsAt) {
+                $('floorLavaOverlay').classList.remove('active');
+                document.body.classList.remove('effect-floorlava');
+            }
+        }, durationMs + 100);
+    }
+
+    // ==========================================================================
+    // 3D Caine powers (require gameActive)
+    // ==========================================================================
+
+    function findPlayerMeshByNick(nick) {
+        if (!nick) return null;
+        const upper = String(nick).toUpperCase();
+        if (upper === user.toUpperCase()) return localPlayerMesh;
+        for (const n in players3D) {
+            if (n.toUpperCase() === upper) return players3D[n].mesh;
+        }
+        return null;
+    }
+
+    // ---------- Spotlight ----------
+
+    function applySpotlight(targetNick) {
+        if (!gameActive || !scene) return;
+        removeSpotlight();
+        const sl = new THREE.SpotLight(0xffffff, 8.0, 40, Math.PI / 7, 0.3, 1.5);
+        sl.position.set(0, 25, 0);
+        sl.castShadow = false; // spotlight cienie = drogi efekt, pomijamy
+        const tgt = new THREE.Object3D();
+        tgt.position.set(0, 0, 0);
+        scene.add(tgt);
+        sl.target = tgt;
+        scene.add(sl);
+        cainePowers.spotlightObj = sl;
+        cainePowers.spotlightTargetMesh = tgt;
+        cainePowers.spotlightTarget = String(targetNick || 'ALL').toUpperCase();
+    }
+
+    function removeSpotlight() {
+        if (cainePowers.spotlightObj) {
+            scene.remove(cainePowers.spotlightObj);
+            cainePowers.spotlightObj = null;
+        }
+        if (cainePowers.spotlightTargetMesh) {
+            scene.remove(cainePowers.spotlightTargetMesh);
+            cainePowers.spotlightTargetMesh = null;
+        }
+        cainePowers.spotlightTarget = null;
+    }
+
+    function updateSpotlight() {
+        if (!cainePowers.spotlightObj || !cainePowers.spotlightTarget) return;
+        const targetUpper = cainePowers.spotlightTarget;
+        let mesh = null;
+        if (targetUpper === 'ALL' || targetUpper === user.toUpperCase()) mesh = localPlayerMesh;
+        else mesh = findPlayerMeshByNick(targetUpper);
+        if (!mesh) return;
+        const px = mesh.position.x;
+        const pz = mesh.position.z;
+        cainePowers.spotlightObj.position.set(px, 25, pz);
+        cainePowers.spotlightTargetMesh.position.set(px, 0, pz);
+    }
+
+    // ---------- Cake (procedural, opcjonalnie ./models/cake.glb) ----------
+
+    function spawnCake(px, py, pz) {
+        if (!gameActive || !scene) return;
+        if (cainePowers.spawnedCake) {
+            scene.remove(cainePowers.spawnedCake);
+            disposeObject3D(cainePowers.spawnedCake);
+        }
+        const group = new THREE.Group();
+        // Spróbuj wczytać model, w razie błędu fallback proceduralny
+        const loader = new THREE.GLTFLoader();
+        loader.load('./models/cake.glb', function(gltf) {
+            const m = gltf.scene;
+            m.traverse(function(n) { if (n.isMesh) { n.castShadow = !isMobile; n.receiveShadow = !isMobile; } });
+            group.add(m);
+        }, undefined, function() {
+            // Fallback proceduralny: 2-piętrowy tort + świeczka
+            const baseMat = new THREE.MeshStandardMaterial({ color: 0xff66aa, roughness: 0.7 });
+            const topMat  = new THREE.MeshStandardMaterial({ color: 0xffeecc, roughness: 0.6 });
+            const candleMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.5 });
+            const flameMat  = new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0xff3300, emissiveIntensity: 2 });
+
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.4, 0.6, 24), baseMat);
+            base.position.y = 0.3;
+            const top  = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.9, 0.5, 24), topMat);
+            top.position.y = 0.85;
+            const candle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.4, 12), candleMat);
+            candle.position.y = 1.3;
+            const flame = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), flameMat);
+            flame.position.y = 1.55;
+            flame.scale.y = 1.6;
+
+            [base, top, candle, flame].forEach(function(m) { m.castShadow = !isMobile; m.receiveShadow = !isMobile; });
+            group.add(base); group.add(top); group.add(candle); group.add(flame);
+            group.userData.flame = flame; // do animacji migotania
+        });
+
+        group.position.set(px, py, pz);
+        scene.add(group);
+        cainePowers.spawnedCake = group;
+        // sprzątanie po 30s
+        setTimeout(function() {
+            if (cainePowers.spawnedCake === group) {
+                scene.remove(group);
+                disposeObject3D(group);
+                cainePowers.spawnedCake = null;
+            }
+        }, 30000);
+    }
+
+    // ---------- Floating eyes (TADC ep5 intermission, opcjonalnie ./models/eye.glb) ----------
+    // Białe gałki, niebieska tęczówka, czarna źrenica. Różne rozmiary, gęsto upakowane,
+    // część patrzy na gracza, część w losowym kierunku. Tło ciemnieje (zwiększona fog density).
+
+    function spawnEyes(durationMs) {
+        if (!gameActive || !scene) return;
+        if (cainePowers.eyesGroup) {
+            scene.remove(cainePowers.eyesGroup);
+            disposeObject3D(cainePowers.eyesGroup);
+        }
+
+        const group = new THREE.Group();
+        const COUNT = isMobile ? 16 : 30;
+
+        // Materiały współdzielone — oszczędność. MeshPhysicalMaterial daje "mokry" połysk gałki.
+        const usePhysical = typeof THREE.MeshPhysicalMaterial !== 'undefined';
+        const eyeballMat = usePhysical
+            ? new THREE.MeshPhysicalMaterial({
+                color: 0xffffff, roughness: 0.18, metalness: 0.0,
+                clearcoat: 1.0, clearcoatRoughness: 0.05, envMapIntensity: 0.7
+            })
+            : new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.15, metalness: 0.0, envMapIntensity: 0.7 });
+        const irisMat = new THREE.MeshStandardMaterial({
+            color: 0x0a3a8a, emissive: 0x0a2050, emissiveIntensity: 0.6, roughness: 0.4, metalness: 0.0
+        });
+        const pupilMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 1.0 });
+
+        // Spróbuj wczytać model, fallback proceduralny
+        const modelLoader = new THREE.GLTFLoader();
+        let modelTemplate = null;
+        modelLoader.load('./models/eye.glb', function(gltf) {
+            modelTemplate = gltf.scene;
+        }, undefined, function() { /* brak modelu — używamy proceduralnego */ });
+
+        // Buduj proceduralne gałki od razu (modelTemplate i tak załaduje się asynchronicznie po fakcie)
+        for (let i = 0; i < COUNT; i++) {
+            const eye = new THREE.Group();
+
+            // Rozkład rozmiarów: większość średnich, kilka dużych (tła), kilka małych (przód)
+            let size;
+            const r = Math.random();
+            if (r < 0.15)      size = 1.2 + Math.random() * 0.8;   // duże (background)
+            else if (r < 0.85) size = 0.4 + Math.random() * 0.5;   // średnie
+            else               size = 0.2 + Math.random() * 0.2;   // małe
+
+            const ball = new THREE.Mesh(new THREE.SphereGeometry(size, 24, 18), eyeballMat);
+            ball.castShadow = !isMobile;
+            ball.receiveShadow = !isMobile;
+
+            const iris = new THREE.Mesh(new THREE.SphereGeometry(size * 0.42, 16, 12), irisMat);
+            iris.position.z = size * 0.62;
+            iris.scale.z = 0.4; // spłaszczona z przodu
+
+            const pupil = new THREE.Mesh(new THREE.SphereGeometry(size * 0.18, 12, 10), pupilMat);
+            pupil.position.z = size * 0.82;
+            pupil.scale.z = 0.35;
+
+            eye.add(ball); eye.add(iris); eye.add(pupil);
+
+            // Pozycja: sfera wokół gracza, gęsto. Niektóre blisko (duże w foreground), niektóre daleko.
+            const azimuth = Math.random() * Math.PI * 2;
+            const elevation = (Math.random() - 0.2) * Math.PI * 0.7; // częściej powyżej horyzontu
+            const distance = 2.5 + Math.random() * 7;
+            eye.position.set(
+                p.x + Math.cos(elevation) * Math.cos(azimuth) * distance,
+                p.y + Math.sin(elevation) * distance + 1.2,
+                p.z + Math.cos(elevation) * Math.sin(azimuth) * distance
+            );
+            eye.userData.basePos = eye.position.clone();
+            eye.userData.bobPhase = Math.random() * Math.PI * 2;
+            eye.userData.bobAmp = 0.1 + Math.random() * 0.25;
+            // 60% patrzy na gracza, 40% w losowym kierunku (creepier, jak w show)
+            eye.userData.tracksPlayer = Math.random() < 0.6;
+            if (!eye.userData.tracksPlayer) {
+                // losowy kierunek patrzenia — generujemy "fałszywego" target
+                const lookAng = Math.random() * Math.PI * 2;
+                const lookEl = (Math.random() - 0.5) * Math.PI * 0.5;
+                eye.userData.lookOffset = new THREE.Vector3(
+                    Math.cos(lookEl) * Math.cos(lookAng),
+                    Math.sin(lookEl),
+                    Math.cos(lookEl) * Math.sin(lookAng)
+                );
+            }
+            eye.userData.nextBlinkAt = Date.now() + 1000 + Math.random() * 6000;
+            eye.userData.blinkPhase = -1;
+
+            group.add(eye);
+        }
+
+        // Ciemniej tło — fog gęstsza (przywracamy w cleanup)
+        if (scene.fog && cainePowers.eyesOriginalFogDensity === null) {
+            cainePowers.eyesOriginalFogDensity = scene.fog.density;
+            scene.fog.density = Math.max(scene.fog.density, 0.06);
+        }
+
+        scene.add(group);
+        cainePowers.eyesGroup = group;
+        cainePowers.eyesEndsAt = Date.now() + (durationMs || 15000);
+    }
+
+    function updateEyes() {
+        if (!cainePowers.eyesGroup) return;
+        if (Date.now() >= cainePowers.eyesEndsAt) {
+            scene.remove(cainePowers.eyesGroup);
+            disposeObject3D(cainePowers.eyesGroup);
+            cainePowers.eyesGroup = null;
+            // Przywróć fog
+            if (scene.fog && cainePowers.eyesOriginalFogDensity !== null) {
+                scene.fog.density = cainePowers.eyesOriginalFogDensity;
+                cainePowers.eyesOriginalFogDensity = null;
+            }
+            return;
+        }
+
+        const now = Date.now();
+        const t = now * 0.001;
+
+        cainePowers.eyesGroup.children.forEach(function(eye) {
+            // Drift wokół pozycji bazowej
+            const base = eye.userData.basePos;
+            const ph = eye.userData.bobPhase;
+            const amp = eye.userData.bobAmp;
+            eye.position.set(
+                base.x + Math.sin(t * 0.5 + ph) * amp,
+                base.y + Math.sin(t * 0.7 + ph) * amp * 1.3,
+                base.z + Math.cos(t * 0.5 + ph) * amp
+            );
+
+            // Patrzenie
+            if (eye.userData.tracksPlayer) {
+                eye.lookAt(p.x, p.y + 1.5, p.z);
+            } else {
+                const o = eye.userData.lookOffset;
+                eye.lookAt(eye.position.x + o.x, eye.position.y + o.y, eye.position.z + o.z);
+            }
+
+            // Mruganie
+            if (eye.userData.blinkPhase < 0) {
+                if (now > eye.userData.nextBlinkAt) eye.userData.blinkPhase = 0;
+            } else {
+                eye.userData.blinkPhase += 0.09;
+                if (eye.userData.blinkPhase >= 1) {
+                    eye.userData.blinkPhase = -1;
+                    eye.userData.nextBlinkAt = now + 2500 + Math.random() * 6000;
+                }
+            }
+            const closeAmount = eye.userData.blinkPhase < 0 ? 0 : Math.sin(eye.userData.blinkPhase * Math.PI);
+            eye.scale.y = 1 - closeAmount * 0.92;
+        });
+    }
+
+    // ---------- Disco lights ----------
+
+    function startDisco(durationMs) {
+        if (!gameActive || !scene) return;
+        stopDisco();
+        const colors = [0xff0044, 0x00f2ff, 0xf9e11e, 0x00ff88, 0xff66ff];
+        for (let i = 0; i < 4; i++) {
+            const pl = new THREE.PointLight(colors[i % colors.length], 4.0, 25, 1.5);
+            pl.userData.baseAngle = (i / 4) * Math.PI * 2;
+            pl.userData.colorIdx = i;
+            scene.add(pl);
+            cainePowers.discoLights.push(pl);
+        }
+        cainePowers.discoEndsAt = Date.now() + (durationMs || 15000);
+    }
+
+    function stopDisco() {
+        cainePowers.discoLights.forEach(function(l) { scene.remove(l); });
+        cainePowers.discoLights = [];
+        cainePowers.discoEndsAt = 0;
+    }
+
+    function updateDisco() {
+        if (cainePowers.discoLights.length === 0) return;
+        if (Date.now() >= cainePowers.discoEndsAt) { stopDisco(); return; }
+        const t = Date.now() * 0.001;
+        const colors = [0xff0044, 0x00f2ff, 0xf9e11e, 0x00ff88, 0xff66ff];
+        cainePowers.discoLights.forEach(function(l, i) {
+            const a = l.userData.baseAngle + t;
+            l.position.set(Math.cos(a) * 12, 8 + Math.sin(t * 2 + i) * 3, Math.sin(a) * 12);
+            // cykluj kolor
+            const colorIdx = (l.userData.colorIdx + Math.floor(t * 2)) % colors.length;
+            l.color.setHex(colors[colorIdx]);
+        });
+    }
+
+    // ---------- Citizens (NPC crowd, procedural, opcjonalnie ./models/npc.glb) ----------
+
+    function spawnCitizens(count) {
+        if (!gameActive || !scene) return;
+        clearCitizens();
+        count = count || 8;
+        for (let i = 0; i < count; i++) {
+            const npc = new THREE.Group();
+            const color = new THREE.Color().setHSL(Math.random(), 0.6, 0.55);
+            const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7 });
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 8), mat);
+            head.position.y = 1.6;
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 1.2, 8), mat);
+            body.position.y = 0.8;
+            [head, body].forEach(function(m) { m.castShadow = !isMobile; m.receiveShadow = !isMobile; });
+            npc.add(head); npc.add(body);
+
+            const angle = (i / count) * Math.PI * 2;
+            const r = 4 + Math.random() * 2;
+            npc.position.set(p.x + Math.cos(angle) * r, p.y - 1.5, p.z + Math.sin(angle) * r);
+            npc.lookAt(p.x, npc.position.y, p.z);
+            npc.userData.bobOffset = Math.random() * Math.PI * 2;
+
+            scene.add(npc);
+            cainePowers.citizens.push(npc);
+        }
+        cainePowers.citizensEndsAt = Date.now() + 30000;
+    }
+
+    function clearCitizens() {
+        cainePowers.citizens.forEach(function(npc) {
+            scene.remove(npc);
+            disposeObject3D(npc);
+        });
+        cainePowers.citizens = [];
+        cainePowers.citizensEndsAt = 0;
+    }
+
+    function updateCitizens() {
+        if (cainePowers.citizens.length === 0) return;
+        if (Date.now() >= cainePowers.citizensEndsAt) { clearCitizens(); return; }
+        const t = Date.now() * 0.003;
+        cainePowers.citizens.forEach(function(npc) {
+            // delikatne podskakiwanie (tłum dopinguje)
+            npc.position.y = (p.y - 1.5) + Math.abs(Math.sin(t + npc.userData.bobOffset)) * 0.15;
+        });
+    }
+
+    // ---------- Player target effects ----------
+
+    function applyLaunch(targetNick) {
+        const upper = String(targetNick || 'ALL').toUpperCase();
+        if (upper === 'ALL' || upper === user.toUpperCase()) {
+            p.vy = 0.8;
+            p.canJump = false;
+        }
+    }
+
+    function applyFreeze(targetNick, durationMs) {
+        const upper = String(targetNick || 'ALL').toUpperCase();
+        if (upper === 'ALL' || upper === user.toUpperCase()) {
+            p.frozenUntil = Date.now() + (durationMs || 5000);
+            document.body.classList.add('effect-frozen');
+            setTimeout(function() {
+                if (Date.now() >= p.frozenUntil) document.body.classList.remove('effect-frozen');
+            }, durationMs + 100);
+        }
+    }
+
+    function applyScale(targetNick, factor, durationMs) {
+        // Wszyscy klienci skalują wskazaną postać
+        const mesh = findPlayerMeshByNick(targetNick);
+        if (!mesh) return;
+        // zachowaj poprzednią skalę żeby ją przywrócić
+        const prev = { x: mesh.scale.x, y: mesh.scale.y, z: mesh.scale.z };
+        mesh.scale.set(prev.x * factor, prev.y * factor, prev.z * factor);
+        setTimeout(function() {
+            // Przywróć tylko jeśli mesh nadal istnieje
+            if (mesh && mesh.parent) mesh.scale.set(prev.x, prev.y, prev.z);
+        }, durationMs || 10000);
     }
 
     // ---------- Effects dispatcher ----------
@@ -1747,7 +2322,19 @@
         setTimeout(function() { document.body.classList.remove(cls); }, duration);
     }
 
-    function runEff(cmd) {
+    // Komendy globalne (każdy klient zawsze wykonuje, target to argument komendy)
+    const GLOBAL_COMMANDS = {
+        announce: 1, adventure: 1, applause: 1, floorlava: 1,
+        spotlight: 1, unspotlight: 1, disco: 1, undisco: 1,
+        cake: 1, eyes: 1, citizens: 1, uncitizens: 1,
+        launch: 1, freeze: 1, big: 1, small: 1, unscale: 1
+    };
+
+    function runEff(cmd, target) {
+        target = target == null ? "ALL" : target;
+        const targetUpper = String(target).toUpperCase();
+        const meIsTarget = (targetUpper === "ALL" || targetUpper === user.toUpperCase());
+
         const h = $('hologramImg');
         const c = $('censorBar');
         const chatCont = $('chatContainer');
@@ -1757,7 +2344,40 @@
         if (isAdmin) $('btnAdminCmd').style.display = 'flex';
         else $('btnAdminCmd').style.display = 'none';
 
-        // Tablicowane efekty CSS
+        // ---- CAINE POWERS (globalne, każdy klient zawsze wykonuje) ----
+        switch (cmd) {
+            case 'announce':   showAnnounce(target); return;
+            case 'adventure':  showAdventure(target); return;
+            case 'applause':   spawnApplause(); return;
+            case 'floorlava':  startFloorLava(10000); return;
+            case 'spotlight':  applySpotlight(targetUpper); return;
+            case 'unspotlight': removeSpotlight(); return;
+            case 'disco':      startDisco(15000); return;
+            case 'undisco':    stopDisco(); return;
+            case 'cake':
+                if (gameActive) {
+                    // Spawn przed graczem-celem; jeśli ALL — przed lokalnym
+                    const subject = findPlayerMeshByNick(targetUpper) || localPlayerMesh;
+                    if (subject) {
+                        const sx = subject.position.x - Math.sin(yaw) * 2.0;
+                        const sz = subject.position.z - Math.cos(yaw) * 2.0;
+                        spawnCake(sx, subject.position.y, sz);
+                    }
+                }
+                return;
+            case 'eyes':       spawnEyes(20000); return;
+            case 'citizens':   spawnCitizens(8); return;
+            case 'uncitizens': clearCitizens(); return;
+            case 'launch':     applyLaunch(targetUpper); return;
+            case 'freeze':     applyFreeze(targetUpper, 5000); return;
+            case 'big':        applyScale(targetUpper, 2.5, 10000); return;
+            case 'small':      applyScale(targetUpper, 0.4, 10000); return;
+            case 'unscale':    applyScale(targetUpper, 1.0, 0); return;
+        }
+
+        // ---- Stare efekty (lokalne, gated targetem) ----
+        if (!meIsTarget) return;
+
         if (effectMap[cmd]) {
             applyClassEffect(effectMap[cmd].cls, effectMap[cmd].duration);
             return;
